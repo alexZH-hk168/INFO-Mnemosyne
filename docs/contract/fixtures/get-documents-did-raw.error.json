@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/documents/{did}/raw",
+  "kind": "error",
+  "description": "材料不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "材料不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "did": "doc_missing"
+    }
+  }
+}

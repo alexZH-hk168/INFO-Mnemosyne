@@ -1,0 +1,14 @@
+{
+  "endpoint": "POST /api/messages/{mid}/cancel",
+  "kind": "ok",
+  "description": "取消生成",
+  "status": 200,
+  "body": {
+    "ok": true
+  },
+  "request": {
+    "params": {
+      "mid": "msg_cx_a1"
+    }
+  }
+}

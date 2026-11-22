@@ -1,0 +1,13 @@
+{
+  "endpoint": "GET /api/skills",
+  "kind": "error",
+  "description": "读取失败",
+  "status": 500,
+  "body": {
+    "error": {
+      "code": "INTERNAL",
+      "message": "读取 Skill 列表失败",
+      "retriable": true
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/web_snapshots/{sid}",
+  "kind": "error",
+  "description": "快照属于兄弟分支",
+  "status": 403,
+  "body": {
+    "error": {
+      "code": "NOT_VISIBLE_ON_PATH",
+      "message": "该网页快照不在当前分支路径上",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "sid": "ws_sibling_branch"
+    }
+  }
+}

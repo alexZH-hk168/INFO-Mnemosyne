@@ -1,0 +1,23 @@
+{
+  "endpoint": "PUT /api/conversations/{cid}/plugins",
+  "kind": "error",
+  "description": "包含未安装的插件",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "插件 plg_tavily 未安装",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    },
+    "body": {
+      "enabled_plugin_ids": [
+        "plg_tavily"
+      ]
+    }
+  }
+}

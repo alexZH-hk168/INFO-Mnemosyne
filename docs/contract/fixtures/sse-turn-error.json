@@ -1,0 +1,61 @@
+{
+  "endpoint": "POST /api/conversations/{cid}/messages",
+  "kind": "sse",
+  "description": "失败回合：模型接口不可用，发 error 后不再有 message.end",
+  "status": 200,
+  "content_type": "text/event-stream",
+  "events": [
+    {
+      "event": "message.start",
+      "data": {
+        "message_id": "msg_er_a1",
+        "client_msg_id": "d1e2f3a4-b5c6-4d7e-8f90-a1b2c3d4e5f6",
+        "user_message_id": "msg_er_u1",
+        "seq": 1
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_er_1",
+        "kind": "search_materials",
+        "label": "检索项目材料",
+        "status": "running",
+        "seq": 2
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_er_1",
+        "kind": "search_materials",
+        "label": "检索项目材料：2 份材料命中",
+        "status": "done",
+        "duration_ms": 1100,
+        "seq": 3
+      }
+    },
+    {
+      "event": "error",
+      "data": {
+        "code": "MODEL_UNAVAILABLE",
+        "message": "模型接口不可用，请检查设置里的 API Key",
+        "retriable": true,
+        "seq": 4
+      }
+    }
+  ],
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    },
+    "body": {
+      "client_msg_id": "d1e2f3a4-b5c6-4d7e-8f90-a1b2c3d4e5f6",
+      "content": "结合第 5 讲课件，讲讲注意力为什么要除以 √dₖ。最好和我上次作业卡住的地方联系起来。",
+      "web_search": true,
+      "scope": {
+        "mode": "all"
+      }
+    }
+  }
+}

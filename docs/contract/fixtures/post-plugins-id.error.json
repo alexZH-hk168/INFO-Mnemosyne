@@ -1,0 +1,21 @@
+{
+  "endpoint": "POST /api/plugins/{id}",
+  "kind": "error",
+  "description": "启动后 tools/list 失败",
+  "status": 502,
+  "body": {
+    "error": {
+      "code": "PLUGIN_SELF_CHECK_FAILED",
+      "message": "插件启动失败：tools/list 在 30 s 内没有返回",
+      "retriable": true
+    }
+  },
+  "request": {
+    "params": {
+      "id": "plg_docling"
+    },
+    "body": {
+      "config": {}
+    }
+  }
+}

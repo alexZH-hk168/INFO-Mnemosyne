@@ -1,0 +1,19 @@
+{
+  "endpoint": "POST /api/skills/import",
+  "kind": "error",
+  "description": "SKILL.md 头部缺 description",
+  "status": 422,
+  "body": {
+    "error": {
+      "code": "SKILL_INVALID",
+      "message": "SKILL.md 头部缺少 description",
+      "retriable": false
+    }
+  },
+  "request": {
+    "body": {
+      "source": "local",
+      "path": "~/skills/my-notes"
+    }
+  }
+}

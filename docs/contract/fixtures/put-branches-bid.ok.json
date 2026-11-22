@@ -1,0 +1,26 @@
+{
+  "endpoint": "PUT /api/branches/{bid}",
+  "kind": "ok",
+  "description": "归档分支",
+  "status": 200,
+  "body": {
+    "id": "br_onehot",
+    "conversation_id": "cnv_transformer",
+    "fork_message_id": "msg_tf_a1",
+    "anchor_start": 154,
+    "anchor_end": 166,
+    "anchor_quote": "输出接近 one-hot",
+    "title": "one-hot 是什么意思",
+    "status": "archived",
+    "created_at": "2026-11-22T06:31:00Z",
+    "context_turns": 1
+  },
+  "request": {
+    "params": {
+      "bid": "br_onehot"
+    },
+    "body": {
+      "status": "archived"
+    }
+  }
+}

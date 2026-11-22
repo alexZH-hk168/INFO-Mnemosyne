@@ -1,0 +1,25 @@
+{
+  "endpoint": "GET /api/skills/{id}",
+  "kind": "ok",
+  "description": "pdf Skill 详情",
+  "status": 200,
+  "body": {
+    "id": "skl_pdf",
+    "name": "pdf",
+    "description": "提取论文 PDF 的文字与表格",
+    "dir_path": "~/.mnemosyne/skills/pdf",
+    "source_url": "https://github.com/anthropics/skills/tree/main/skills/pdf",
+    "license": "Apache-2.0",
+    "enabled": true,
+    "skill_md": "---\nname: pdf\ndescription: 提取论文 PDF 的文字与表格\nlicense: Apache-2.0\n---\n\n（fixture 占位：正文以安装时从仓库读取的 SKILL.md 为准）\n",
+    "files": [
+      "SKILL.md",
+      "LICENSE.txt"
+    ]
+  },
+  "request": {
+    "params": {
+      "id": "skl_pdf"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "endpoint": "GET /api/plugins",
+  "kind": "ok",
+  "description": "已安装 3 个插件",
+  "status": 200,
+  "body": {
+    "plugins": [
+      {
+        "id": "plg_arxiv",
+        "name": "ArXiv MCP Server",
+        "version": "1.0.0",
+        "status": "installed",
+        "permissions": [
+          "network",
+          "fs_write"
+        ],
+        "config_schema": {},
+        "last_check_at": "2026-11-22T06:00:00Z"
+      },
+      {
+        "id": "plg_fetch",
+        "name": "Fetch MCP Server",
+        "version": "1.0.0",
+        "status": "installed",
+        "permissions": [
+          "network"
+        ],
+        "config_schema": {},
+        "last_check_at": "2026-11-22T06:00:02Z"
+      },
+      {
+        "id": "plg_markitdown",
+        "name": "MarkItDown MCP",
+        "version": "1.0.0",
+        "status": "installed",
+        "permissions": [
+          "fs_read"
+        ],
+        "config_schema": {},
+        "last_check_at": "2026-11-22T06:00:05Z"
+      }
+    ]
+  }
+}

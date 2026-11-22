@@ -1,0 +1,17 @@
+{
+  "endpoint": "POST /api/projects",
+  "kind": "ok",
+  "description": "新建项目",
+  "status": 200,
+  "body": {
+    "id": "prj_rl",
+    "name": "强化学习",
+    "created_at": "2026-11-22T06:40:00Z",
+    "conversation_count": 0
+  },
+  "request": {
+    "body": {
+      "name": "强化学习"
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "endpoint": "GET /api/evidence/{eid}",
+  "kind": "ok",
+  "description": "历史对话“反向传播 · 作业 3”的一段回答；context_messages 含被引消息及其前后各 1 条",
+  "status": 200,
+  "body": {
+    "id": "evd_hw3_sigmoid",
+    "source_type": "message",
+    "source_id": "msg_hw3_a2",
+    "title": "反向传播 · 作业 3",
+    "locator": {
+      "message_id": "msg_hw3_a2",
+      "char_range": [
+        3,
+        43
+      ]
+    },
+    "quote": "sigmoid 输入很大时导数 σ(x)(1−σ(x)) 趋近 0，梯度传不回去",
+    "sha256": "6832ede80730c49dd4db5e08e7d2c06fa7a38fe171f5230b9dc36c7aa25742f1",
+    "cited_by": [],
+    "context_messages": [
+      {
+        "id": "msg_hw3_u2",
+        "conversation_id": "cnv_backprop_hw3",
+        "parent_id": "msg_hw3_a1",
+        "role": "user",
+        "content": "第 3 题我把初始化调大以后，loss 基本不动了，为什么？",
+        "created_at": "2026-11-21T13:01:00Z"
+      },
+      {
+        "id": "msg_hw3_a2",
+        "conversation_id": "cnv_backprop_hw3",
+        "parent_id": "msg_hw3_u2",
+        "role": "assistant",
+        "content": "因为 sigmoid 输入很大时导数 σ(x)(1−σ(x)) 趋近 0，梯度传不回去，前面几层几乎不更新。可以把初始化调小，或者换成 ReLU 再试。",
+        "model": "chat-model",
+        "usage": {
+          "prompt_tokens": 1820,
+          "completion_tokens": 96
+        },
+        "created_at": "2026-11-21T13:01:20Z",
+        "steps": [],
+        "citations": []
+      },
+      {
+        "id": "msg_hw3_u3",
+        "conversation_id": "cnv_backprop_hw3",
+        "parent_id": "msg_hw3_a2",
+        "role": "user",
+        "content": "那换成 ReLU 是不是就没有这个问题了？",
+        "created_at": "2026-11-21T13:03:00Z"
+      }
+    ]
+  },
+  "request": {
+    "params": {
+      "eid": "evd_hw3_sigmoid"
+    }
+  }
+}

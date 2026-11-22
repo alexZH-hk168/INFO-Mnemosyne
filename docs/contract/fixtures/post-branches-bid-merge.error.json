@@ -1,0 +1,18 @@
+{
+  "endpoint": "POST /api/branches/{bid}/merge",
+  "kind": "error",
+  "description": "分支不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "分支不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "bid": "br_missing"
+    }
+  }
+}

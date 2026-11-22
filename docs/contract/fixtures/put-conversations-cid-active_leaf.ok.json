@@ -1,0 +1,17 @@
+{
+  "endpoint": "PUT /api/conversations/{cid}/active_leaf",
+  "kind": "ok",
+  "description": "切换到重新生成的兄弟回答",
+  "status": 200,
+  "body": {
+    "active_leaf_id": "msg_tf_a1b"
+  },
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    },
+    "body": {
+      "message_id": "msg_tf_a1b"
+    }
+  }
+}

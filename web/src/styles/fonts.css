@@ -1,0 +1,31 @@
+/* 自托管字体。
+   Inter：npm 包 @fontsource/inter（SIL OFL 1.1），由 Vite 打包进产物。
+   Noto Sans SC / Noto Serif SC：云电脑自带的 Noto CJK OTF（SIL OFL 1.1）用 fontTools 子集化为 woff2，
+   字符集 = GB2312 全部 7445 字 + ASCII/Latin-1 + 常用标点与箭头/数学符号；集外字回退到系统字体。 */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/noto-sans-sc-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('../assets/fonts/noto-sans-sc-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('../assets/fonts/noto-serif-sc-600.woff2') format('woff2');
+}

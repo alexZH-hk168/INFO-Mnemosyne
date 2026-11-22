@@ -1,0 +1,18 @@
+{
+  "endpoint": "DELETE /api/plugins/{id}",
+  "kind": "error",
+  "description": "插件未安装",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "插件未安装",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "id": "plg_missing"
+    }
+  }
+}

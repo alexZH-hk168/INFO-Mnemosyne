@@ -1,0 +1,21 @@
+{
+  "endpoint": "POST /api/projects/{pid}/documents",
+  "kind": "error",
+  "description": "不支持的文件类型",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "暂不支持 .docx，请上传 PDF、PPTX、代码、Notebook 或 Markdown",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "pid": "prj_dlintro"
+    },
+    "files": [
+      "作业3.docx"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "endpoint": "PUT /api/branches/{bid}",
+  "kind": "error",
+  "description": "标题为空",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "分支标题不能为空",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "bid": "br_variance"
+    },
+    "body": {
+      "title": ""
+    }
+  }
+}

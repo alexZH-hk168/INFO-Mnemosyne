@@ -1,0 +1,42 @@
+{
+  "endpoint": "GET /api/plugins/{id}",
+  "kind": "ok",
+  "description": "ArXiv 插件详情（v1 完整验收的两个插件之一）",
+  "status": 200,
+  "body": {
+    "id": "plg_arxiv",
+    "name": "ArXiv MCP Server",
+    "version": "1.0.0",
+    "status": "installed",
+    "permissions": [
+      "network",
+      "fs_write"
+    ],
+    "config_schema": {},
+    "last_check_at": "2026-11-22T06:00:00Z",
+    "verified": true,
+    "tools": [
+      {
+        "name": "search_papers",
+        "description": "按关键词、作者或分类检索 arXiv 论文"
+      },
+      {
+        "name": "get_abstract",
+        "description": "读取指定论文的摘要"
+      },
+      {
+        "name": "download_paper",
+        "description": "下载论文 PDF 到插件存储目录"
+      },
+      {
+        "name": "read_paper",
+        "description": "读取已下载论文的正文"
+      }
+    ]
+  },
+  "request": {
+    "params": {
+      "id": "plg_arxiv"
+    }
+  }
+}

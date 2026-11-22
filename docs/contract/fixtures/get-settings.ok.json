@@ -1,0 +1,15 @@
+{
+  "endpoint": "GET /api/settings",
+  "kind": "ok",
+  "description": "设置（模型名为占位，模型选择待定 U2）",
+  "status": 200,
+  "body": {
+    "chat_model": "chat-model",
+    "small_model": "small-model",
+    "embedding_model": "embedding-model",
+    "api_base": "https://api.example.com/v1",
+    "api_key_set": false,
+    "web_search_default": false,
+    "memory_enabled": true
+  }
+}

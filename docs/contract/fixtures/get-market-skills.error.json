@@ -1,0 +1,13 @@
+{
+  "endpoint": "GET /api/market/skills",
+  "kind": "error",
+  "description": "registry 读取失败",
+  "status": 500,
+  "body": {
+    "error": {
+      "code": "INTERNAL",
+      "message": "读取 Skill 市场失败",
+      "retriable": true
+    }
+  }
+}

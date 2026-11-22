@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/evidence/{eid}",
+  "kind": "error",
+  "description": "证据来自兄弟分支，不在当前路径上",
+  "status": 403,
+  "body": {
+    "error": {
+      "code": "NOT_VISIBLE_ON_PATH",
+      "message": "该证据不在当前分支路径上",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "eid": "evd_sibling_branch"
+    }
+  }
+}

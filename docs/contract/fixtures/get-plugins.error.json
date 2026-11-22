@@ -1,0 +1,13 @@
+{
+  "endpoint": "GET /api/plugins",
+  "kind": "error",
+  "description": "读取失败",
+  "status": 500,
+  "body": {
+    "error": {
+      "code": "INTERNAL",
+      "message": "读取已安装插件失败",
+      "retriable": true
+    }
+  }
+}

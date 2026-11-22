@@ -1,0 +1,27 @@
+{
+  "endpoint": "PUT /api/memory/items/{id}",
+  "kind": "ok",
+  "description": "修改一条记忆",
+  "status": 200,
+  "body": {
+    "id": "mem_hw3_sigmoid",
+    "scope": "project",
+    "scope_id": "prj_dlintro",
+    "topic": "反向传播",
+    "content": "作业 3 卡在 sigmoid 饱和导致梯度消失，已改用 ReLU 解决。",
+    "source_message_ids": [
+      "msg_hw3_a2"
+    ],
+    "status": "active",
+    "valid_from": "2026-11-21T13:05:00Z",
+    "confidence": 0.86
+  },
+  "request": {
+    "params": {
+      "id": "mem_hw3_sigmoid"
+    },
+    "body": {
+      "content": "作业 3 卡在 sigmoid 饱和导致梯度消失，已改用 ReLU 解决。"
+    }
+  }
+}

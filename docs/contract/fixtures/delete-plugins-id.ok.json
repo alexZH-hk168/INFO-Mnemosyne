@@ -1,0 +1,14 @@
+{
+  "endpoint": "DELETE /api/plugins/{id}",
+  "kind": "ok",
+  "description": "卸载插件",
+  "status": 200,
+  "body": {
+    "ok": true
+  },
+  "request": {
+    "params": {
+      "id": "plg_markitdown"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+/* 设计 token：来源 docs/ux/README.md「设计 token」表（概念图 common.css）。
+   颜色、圆角、字体只在这里与 tailwind.config.ts 定义，组件里不散写色值。只做浅色主题。 */
+:root {
+  /* 底色与面板 */
+  --canvas: #fbfaf8;
+  --panel: #f4f3f0;
+  --panel-2: #eeece8;
+  --surface: #ffffff;
+
+  /* 边线 */
+  --line: #e6e3dd;
+  --line-2: #efede8;
+
+  /* 文字 */
+  --ink: #1d1c1a;
+  --ink-2: #4f4c46;
+  --muted: #8b877f;
+  --faint: #b5b1a9;
+
+  /* 选中、悬停底 */
+  --sel: #e9e7e2;
+
+  /* 证据胶囊：材料 / 网页与插件 / 历史对话；原文高亮 */
+  --evi-bg: #f4ecda;
+  --evi-ink: #8a5b14;
+  --evi-hl: #fbe8a6;
+  --evi-web-bg: #e9eef3;
+  --evi-web-ink: #3f5f7f;
+  --evi-msg-bg: #eeece8;
+  --evi-msg-ink: #6b675f;
+  /* 胶囊选中外圈（evidence-locator.md「胶囊配色」） */
+  --evi-ring: #e2c47a;
+
+  /* 开关开启 */
+  --ok: #2f7d6d;
+
+  /* 字体：正文 Inter + Noto Sans SC；标题 Noto Serif SC；代码 Noto Sans Mono CJK SC */
+  --font-sans: 'Inter', 'Noto Sans SC', system-ui, -apple-system, 'PingFang SC', sans-serif;
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
+  --font-mono: 'Noto Sans Mono CJK SC', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* 圆角：面板 14，卡片 10–12，按钮 7–8，胶囊 5 / 999 */
+  --radius-panel: 14px;
+  --radius-card: 12px;
+  --radius-card-sm: 10px;
+  --radius-btn: 8px;
+  --radius-btn-sm: 7px;
+  --radius-chip: 5px;
+  --radius-pill: 999px;
+}

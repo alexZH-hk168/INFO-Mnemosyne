@@ -1,0 +1,117 @@
+{
+  "endpoint": "POST /api/conversations/{cid}/messages",
+  "kind": "sse",
+  "description": "取消回合：生成到一半用户点停止；未校验的引用以 partial 发出，然后 message.end(cancelled=true)",
+  "status": 200,
+  "content_type": "text/event-stream",
+  "events": [
+    {
+      "event": "message.start",
+      "data": {
+        "message_id": "msg_cx_a1",
+        "client_msg_id": "c9d8e7f6-a5b4-4c3d-8e2f-1a0b9c8d7e6f",
+        "user_message_id": "msg_cx_u1",
+        "parent_id": "msg_tf_a1",
+        "seq": 1
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_cx_1",
+        "kind": "search_materials",
+        "label": "检索项目材料",
+        "status": "running",
+        "seq": 2
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_cx_1",
+        "kind": "search_materials",
+        "label": "检索项目材料：1 份材料命中",
+        "status": "done",
+        "duration_ms": 880,
+        "seq": 3
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_att_p5_heads",
+        "label": "E1",
+        "source_type": "material",
+        "title": "Attention Is All You Need",
+        "locator": {
+          "page": 5,
+          "sentence_ids": [
+            "s5_031",
+            "s5_032"
+          ],
+          "bbox": [
+            107.6,
+            402,
+            504.2,
+            426.5
+          ]
+        },
+        "quote": "In this work we employ h = 8 parallel attention layers, or heads. For each of these we use d_k = d_v = d_model/h = 64.",
+        "seq": 4
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "论文用了 h = 8 个头，每个头 dₖ = dᵥ = d_model/h = 64[[E1]]。",
+        "seq": 5
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "所以上面“标准差是 8”的例子",
+        "seq": 6
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_cx_1",
+        "eid": "evd_att_p5_heads",
+        "label": "E1",
+        "sentence_start": 0,
+        "sentence_end": 43,
+        "verdict": "partial",
+        "seq": 7
+      }
+    },
+    {
+      "event": "message.end",
+      "data": {
+        "message_id": "msg_cx_a1",
+        "usage": {
+          "prompt_tokens": 7020,
+          "completion_tokens": 31
+        },
+        "latency_ms": 2140,
+        "cancelled": true,
+        "seq": 8
+      }
+    }
+  ],
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    },
+    "body": {
+      "client_msg_id": "c9d8e7f6-a5b4-4c3d-8e2f-1a0b9c8d7e6f",
+      "content": "那多头注意力里，每个头的 dₖ 是多少？",
+      "parent_id": "msg_tf_a1",
+      "web_search": false,
+      "scope": {
+        "mode": "all"
+      }
+    }
+  }
+}
