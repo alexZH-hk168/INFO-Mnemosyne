@@ -94,6 +94,25 @@ def seed_world(conn, files_dir: Path) -> None:
     for b in tree["branches"]:
         row = {k: v for k, v in b.items() if k != "context_turns"}
         _ins(conn, "branches", row)
+    # F4 的代码问答回合（sse-turn-code.json，cid=cnv_transformer），接在主线 msg_tf_a2 之后。
+    # 只写 get-evidence-eid.code.ok 需要的引用 cit_code_1；另两条引用的证据（evd_hw3_sigmoid、evd_jalammar_scale）
+    # 在各自 fixture 里的 cited_by 是这一轮之前的状态，写进来会和那两份样例冲突。
+    code_turn = load_fixture("sse-turn-code")
+    code_cits = [e["data"] for e in code_turn["events"] if e["event"] == "citation" and e["data"]["eid"] == "evd_tfpy_l7"]
+    _msg(conn, {"id": "msg_code_u1", "conversation_id": conv["id"], "parent_id": "msg_tf_a2", "role": "user", "content": code_turn["request"]["body"]["content"], "created_at": "2026-11-22T07:10:00Z"})
+    _msg(
+        conn,
+        {
+            "id": "msg_code_a1",
+            "conversation_id": conv["id"],
+            "parent_id": "msg_code_u1",
+            "role": "assistant",
+            "content": "第 7 行把点积分数除以 √d_k。",
+            "model": "chat-model",
+            "created_at": "2026-11-22T07:10:05Z",
+            "citations": [{k: c[k] for k in ("citation_id", "eid", "label", "sentence_start", "sentence_end", "verdict")} for c in code_cits],
+        },
+    )
 
     # 历史对话“反向传播 · 作业 3”
     ctx = load_fixture("get-evidence-eid.message.ok")["body"]["context_messages"]
@@ -106,6 +125,8 @@ def seed_world(conn, files_dir: Path) -> None:
 
     # 材料
     raw_code = load_fixture("get-documents-did-raw.ok")["body"]
+    raw_md = load_fixture("get-documents-did-raw.md.ok")["body"]  # 40 行，与文档列表里 doc_attention_notes 的 lines 一致
+    raw_ipynb = load_fixture("get-documents-did-raw.ipynb.ok")["body"]  # 14 个单元格
     groups = load_fixture("get-projects-pid-documents.ok")["body"]["groups"]
     for g in groups:
         for d in g["documents"]:
@@ -124,10 +145,9 @@ def seed_world(conn, files_dir: Path) -> None:
             elif kind == "code":
                 path = _write(files_dir, did, d["title"], raw_code.encode("utf-8"))
             elif kind == "md":
-                path = _write(files_dir, did, d["title"], "# 注意力笔记\n\n缩放点积。\n".encode("utf-8"))
+                path = _write(files_dir, did, d["title"], raw_md.encode("utf-8"))
             elif kind == "ipynb":
-                nb = {"cells": [{"cell_type": "code", "source": ["print(1)\n"], "outputs": []}], "metadata": {}, "nbformat": 4, "nbformat_minor": 5}
-                path = _write(files_dir, did, d["title"], json.dumps(nb).encode("utf-8"))
+                path = _write(files_dir, did, d["title"], raw_ipynb.encode("utf-8"))
             _ins(
                 conn,
                 "documents",
@@ -156,7 +176,7 @@ def seed_world(conn, files_dir: Path) -> None:
     _ins(conn, "web_snapshots", {**snap, "id": "ws_pytorch_sdpa", "url": "https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html", "title": "PyTorch"})
     _ins(conn, "web_snapshots", {**snap, "id": "ws_sibling_branch", "url": "https://example.org/sibling", "title": "兄弟分支里抓的网页"})
     captured = {"evd_jalammar_scale": "msg_tf_a1"}
-    for name in ("get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.web.ok", "get-evidence-eid.message.ok"):
+    for name in ("get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.web.ok", "get-evidence-eid.message.ok", "get-evidence-eid.code.ok"):
         e = load_fixture(name)["body"]
         _ins(
             conn,

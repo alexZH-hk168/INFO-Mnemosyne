@@ -55,11 +55,11 @@ def test_conversation_pagination(world, client):
 def test_active_leaf_switch_and_back(world, client):
     r = client.put("/api/conversations/cnv_transformer/active_leaf", json={"message_id": "msg_tf_a1b"})
     assert r.json() == {"active_leaf_id": "msg_tf_a1b"}
-    # 切回原回答：落到该回答这条线上最新的叶子 msg_tf_a2
+    # 切回原回答：落到该回答这条主线上最新的叶子（seed 在 msg_tf_a2 后接了 F4 的代码问答回合，叶子是 msg_code_a1）
     r = client.put("/api/conversations/cnv_transformer/active_leaf", json={"message_id": "msg_tf_a1"})
-    assert r.json() == {"active_leaf_id": "msg_tf_a2"}
+    assert r.json() == {"active_leaf_id": "msg_code_a1"}
     tree = client.get("/api/conversations/cnv_transformer/tree").json()
-    assert tree["active_leaf_id"] == "msg_tf_a2" and tree["conversation"]["active_leaf_id"] == "msg_tf_a2"
+    assert tree["active_leaf_id"] == "msg_code_a1" and tree["conversation"]["active_leaf_id"] == "msg_code_a1"
     assert client.put("/api/conversations/cnv_transformer/active_leaf", json={"message_id": "msg_tf_u2"}).status_code == 400
     assert client.put("/api/conversations/cnv_transformer/active_leaf", json={"message_id": "msg_hw3_a2"}).status_code == 400
     assert client.put("/api/conversations/cnv_missing/active_leaf", json={"message_id": "x"}).status_code == 404

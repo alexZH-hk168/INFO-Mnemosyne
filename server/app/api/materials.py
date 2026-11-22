@@ -123,8 +123,7 @@ def get_raw(did: str, conn: sqlite3.Connection = Depends(get_conn)):
         if not preview.is_file():
             raise ApiError("NOT_FOUND", "课件预览 PDF 尚未生成")
         return _inline(preview, "application/pdf", Path(path.name).stem + ".pdf")
-    if kind == "ipynb":
-        return _inline(path, "application/json", path.name)
+    # code、ipynb、md 一律 text/plain（契约 rest-api.md“code/md 返回 text/plain”；ipynb 属 code 组，返回原 JSON 文本）
     return Response(content=read_text(path), media_type="text/plain; charset=utf-8")
 
 

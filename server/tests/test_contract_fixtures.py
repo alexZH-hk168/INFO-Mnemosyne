@@ -162,7 +162,9 @@ def test_tree_equals_fixture(client, world):
     """种子数据来自 fixture，树接口应原样还原（含 steps、citations、context_turns）。"""
     fx = json.loads((FIXTURES / "get-conversations-cid-tree.ok.json").read_text(encoding="utf-8"))
     body = client.get("/api/conversations/cnv_transformer/tree").json()
-    body["messages"] = [x for x in body["messages"] if x["id"] != "msg_tf_a1b"]
+    # seed 另加的消息（不在该 fixture 里）：重新生成的兄弟回答、F4 代码问答回合
+    extra = {"msg_tf_a1b", "msg_code_u1", "msg_code_a1"}
+    body["messages"] = [x for x in body["messages"] if x["id"] not in extra]
     expected = dict(fx["body"])
     # 契约没有规定 messages 的顺序（样例是主线在前、分支在后，接口按 created_at），按 id 比较
     by_id = lambda xs: sorted(xs, key=lambda x: x["id"])  # noqa: E731
@@ -170,7 +172,10 @@ def test_tree_equals_fixture(client, world):
     assert body == expected
 
 
-@pytest.mark.parametrize("variant", ["get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.message.ok", "get-evidence-eid.web.ok"])
+@pytest.mark.parametrize(
+    "variant",
+    ["get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.message.ok", "get-evidence-eid.web.ok", "get-evidence-eid.code.ok"],
+)
 def test_evidence_equals_fixture(variant, client, world):
     fx = json.loads((FIXTURES / f"{variant}.json").read_text(encoding="utf-8"))
     body = client.get(f"/api/evidence/{fx['request']['params']['eid']}").json()

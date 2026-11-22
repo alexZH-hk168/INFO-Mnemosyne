@@ -216,6 +216,8 @@ def test_upload_all_text_kinds(client, run_jobs):
     assert code["code"]["lines"] == 16 and code["ipynb"]["cells"] == 1 and groups["notes"][0]["lines"] == 3
     raw = client.get(f"/api/documents/{code['code']['id']}/raw")
     assert raw.headers["content-type"].startswith("text/plain") and raw.text == PY
+    nb_raw = client.get(f"/api/documents/{code['ipynb']['id']}/raw")
+    assert nb_raw.headers["content-type"].startswith("text/plain") and nb_raw.text == nb
 
 
 def test_empty_code_file_fails(client, run_jobs):
