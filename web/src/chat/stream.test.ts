@@ -7,10 +7,12 @@ import { parseSseBlock, sendMessageStream } from '../api/sse';
 import type { ConversationTree, SendMessageBody, SseEvent } from '../api/types';
 import type { SseFixture } from '../mocks/fixture-types';
 import { fixtures, setMockScenario } from '../mocks/handlers';
-import { MAIN, useChat } from '../store/chat';
+import { draftKey, useChat } from '../store/chat';
 import { seen, server, setupF3Msw } from '../test/f3-utils';
 
 setupF3Msw();
+/** 对话 cnv_transformer 的主线草稿 key（U37） */
+const K = draftKey('cnv_transformer');
 
 const full = fixtures['sse-turn-full.json'] as SseFixture;
 const fullText = full.events.flatMap((e) => (e.event === 'delta' ? [e.data.text] : [])).join('');
@@ -38,7 +40,7 @@ describe('parseSseBlock', () => {
 
 describe('useChat.send（MSW 完整回合）', () => {
   it('请求体带 web_search / scope / forced_skill，档位写进 X-Model-Tier；回合按顺序走到 saved', async () => {
-    useChat.getState().setDraft(MAIN, {
+    useChat.getState().setDraft(K, {
       text: '结合第 5 讲课件讲讲',
       web_search: false,
       scope: { mode: 'selected', document_ids: ['doc_attention', 'doc_l05_attention'] },
@@ -51,8 +53,8 @@ describe('useChat.send（MSW 完整回合）', () => {
       content: '结合第 5 讲课件讲讲',
       parent_id: 'msg_tf_a2',
     });
-    expect(useChat.getState().composer[MAIN]).toMatchObject({ text: '', scope: { mode: 'all' }, attachments: [] });
-    expect(useChat.getState().composer[MAIN].forced_skill).toBeUndefined();
+    expect(useChat.getState().composer[K]).toMatchObject({ text: '', scope: { mode: 'all' }, attachments: [] });
+    expect(useChat.getState().composer[K].forced_skill).toBeUndefined();
 
     const statuses = new Set<string>();
     const unsub = useChat.subscribe((s) => s.streaming && statuses.add(s.streaming.status));
@@ -76,7 +78,7 @@ describe('useChat.send（MSW 完整回合）', () => {
   });
 
   it('保存后树里出现这一轮（用户消息 + 回答），并成为 active_leaf', async () => {
-    useChat.getState().setDraft(MAIN, { text: '追问' });
+    useChat.getState().setDraft(K, { text: '追问' });
     useChat.getState().send({ conversation_id: 'cnv_transformer', parent_id: 'msg_tf_a2' });
     await waitStatus('saved');
     const tree = await api.get<ConversationTree>('/api/conversations/cnv_transformer/tree');
@@ -107,7 +109,7 @@ describe('断线续流', () => {
     const expected = resume.events.flatMap((e) => (e.event === 'delta' ? [e.data.text] : [])).join('');
     const conns: string[] = [];
     const unsub = useChat.subscribe((s) => s.turn && conns.push(s.turn.connection));
-    useChat.getState().setDraft(MAIN, { text: '续流' });
+    useChat.getState().setDraft(draftKey('cnv_resume_demo'), { text: '续流' });
     useChat.getState().send({ conversation_id: 'cnv_resume_demo' });
     await waitStatus('saved', 10000);
     unsub();
@@ -208,7 +210,7 @@ describe('断线续流', () => {
 
 describe('停止与重新生成', () => {
   it('中途停止：保留已生成正文，已出现标记的引用以 partial 发出，以 cancelled 结束', async () => {
-    useChat.getState().setDraft(MAIN, { text: '停一下' });
+    useChat.getState().setDraft(K, { text: '停一下' });
     useChat.getState().send({ conversation_id: 'cnv_transformer', parent_id: 'msg_tf_a2' });
     await vi.waitFor(() => expect(useChat.getState().streaming?.text ?? '').toContain('[[E1]]'), {
       timeout: 5000,
@@ -226,7 +228,7 @@ describe('停止与重新生成', () => {
 
   it('error 事件：状态 error，turn 带错误信息', async () => {
     setMockScenario('POST /api/conversations/{cid}/messages', 'sse-turn-error.json');
-    useChat.getState().setDraft(MAIN, { text: 'x' });
+    useChat.getState().setDraft(K, { text: 'x' });
     useChat.getState().send({ conversation_id: 'cnv_transformer' });
     await waitStatus('error');
     expect(useChat.getState().turn?.error).toMatchObject({ code: 'MODEL_UNAVAILABLE', retriable: true });

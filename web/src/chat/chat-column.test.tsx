@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Citation } from '../api/types';
 import { stripCitations } from '../lib/citations';
 import { setMockScenario } from '../mocks/handlers';
-import { MAIN, useChat, type Streaming } from '../store/chat';
+import { draftKey, useChat, type Streaming } from '../store/chat';
 import { useEvidence } from '../store/evidence';
 import { useLayout } from '../store/layout';
 import { useUI } from '../store/ui';
@@ -13,6 +13,8 @@ import { renderWithClient, seen, setupF3Msw } from '../test/f3-utils';
 import ChatColumn from './ChatColumn';
 
 setupF3Msw();
+/** 对话 cnv_transformer 的主线草稿 key（U37） */
+const K = draftKey('cnv_transformer');
 vi.setConfig({ testTimeout: 20000 });
 
 const open = (cid = 'cnv_transformer') => {
@@ -283,7 +285,7 @@ describe('1-助手回答-步骤行', () => {
     open();
     const trail = await screen.findByTestId('chat.step-trail:msg_tf_a1', {}, { timeout: 5000 });
     await waitFor(() => expect(trail).toHaveTextContent('检索 2 份材料、1 个网页，参考 1 段历史对话'));
-    expect(trail).toHaveTextContent('3 步 · 4 秒');
+    expect(trail).toHaveTextContent('3 步 · 9 秒'); // U35：整轮耗时，历史消息 = 06:20:09 − 06:20:00
     expect(trail.textContent).not.toContain('记忆');
     fireEvent.click(trail);
     const detail = screen.getByTestId('chat.step-trail.detail:msg_tf_a1');
@@ -304,6 +306,46 @@ describe('1-助手回答-步骤行', () => {
     const trail = screen.getByTestId('chat.step-trail:msg_s_a');
     expect(trail).toHaveAttribute('data-state', 'error');
     expect(trail).toHaveTextContent('1 步失败');
+  });
+
+  it('秒数是整轮耗时（U35）：流式中不显示，message.end 后取 latency_ms；不知道就不显示', async () => {
+    open();
+    await loaded();
+    const steps = [
+      {
+        step_id: 'x',
+        kind: 'search_materials' as const,
+        label: '检索项目材料',
+        status: 'done' as const,
+        duration_ms: 900,
+      },
+    ];
+    act(() => stage({ steps, text: '答', status: 'streaming' }));
+    const trail = screen.getByTestId('chat.step-trail:msg_s_a');
+    expect(trail).toHaveTextContent('1 步');
+    expect(trail.textContent).not.toMatch(/秒/);
+    act(() => useChat.setState((s) => ({ streaming: { ...s.streaming!, status: 'saved', latency_ms: 4210 } })));
+    expect(trail).toHaveTextContent('1 步 · 4 秒');
+    // 历史里 msg_tf_a2 的用户消息与回答相隔 5 秒
+    expect(screen.getByTestId('chat.step-trail:msg_tf_a2')).toHaveTextContent('1 步 · 5 秒');
+  });
+
+  it('以 error 结束（没有 message.end）：用 error 与 message.start 的本地时刻差', () => {
+    useChat.setState({ streaming: null, turn: null });
+    const t0 = Date.now();
+    vi.spyOn(Date, 'now')
+      .mockReturnValueOnce(t0)
+      .mockReturnValueOnce(t0 + 2600);
+    useChat.getState().applyEvent({
+      event: 'message.start',
+      data: { seq: 1, message_id: 'm', client_msg_id: 'c', user_message_id: 'u' },
+    });
+    useChat.getState().applyEvent({
+      event: 'error',
+      data: { seq: 2, code: 'MODEL_UNAVAILABLE', message: 'x', retriable: true },
+    });
+    expect(useChat.getState().streaming).toMatchObject({ status: 'error', latency_ms: 2600 });
+    vi.restoreAllMocks();
   });
 });
 
@@ -345,7 +387,7 @@ describe('完整回合（对话栏 + MSW）', () => {
   it('发送后：用户消息、步骤行、正文与胶囊依次出现，保存后进入树并可继续追问', async () => {
     open();
     await loaded();
-    act(() => useChat.getState().setDraft(MAIN, { text: '那多头注意力里，每个头的 dₖ 是多少？' }));
+    act(() => useChat.getState().setDraft(K, { text: '那多头注意力里，每个头的 dₖ 是多少？' }));
     fireEvent.click(screen.getByTestId('composer.send'));
     await waitFor(() => expect(useChat.getState().streaming?.status).toBe('saved'), { timeout: 8000 });
     const mid = useChat.getState().streaming!.message_id;
@@ -353,7 +395,7 @@ describe('完整回合（对话栏 + MSW）', () => {
     expect(screen.getByTestId(`chat.assistant-message:${mid}`)).toHaveAttribute('data-status', 'saved');
     expect(screen.getByTestId(`chat.evidence-chip:${mid}:E1`)).toHaveAttribute('data-state', 'supported');
     // 下一轮接在新回答后面
-    act(() => useChat.getState().setDraft(MAIN, { text: '再问' }));
+    act(() => useChat.getState().setDraft(K, { text: '再问' }));
     fireEvent.click(screen.getByTestId('composer.send'));
     await waitFor(() =>
       expect(seen.filter((r) => r.method === 'POST' && r.path.endsWith('/messages'))).toHaveLength(2),

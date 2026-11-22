@@ -31,7 +31,7 @@ function headCp(s: string, n: number): string {
 
 /**
  * 胶囊里的位置简写：PDF `p.4`、PPT `p.18`、代码 `L7`、网页“网页”、历史对话用对话标题前 4 字、无 URL 插件“插件”。
- * 规格里的“脚注 4”需要 locator 标明脚注，契约 v0.2 的 PDF locator 没有该字段，先按页码显示（见 PROGRESS 未决）。
+ * 规格里的“脚注 4”需要 locator 标明脚注，契约 v0.2 的 PDF locator 没有该字段，先按页码显示（编排决定 U34：维持 p.N，不改契约；UI-05 的“脚注 4”记为概念图与实现差异）。
  */
 export function chipPosition(ev: Pick<Evidence, 'source_type' | 'locator' | 'title'>): string {
   const loc = ev.locator as Loc;

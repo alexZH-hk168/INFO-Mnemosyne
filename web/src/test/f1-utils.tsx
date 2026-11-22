@@ -6,7 +6,7 @@ import type { ReactElement } from 'react';
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 import { handlers, resetMockScenarios } from '../mocks/handlers';
 import { resetWorld, worldHandlers } from '../mocks/world';
-import { emptyDraft, MAIN, useChat } from '../store/chat';
+import { emptyDraft, NEW_MAIN, useChat } from '../store/chat';
 import { DEFAULT_SIZES, useLayout } from '../store/layout';
 import { useUI } from '../store/ui';
 
@@ -33,7 +33,7 @@ export function resetStores(): void {
     conversationId: null,
     activeBranchId: null,
     streaming: null,
-    composer: { [MAIN]: emptyDraft() },
+    composer: { [NEW_MAIN]: emptyDraft() },
   });
   useUI.setState({ modal: null, toasts: [], popover: null, selection: null });
 }

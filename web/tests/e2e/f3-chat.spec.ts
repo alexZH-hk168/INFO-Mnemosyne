@@ -123,7 +123,7 @@ test.describe('对话栏与证据', () => {
     await page.getByTestId('chat.message-list').evaluate((el) => (el.scrollTop = 0));
     const trail = page.getByTestId('chat.step-trail:msg_tf_a1');
     await expect(trail).toContainText('检索 2 份材料、1 个网页，参考 1 段历史对话');
-    await expect(trail).toContainText('3 步 · 4 秒');
+    await expect(trail).toContainText('3 步 · 9 秒'); // U35：整轮耗时
     await trail.click();
     await expect(page.getByTestId('chat.step-trail.detail:msg_tf_a1')).toBeVisible();
     await expect(page.getByTestId('chat.step-trail.detail:msg_tf_a1')).not.toContainText('记忆');
@@ -275,6 +275,8 @@ test.describe('输入框控件', () => {
     await openConversation(page);
     await textbox(page).fill('写了一半的问题');
     await page.getByTestId('sidebar.conversation-row:cnv_backprop_hw3').click();
+    // U37：草稿按对话存，A 的半句不跟到 B
+    await expect(textbox(page)).toHaveValue('');
     await page.getByTestId('sidebar.conversation-row:cnv_transformer').click();
     await expect(textbox(page)).toHaveValue('写了一半的问题');
     await page.getByTestId('sidebar.new-chat').click();

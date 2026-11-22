@@ -18,6 +18,7 @@ import {
 } from './citations';
 import { chipPosition, chipText, chipTone, longPosition, sourceKind } from './evidenceDisplay';
 import { STEP_KIND_NAME, summarizeSteps } from './steps';
+import { historyLatencyMs } from './latency';
 
 const tree = (fixtures['get-conversations-cid-tree.ok.json'] as RestFixture).body as ConversationTree;
 const a1 = tree.messages.find((m) => m.id === 'msg_tf_a1')!;
@@ -140,13 +141,27 @@ describe('胶囊文字与配色', () => {
 
 describe('步骤摘要', () => {
   const steps = a1.steps as Step[];
-  it('与 UI-05 文案格式一致', () => {
-    const s = summarizeSteps(steps, fullEvidence);
+  it('与 UI-05 文案格式一致；秒数是整轮耗时（message.end.latency_ms，U35）', () => {
+    const end = full.events.find((e) => e.event === 'message.end');
+    const latency = end && end.event === 'message.end' ? end.data.latency_ms : -1;
+    expect(latency).toBe(9120);
+    const s = summarizeSteps(steps, fullEvidence, latency);
     expect(s.text).toBe('检索 2 份材料、1 个网页，参考 1 段历史对话');
     expect(s.count).toBe(3);
-    expect(s.seconds).toBe(4);
+    expect(s.seconds).toBe(9);
     expect(s.failed).toBe(0);
     expect(s.running).toBeNull();
+    // 不知道整轮耗时：不显示秒数（不再退回各步 duration_ms 之和）
+    expect(summarizeSteps(steps, fullEvidence).seconds).toBe(0);
+  });
+  it('历史消息的整轮耗时：回答 created_at − 用户消息 created_at；重新生成的兄弟不推算', () => {
+    const byId = new Map(tree.messages.map((m) => [m.id, m]));
+    expect(historyLatencyMs(a1, byId, ['msg_tf_a1'])).toBe(9000);
+    expect(historyLatencyMs(a1, byId, [])).toBe(9000);
+    expect(historyLatencyMs(a1, byId, ['msg_other', 'msg_tf_a1'])).toBeUndefined();
+    const u1 = byId.get('msg_tf_u1')!;
+    expect(historyLatencyMs(u1, byId, [])).toBeUndefined();
+    expect(historyLatencyMs({ ...a1, created_at: '2026-11-22T06:19:00Z' }, byId, [])).toBeUndefined();
   });
   it('没有证据时网页按步骤数', () => {
     expect(summarizeSteps(steps).text).toBe('检索 1 个网页，参考 1 段历史对话');

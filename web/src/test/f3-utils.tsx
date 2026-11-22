@@ -8,7 +8,7 @@ import { resetComposerDefaults } from '../chat/Composer';
 import { chatWorldHandlers, resetChatWorld } from '../mocks/chat-world';
 import { handlers, resetMockScenarios } from '../mocks/handlers';
 import { resetWorld, worldHandlers } from '../mocks/world';
-import { emptyDraft, MAIN, useChat } from '../store/chat';
+import { emptyDraft, NEW_MAIN, useChat } from '../store/chat';
 import { useEvidence } from '../store/evidence';
 import { DEFAULT_SIZES, useLayout } from '../store/layout';
 import { useUI } from '../store/ui';
@@ -40,7 +40,7 @@ export function resetF3Stores(): void {
     activeBranchId: null,
     streaming: null,
     turn: null,
-    composer: { [MAIN]: emptyDraft() },
+    composer: { [NEW_MAIN]: emptyDraft() },
   });
   useEvidence.setState({ selectedEvidenceId: null, messageEvidence: [], hover: null });
   useUI.setState({ modal: null, toasts: [], popover: null, selection: null });

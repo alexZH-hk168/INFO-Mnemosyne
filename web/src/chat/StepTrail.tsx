@@ -1,5 +1,5 @@
 // 规格：1-助手回答-步骤行（chat.step-trail）
-// 回答顶部一行：“› 检索 2 份材料、1 个网页，参考 1 段历史对话 · 3 步 · 4 秒”。点击展开每一步（图标、label、状态、耗时）与本轮证据。
+// 回答顶部一行：“› 检索 2 份材料、1 个网页，参考 1 段历史对话 · 3 步 · 9 秒”（秒数为整轮耗时，编排决定 U35）。点击展开每一步（图标、label、状态、耗时）与本轮证据。
 // running：摘要后转圈并显示当前步骤 label；有 error 步骤：该步红色、摘要末尾“1 步失败”；verifying：末尾“核对引用…”；无步骤不渲染。
 // 记忆相关步骤只说“参考 N 段历史对话”，不出现“记忆”二字。
 import { memo, useState } from 'react';
@@ -17,14 +17,16 @@ interface Props {
   /** 本轮证据（流式中来自 SSE；历史消息为已加载到的证据） */
   evidence: Evidence[];
   verifying: boolean;
+  /** 整轮耗时（毫秒，U35）；未知时不显示秒数 */
+  latencyMs?: number;
 }
 
 const fmtMs = (ms?: number) => (ms === undefined ? '' : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} 秒`);
 
-function StepTrail({ messageId, steps, evidence, verifying }: Props) {
+function StepTrail({ messageId, steps, evidence, verifying, latencyMs }: Props) {
   const [open, setOpen] = useState(false);
   if (steps.length === 0) return null;
-  const s = summarizeSteps(steps, evidence);
+  const s = summarizeSteps(steps, evidence, latencyMs);
   const detailId = `step-detail-${messageId}`;
 
   return (

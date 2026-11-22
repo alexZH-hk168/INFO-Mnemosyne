@@ -1,6 +1,8 @@
 // F3：输入框各规格的状态与交互（1-外壳-输入框、发送停止、联网检索、引用范围、附件、模型档位、@ 引用、/ Skill）。
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { api } from '../api/client';
 import type { DocumentGroups } from '../api/endpoints';
@@ -8,7 +10,7 @@ import type { Document, Project, SendMessageBody } from '../api/types';
 import { DOC_DRAG_TYPE } from '../files/FileRow';
 import { fixtures } from '../mocks/handlers';
 import type { RestFixture } from '../mocks/fixture-types';
-import { MAIN, useChat } from '../store/chat';
+import { draftKey, NEW_MAIN, useChat } from '../store/chat';
 import { useLayout } from '../store/layout';
 import { useUI } from '../store/ui';
 import { renderWithClient, seen, server, setupF3Msw } from '../test/f3-utils';
@@ -16,6 +18,8 @@ import Composer, { PLACEHOLDER } from './Composer';
 import { requestComposerFocus } from './focus';
 
 setupF3Msw();
+/** 对话 cnv_transformer 的主线草稿 key（U37） */
+const K = draftKey('cnv_transformer');
 
 const textbox = (root: HTMLElement = document.body) => within(root).getByRole('textbox') as HTMLTextAreaElement;
 const sendBtn = () => screen.getByTestId('composer.send');
@@ -65,7 +69,7 @@ describe('1-外壳-输入框', () => {
     fireEvent.keyDown(ta, { key: 'Enter' });
     expect(useChat.getState().turn).toMatchObject({ content: '第一行', parent_id: 'msg_tf_a2' });
     // 发送后清空草稿
-    expect(useChat.getState().composer[MAIN].text).toBe('');
+    expect(useChat.getState().composer[K].text).toBe('');
     await waitFor(() => expect(posts()).toHaveLength(1));
   });
 
@@ -89,7 +93,7 @@ describe('1-外壳-输入框', () => {
     type(textbox(), '下一问');
     expect(textbox().value).toBe('下一问');
     fireEvent.keyDown(textbox(), { key: 'Enter' });
-    expect(useChat.getState().composer[MAIN].text).toBe('下一问');
+    expect(useChat.getState().composer[K].text).toBe('下一问');
     act(() => useChat.setState((s) => ({ streaming: { ...s.streaming!, status: 'verifying' } })));
     expect(sendBtn()).toHaveAttribute('aria-label', '停止生成');
     fireEvent.click(sendBtn());
@@ -110,7 +114,7 @@ describe('1-外壳-输入框', () => {
     expect(box).toHaveAttribute('data-drag', 'true');
     fireEvent.drop(box, { dataTransfer: dt });
     expect(box).not.toHaveAttribute('data-drag');
-    expect(useChat.getState().composer[MAIN]).toMatchObject({
+    expect(useChat.getState().composer[K]).toMatchObject({
       text: '@Attention Is All You Need ',
       scope: { mode: 'selected', document_ids: ['doc_attention'] },
     });
@@ -129,10 +133,26 @@ describe('1-外壳-输入框', () => {
     );
     type(textbox(screen.getByTestId('main')), '主线草稿');
     type(textbox(screen.getByTestId('branch')), '分支草稿');
-    expect(useChat.getState().composer[MAIN].text).toBe('主线草稿');
+    expect(useChat.getState().composer[K].text).toBe('主线草稿');
     expect(useChat.getState().composer.br_mock.text).toBe('分支草稿');
     expect(textbox(screen.getByTestId('main')).value).toBe('主线草稿');
     expect(textbox(screen.getByTestId('branch')).value).toBe('分支草稿');
+  });
+
+  it('A 对话的草稿切到 B 不跟随，切回 A 还在（U37：主线草稿按对话存）', async () => {
+    const { rerender: raw, client } = renderWithClient(<Composer variant="chat" conversationId="cnv_a" />);
+    const rerender = (ui: ReactElement) => raw(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+    type(textbox(), 'A 写了一半');
+    expect(useChat.getState().composer[draftKey('cnv_a')].text).toBe('A 写了一半');
+    rerender(<Composer variant="chat" conversationId="cnv_b" />);
+    expect(textbox().value).toBe('');
+    type(textbox(), 'B 的问题');
+    rerender(<Composer variant="chat" conversationId="cnv_a" />);
+    expect(textbox().value).toBe('A 写了一半');
+    expect(useChat.getState().composer[draftKey('cnv_b')].text).toBe('B 的问题');
+    // 主页（还没有对话）是另一份
+    rerender(<Composer variant="home" />);
+    expect(textbox().value).toBe('');
   });
 
   it('分支 variant 发送带 branch_id 与 parent_id', async () => {
@@ -164,12 +184,16 @@ describe('1-输入框-发送停止按钮（主页）', () => {
     expect(seen.find((r) => r.method === 'POST' && r.path === '/api/projects/prj_dlintro/conversations')).toBeTruthy();
     await waitFor(() => expect(posts()[0]?.path).toBe(`/api/conversations/${cid}/messages`));
     expect(window.location.pathname).toBe(`/c/${cid}`);
+    expect((posts()[0].body as SendMessageBody).content).toBe('从主页问');
+    // U37：主页草稿 new:main 发出首条后丢弃；新对话的主线草稿是空的
+    expect(useChat.getState().composer[NEW_MAIN]).toBeUndefined();
+    expect(useChat.getState().composer[draftKey(cid)]).toMatchObject({ text: '', attachments: [] });
   });
 });
 
 describe('1-输入框-联网检索开关', () => {
   it('初值取 settings.web_search_default；关闭时请求体 web_search=false', async () => {
-    useChat.getState().setDraft(MAIN, { web_search: true });
+    useChat.getState().setDraft(K, { web_search: true });
     renderChat();
     await ready();
     const t = screen.getByTestId('composer.web-toggle');
@@ -233,15 +257,15 @@ describe('2-艾特-文件引用列表', () => {
     expect(within(menu).queryByTestId('composer.mention.item:doc_longmemeval')).toBeNull(); // 解析中
     expect(within(menu).queryByTestId('composer.mention.item:doc_web_illustrated')).toBeNull(); // 网页快照
     fireEvent.keyDown(ta, { key: 'Enter' }); // 选中第一项
-    expect(useChat.getState().composer[MAIN].text).toBe('比较 @Attention Is All You Need ');
-    type(ta, `${useChat.getState().composer[MAIN].text}和 @L05`);
+    expect(useChat.getState().composer[K].text).toBe('比较 @Attention Is All You Need ');
+    type(ta, `${useChat.getState().composer[K].text}和 @L05`);
     await screen.findByTestId('composer.mention.item:doc_l05_attention');
     fireEvent.click(screen.getByTestId('composer.mention.item:doc_l05_attention'));
-    expect(useChat.getState().composer[MAIN].scope).toEqual({
+    expect(useChat.getState().composer[K].scope).toEqual({
       mode: 'selected',
       document_ids: ['doc_attention', 'doc_l05_attention'],
     });
-    type(ta, `${useChat.getState().composer[MAIN].text}@`);
+    type(ta, `${useChat.getState().composer[K].text}@`);
     await screen.findByTestId('composer.mention');
     fireEvent.keyDown(ta, { key: 'Escape' });
     expect(screen.queryByTestId('composer.mention')).toBeNull();
@@ -257,11 +281,11 @@ describe('2-艾特-文件引用列表', () => {
     type(ta, '@');
     await screen.findByTestId('composer.mention');
     fireEvent.click(screen.getByTestId('composer.mention.item:doc_attention'));
-    const text = useChat.getState().composer[MAIN].text;
+    const text = useChat.getState().composer[K].text;
     ta.setSelectionRange(text.length, text.length);
     fireEvent.keyDown(ta, { key: 'Backspace' });
-    expect(useChat.getState().composer[MAIN].text).toBe('');
-    expect(useChat.getState().composer[MAIN].scope).toEqual({ mode: 'all' });
+    expect(useChat.getState().composer[K].text).toBe('');
+    expect(useChat.getState().composer[K].scope).toEqual({ mode: 'all' });
   });
 
   it('无材料：“项目里还没有文件”', async () => {
@@ -284,11 +308,11 @@ describe('2-斜杠-Skill选择列表', () => {
     await within(menu).findByTestId('composer.slash.item:pdf');
     expect(within(menu).queryByTestId('composer.slash.item:literature-review')).toBeNull(); // 未启用
     fireEvent.keyDown(ta, { key: 'Enter' });
-    expect(useChat.getState().composer[MAIN]).toMatchObject({ text: '', forced_skill: 'pdf' });
+    expect(useChat.getState().composer[K]).toMatchObject({ text: '', forced_skill: 'pdf' });
     expect(screen.getByTestId('composer.skill-tag')).toHaveTextContent('/pdf');
     ta.setSelectionRange(0, 0);
     fireEvent.keyDown(ta, { key: 'Backspace' });
-    expect(useChat.getState().composer[MAIN].forced_skill).toBeUndefined();
+    expect(useChat.getState().composer[K].forced_skill).toBeUndefined();
   });
 
   it('按前缀过滤；无匹配显示“没有匹配的 Skill · 去 Skill 市场”', async () => {
@@ -356,8 +380,8 @@ describe('1-输入框-附件按钮', () => {
     const input = screen.getByTestId('composer.attach-input') as HTMLInputElement;
     const file = new File([new Uint8Array(1000)], 'L06 位置编码.pptx');
     fireEvent.change(input, { target: { files: [file] } });
-    await waitFor(() => expect(useChat.getState().composer[MAIN].attachments).toEqual([doc.id]));
-    expect(useChat.getState().composer[MAIN].scope).toEqual({ mode: 'selected', document_ids: [doc.id] });
+    await waitFor(() => expect(useChat.getState().composer[K].attachments).toEqual([doc.id]));
+    expect(useChat.getState().composer[K].scope).toEqual({ mode: 'selected', document_ids: [doc.id] });
     const card = await screen.findByTestId(`composer.attach-card:${doc.id}`);
     await waitFor(() => expect(card).toHaveTextContent('L06 位置编码.pptx'));
     expect(card).toHaveTextContent('解析 40%');
@@ -365,7 +389,7 @@ describe('1-输入框-附件按钮', () => {
     type(textbox(), 'q');
     fireEvent.click(sendBtn());
     await waitFor(() => expect(useUI.getState().toasts.some((t) => t.text.includes('还在解析'))).toBe(true));
-    expect(useChat.getState().composer[MAIN].attachments).toHaveLength(0);
+    expect(useChat.getState().composer[K].attachments).toHaveLength(0);
   });
 
   it('不支持的类型：提示且不上传', async () => {
@@ -378,14 +402,14 @@ describe('1-输入框-附件按钮', () => {
   });
 
   it('× 移除附件后 scope 回到 all', async () => {
-    useChat.getState().setDraft(MAIN, {
+    useChat.getState().setDraft(K, {
       attachments: ['doc_attention'],
       scope: { mode: 'selected', document_ids: ['doc_attention'] },
     });
     renderChat();
     await ready().catch(() => undefined);
     fireEvent.click(await screen.findByTestId('composer.attach-remove:doc_attention'));
-    expect(useChat.getState().composer[MAIN]).toMatchObject({ attachments: [], scope: { mode: 'all' } });
+    expect(useChat.getState().composer[K]).toMatchObject({ attachments: [], scope: { mode: 'all' } });
   });
 });
 

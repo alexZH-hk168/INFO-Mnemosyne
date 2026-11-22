@@ -22,6 +22,8 @@ export interface AssistantView {
   steps: Step[];
   citations: Citation[];
   status: StreamStatus;
+  /** 整轮耗时（毫秒，U35），来源见 lib/latency.ts */
+  latencyMs?: number;
 }
 
 interface Props {
@@ -63,7 +65,13 @@ function AssistantMessage({ view, conversationId, siblings, busy, connection, er
 
   return (
     <div data-testid={`chat.assistant-message:${view.id}`} data-status={view.status} className="group">
-      <StepTrail messageId={view.id} steps={view.steps} evidence={evidence} verifying={view.status === 'verifying'} />
+      <StepTrail
+        messageId={view.id}
+        steps={view.steps}
+        evidence={evidence}
+        verifying={view.status === 'verifying'}
+        latencyMs={view.latencyMs}
+      />
       {view.content ? (
         <AnswerBody
           messageId={view.id}

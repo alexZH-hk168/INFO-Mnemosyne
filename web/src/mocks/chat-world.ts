@@ -282,6 +282,7 @@ function streamRun(run: Run, afterSeq = 0): Response {
             ...(run.assistant.branch_id ? { branch_id: run.assistant.branch_id } : {}),
           });
           run.readyAt = now();
+          stampAnswerTime(run);
           run.cancelRequested = false;
         }
         const e = run.events[i];
@@ -298,6 +299,18 @@ function streamRun(run: Run, afterSeq = 0): Response {
     },
   });
   return new HttpResponse(body, { status: 200, headers: sseHeaders });
+}
+
+/**
+ * 回答的 created_at = 用户消息 created_at + 本轮 message.end.latency_ms，与契约 fixture 的关系一致
+ * （前端用两者之差推算历史消息的整轮耗时，编排决定 U35）。重新生成的回答没有用户消息，保留生成时刻。
+ */
+function stampAnswerTime(run: Run): void {
+  if (!run.user) return;
+  const end = run.events.find((e) => e.event === 'message.end');
+  const latency = end && end.event === 'message.end' ? end.data.latency_ms : 0;
+  const t = Date.parse(run.user.created_at) + latency;
+  run.assistant = { ...run.assistant, created_at: new Date(t).toISOString().replace(/\.\d{3}Z$/, 'Z') };
 }
 
 function newRun(
@@ -405,6 +418,7 @@ export const chatWorldHandlers: HttpHandler[] = [
       ...(body.branch_id ? { branch_id: body.branch_id } : {}),
     });
     w.byClientMsg.set(body.client_msg_id, run);
+    stampAnswerTime(run);
     // 标题由后端保证非空（U21）：新对话首条消息后用用户原文前 20 字
     if (st.conversation.title === PLACEHOLDER_TITLE && body.content.trim()) {
       st.conversation = { ...st.conversation, title: Array.from(body.content.trim()).slice(0, 20).join('') };

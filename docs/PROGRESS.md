@@ -55,6 +55,12 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-22 | `useChat.setDraft(key, patch)` 交 F3 增加（同步 state.md），之后把 `web/src/home/draft.ts` 改为调用它（原 U25） | 编排决定，待用户追认 |
 | 2026-11-22 | 接受派生 testid `home.card-modal-close`、`home.card-modal-scrim`，以及“试一试”后焦点放到主页输入框（原 U26） | 编排决定，待用户追认 |
 | 2026-11-22 | 接受：预热后的稳态无 >50 ms 长任务即通过；首次打开弹窗偶发长任务不阻塞，真机 Chrome 性能面板复测留给用户（原 U27） | 编排决定，待用户追认 |
+| 2026-11-23 | 证据胶囊维持显示 `1 · p.4`，不改契约（PDF locator 不加脚注字段）；UI-05 的“1 · 脚注 4”记为概念图与实现的差异（原 U34，F3 提出时编号 U28，因与 F6 撞号改编） | 编排决定，待用户追认 |
+| 2026-11-23 | 步骤行秒数改用整轮耗时：流式回答取 `message.end.latency_ms`（契约 sse-events.md 字段）；以 `error` 结束时用收到 `error` 与 `message.start` 的本地时刻差；历史消息契约 v0.2 无耗时字段，用“回答 created_at − 其用户消息 created_at”推算（fixture msg_tf_a1 为 9 秒，与事件流 latency_ms 9120 一致），重新生成的兄弟回答无法这样推算，不显示秒数。若要历史消息也精确，需契约给 Message 加 `latency_ms?`（留给契约 v0.3 讨论）（原 U35，F3 提出时编号 U29） | 编排决定，待用户追认 |
+| 2026-11-23 | 插件简称交 F6b（契约 v0.3 加 `short_name?`），F3 先保持插件全名（原 U36，F3 提出时编号 U30） | 编排决定，待用户追认 |
+| 2026-11-23 | 主线草稿 key 改为按对话：`${conversationId}:main`；新对话（还没有 id）用 `new:main`，主页发出首条后丢弃（联网开关与“不用材料”范围带到新对话的主线草稿）；分支仍用 `branchId`。已同步 `docs/ux/state.md`（`draftKey`、`NEW_MAIN`、`send` 的 `draft_key?`）、`setDraft`、`web/src/home/draft.ts`（原 U37，F3 提出时编号 U31） | 编排决定，待用户追认 |
+| 2026-11-23 | @ 引用接受“文本 `@文件名` + 背后高亮层”方案，不做 contenteditable 真标签（原 U38，F3 提出时编号 U32） | 编排决定，待用户追认 |
+| 2026-11-23 | 分支面板 variant 占位用 UI-05 文案“在分支里继续追问”；主页输入框内层“插件 · 3”保留，与 UI-01 一致（原 U39，F3 提出时编号 U33） | 编排决定，待用户追认 |
 
 ## 未决（需要用户拍板）
 
@@ -70,16 +76,10 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U8 | “试一试”示例材料：论文、代码、课件各用哪份 | F2 | 2026-11-22 |
 | U9 | 用户卡片显示名是否加 `display_name` 设置项 | F1 | 2026-11-22 |
 | U10 | License | 仓库 | 2026-11-22 |
-| U28 | 胶囊“1 · 脚注 4”：PDF locator 没有脚注字段，F3 先显示“1 · p.4”。要与 UI-05 一致需 locator 加 `footnote?` 或证据带现成的位置短语 | F3、B2、契约 | 2026-11-23 |
-| U29 | 步骤行秒数取各步 `duration_ms` 之和（fixture 为“3 步 · 4 秒”），UI-05 写“6 步 · 9 秒”接近整轮 `latency_ms`。是否改用整轮耗时 | F3 | 2026-11-23 |
-| U30 | 插件胶囊文字：对话栏列插件全名（ArXiv MCP Server · Fetch MCP Server · MarkItDown MCP），UI-11 用简称（网页检索 · PDF 解析 · arXiv）；简称从哪里来（manifest 加 `short_name`？） | F6 | 2026-11-23 |
-| U31 | 主线草稿 key 是 `'main'`（state.md 原设计），不区分对话：在 A 对话写一半切到 B，草稿跟着过去。是否改成按对话存（如 `cid:main`） | F3、state.md | 2026-11-23 |
-| U32 | @ 引用在文本里写成 `@文件名`，背后一层高亮画成标签、退格整块删除（不是 contenteditable 的真标签）。视觉接近规格；要真标签需换成 contenteditable，成本较高 | F3 | 2026-11-23 |
-| U33 | 分支面板 variant 占位“在分支里继续追问”取自 UI-05（规格只给了主页与对话两条）；主页输入框内层保留 UI-01 的“插件 · 3”胶囊，和托条“已启用 3 个插件”重复 | F3、F5 | 2026-11-23 |
 
 ## 动作日志
 
-- 2026-11-23 · [F3] 输入框、对话流、SSE 客户端、证据胶囊 · 完成 · 分支 feat/F3-chat · npm run check 通过 · 单测 308/308（F3 新增 64 条）· e2e 56/56（MN_PORT=5173，workers=2，含 F3 17 条）· 截图 web/tests/screenshots/ 下 F3 规格 20 张（F1/F2 截图未刷新）· 落地 U23（新建对话后输入框聚焦、文件行拖入加 @ 引用）与 U25（`useChat.setDraft`，`home/draft.ts` 改调）· 主页 `HomeComposerShell` 删除，换成 `chat/Composer` home variant · 共享文件：`store/chat.ts`（追加 setDraft/turn/regenerate/settleTurn/model_tier，`send` 由占位换成实现）、`api/sse.ts`（占位换成实现，追加回调与 regenerateMessageStream）、`docs/ux/state.md`（追加行）、`mocks/world.ts`（追加 upsertConversationSummary）、`mocks/browser.ts`（注册 chat-world）、新增 `mocks/chat-world.ts`；契约与 tokens 未改 · F1/F2 测试适配：对话占位 testid 换 `chat.panel`、主页 Tab 顺序跳过输入框控件、弹窗切换后等标题剩一个、home.test 包 QueryClient · 未决 U28–U33
+- 2026-11-23 · [F3] 输入框、对话流、SSE 客户端、证据胶囊 · 完成 · 分支 feat/F3-chat · npm run check 通过 · 单测 308/308（F3 新增 64 条）· e2e 56/56（MN_PORT=5173，workers=2，含 F3 17 条）· 截图 web/tests/screenshots/ 下 F3 规格 20 张（F1/F2 截图未刷新）· 落地 U23（新建对话后输入框聚焦、文件行拖入加 @ 引用）与 U25（`useChat.setDraft`，`home/draft.ts` 改调）· 主页 `HomeComposerShell` 删除，换成 `chat/Composer` home variant · 共享文件：`store/chat.ts`（追加 setDraft/turn/regenerate/settleTurn/model_tier，`send` 由占位换成实现）、`api/sse.ts`（占位换成实现，追加回调与 regenerateMessageStream）、`docs/ux/state.md`（追加行）、`mocks/world.ts`（追加 upsertConversationSummary）、`mocks/browser.ts`（注册 chat-world）、新增 `mocks/chat-world.ts`；契约与 tokens 未改 · F1/F2 测试适配：对话占位 testid 换 `chat.panel`、主页 Tab 顺序跳过输入框控件、弹窗切换后等标题剩一个、home.test 包 QueryClient · 未决 U34–U39（原编号 U28–U33 与 F6 撞号，验收时改编）
 - 2026-11-23 · [F3] 输入框、对话流、SSE 客户端、证据胶囊 · 开始 · 分支 feat/F3-chat（worktree `INFO5000项目/worktrees/F3-chat`，dev 端口 5173）· 共享文件只追加：`web/src/store/chat.ts`、`web/src/api/sse.ts`、`docs/ux/state.md`、`web/src/mocks/*`
 - 2026-11-22 14:40 · [集成] F1+F2 集成修复 · 完成 · 分支 integ/F1F2 · 主页按中间区宽度自适应（先收紧卡片间距到 150、再缩放；1440 默认四栏中间区 480 时缩放 0.637）；F2 e2e 适配四栏；F1 Tab 测试改为先点外壳空白处重置导航起点；落地 U19–U27 编排决定 · npm run check 通过 · 单测 244/244 · e2e 39/39（workers=2）· 截图 web/tests/screenshots/1-新建对话-主页.png 等 F2 8 张 + 1-新建对话-主页-右栏收起.png、1-新建对话-主页-对照UI-01.png
 - 2026-11-23 · [编排] 合并 F1+F2 · 集成中 · 分支 integ/F1F2 · 冲突已解（tokens 合并，F2 遮罩改名 --scrim-frost；CenterPane 接入 Onboard；App/f0 测试取 F1 版本）· check 通过 · 单测 242/242 · e2e 31/38（f2-home 6 条、f1-shell 焦点 1 条在四栏外壳里失败，交 F2 修）
@@ -93,3 +93,4 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 - 2026-11-22 · [F0] 契约 fixtures 与前端脚手架 · 开始 · 分支 feat/F0-scaffold（worktree `INFO5000项目/worktrees/F0-scaffold`）
 - 2026-11-22 17:20 · 文档 · 重写 AGENTS.md（读文件顺序、目录与修改权限、冲突优先级、红线 R1–R8、停下询问的情况）；提示词改为指向云电脑本地仓库；规定暂不推送
 - 2026-11-22 · 文档 · 初始化 README、AGENTS.md、开发规范、契约 v0.1 草案、88 份 UX 规格、开发提示词 · 未写代码
+- 2026-11-23 · [F3] 验收整改 · 完成 · 分支 feat/F3-chat · 未决 U28–U33 改编 U34–U39 并按编排决定全部移入“已定决定” · U35：步骤行秒数改整轮耗时（新增 `lib/latency.ts`，`summarizeSteps` 第三参数 `latencyMs`，`useChat.streaming` 追加 `started_at?`、`latency_ms?`；模拟层回答 created_at = 用户消息 created_at + latency_ms）· U37：草稿 key 按对话（`useChat` 追加 `draftKey`、`NEW_MAIN`、`SendTarget.draft_key?`，初始草稿改为 `new:main`，`MAIN` 保留导出不再使用；同步 state.md、`home/draft.ts`、F1/F3 测试工具）· 新增单测：A 对话草稿切到 B 不跟随、主页发出后丢弃 `new:main`、整轮耗时三种来源

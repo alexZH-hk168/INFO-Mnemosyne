@@ -6,6 +6,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ConversationTree, ID, Message } from '../api/types';
 import { ArrowDownIcon } from '../icons/ChatIcons';
+import { historyLatencyMs } from '../lib/latency';
 import { useChat } from '../store/chat';
 import AssistantMessage, { type AssistantView } from './AssistantMessage';
 import UserMessage from './UserMessage';
@@ -53,6 +54,7 @@ function MessageList({ conversationId, tree, docTitles }: Props) {
 
   const path = useMemo(() => mainPath(tree), [tree]);
   const inTree = useMemo(() => new Set(tree.messages.map((m) => m.id)), [tree]);
+  const byId = useMemo(() => new Map(tree.messages.map((m) => [m.id, m])), [tree]);
 
   // 本对话主线上的进行中一轮（分支里的回合由 F5 的分支面板显示）
   const myTurn = turn && turn.conversation_id === conversationId && !turn.branch_id ? turn : null;
@@ -85,6 +87,7 @@ function MessageList({ conversationId, tree, docTitles }: Props) {
           steps: streaming.steps,
           citations: streaming.citations,
           status: streaming.status,
+          ...(streaming.latency_ms !== undefined ? { latencyMs: streaming.latency_ms } : {}),
           ...(overlay.kind === 'regenerate'
             ? overlay.parent_id
               ? { parentId: overlay.parent_id }
@@ -136,6 +139,11 @@ function MessageList({ conversationId, tree, docTitles }: Props) {
               return <UserMessage key={m.id} id={m.id} content={m.content} docTitles={docTitles} />;
             if (m.role === 'assistant') {
               const isStreamed = streaming?.message_id === m.id;
+              const siblings = siblingsOf(tree, m);
+              const latencyMs =
+                isStreamed && streaming.latency_ms !== undefined
+                  ? streaming.latency_ms
+                  : historyLatencyMs(m, byId, siblings);
               const view: AssistantView = {
                 id: m.id,
                 content: m.content,
@@ -143,13 +151,14 @@ function MessageList({ conversationId, tree, docTitles }: Props) {
                 citations: m.citations ?? [],
                 status: isStreamed && streaming.status === 'cancelled' ? 'cancelled' : 'saved',
                 ...(m.parent_id ? { parentId: m.parent_id } : {}),
+                ...(latencyMs !== undefined ? { latencyMs } : {}),
               };
               return (
                 <AssistantMessage
                   key={m.id}
                   view={view}
                   conversationId={conversationId}
-                  siblings={siblingsOf(tree, m)}
+                  siblings={siblings}
                   busy={busy}
                 />
               );

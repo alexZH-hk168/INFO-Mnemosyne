@@ -1,6 +1,6 @@
 // 规格：1-外壳-输入框（composer.box）＋ 1-输入框-发送停止按钮（composer.send）＋ 1-输入框-附件按钮（composer.attach）
 // 主页、对话栏、分支面板共用的输入框。外层托条：联网检索、引用范围、已启用插件；内层：文本框、+ 附件、模型档位、发送/停止。
-// 草稿按 `branchId ?? 'main'` 存在 useChat.composer；Enter 发送、Shift+Enter 换行、输入法组字中不发送；文本框最多 8 行后滚动。
+// 草稿存在 useChat.composer，key 见 draftKey（U37：主线按对话 `${cid}:main`、主页 `new:main`、分支 branchId）；Enter 发送、Shift+Enter 换行、输入法组字中不发送；文本框最多 8 行后滚动。
 // @ 引用以 `@文件名` 写进文本（背后一层高亮成小标签，退格整块删除），文件 id 记在 scope.document_ids；
 // / Skill 选中后变成文本框前不可拆的小标签（forced_skill）。语音按钮 v1 不做。
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,7 @@ import { CloseIcon, PlusIcon, Spinner } from '../icons/Icons';
 import { ArrowUpIcon, StopIcon } from '../icons/ChatIcons';
 import { goConversation } from '../lib/nav';
 import { ACCEPT_ATTR, rejectedText, splitAccepted, uploadFiles } from '../lib/upload';
-import { emptyDraft, MAIN, useChat, type ComposerDraft, type ModelTier } from '../store/chat';
+import { draftKey, emptyDraft, NEW_MAIN, useChat, type ComposerDraft, type ModelTier } from '../store/chat';
 import { useUI } from '../store/ui';
 import ComposerBar, { PluginEntry, PluginPopoverSlot } from './ComposerBar';
 import { COMPOSER_FOCUS_EVENT, requestComposerFocus } from './focus';
@@ -135,7 +135,7 @@ export default function Composer({
   parentId,
   autoFocus,
 }: ComposerProps) {
-  const key = branchId ?? MAIN;
+  const key = variant === 'home' ? NEW_MAIN : draftKey(conversationId, branchId);
   const qc = useQueryClient();
   const draft = useChat((s) => s.composer[key] ?? EMPTY);
   const setDraft = useChat((s) => s.setDraft);
@@ -451,7 +451,9 @@ export default function Composer({
         const conv = await api.post<Conversation>(`/api/projects/${encodeURIComponent(pid)}/conversations`, {});
         void qc.invalidateQueries({ queryKey: queryKeys.conversations(pid) });
         goConversation(conv.id);
-        useChat.getState().send({ conversation_id: conv.id, model_tier: tier });
+        useChat.getState().send({ conversation_id: conv.id, model_tier: tier, draft_key: NEW_MAIN });
+        // 主页草稿已丢弃，联网开关带到了新对话的主线草稿：不再用设置里的默认值覆盖
+        webDefaultApplied.add(draftKey(conv.id));
         requestComposerFocus('chat');
       } catch (err) {
         useUI.getState().pushToast({ kind: 'error', text: `新建对话失败：${(err as Error).message}` });

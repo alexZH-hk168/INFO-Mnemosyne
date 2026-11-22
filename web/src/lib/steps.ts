@@ -8,7 +8,7 @@ export interface StepSummary {
   text: string;
   /** 步数（同一 step_id 只算一次） */
   count: number;
-  /** 各步耗时之和（秒，四舍五入；没有耗时为 0） */
+  /** 整轮耗时（秒，四舍五入，至少 1）；不知道整轮耗时为 0，不显示。编排决定 U35：不再用各步 duration_ms 之和 */
   seconds: number;
   /** 正在进行的步骤 */
   running: Step | null;
@@ -33,6 +33,8 @@ export const STEP_KIND_NAME: Record<StepKind, string> = {
 export function summarizeSteps(
   steps: Step[],
   evidence: Pick<Evidence, 'source_type' | 'source_id'>[] = [],
+  /** 整轮耗时（毫秒），来源见 lib/latency.ts */
+  latencyMs?: number,
 ): StepSummary {
   const materialDocs = new Set(evidence.filter((e) => e.source_type === 'material').map((e) => e.source_id));
   const webPages = new Set(evidence.filter((e) => e.source_type === 'web').map((e) => e.source_id));
@@ -53,11 +55,10 @@ export function summarizeSteps(
 
   const running = [...steps].reverse().find((s) => s.status === 'running') ?? null;
   const text = parts.length > 0 ? parts.join('，') : (steps[steps.length - 1]?.label ?? '');
-  const ms = steps.reduce((sum, s) => sum + (s.duration_ms ?? 0), 0);
   return {
     text,
     count: steps.length,
-    seconds: ms > 0 ? Math.max(1, Math.round(ms / 1000)) : 0,
+    seconds: latencyMs !== undefined && latencyMs >= 0 ? Math.max(1, Math.round(latencyMs / 1000)) : 0,
     running,
     failed: steps.filter((s) => s.status === 'error').length,
   };

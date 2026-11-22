@@ -34,6 +34,10 @@ export interface Streaming {
   text: string;
   citations: Citation[];
   status: StreamStatus;
+  /** F3 追加（编排决定 U35）：收到 message.start 的本地时刻（Date.now），用于没有 message.end 时推算整轮耗时 */
+  started_at?: number;
+  /** F3 追加（U35）：整轮耗时。取 message.end.latency_ms；以 error 结束（没有 message.end）时 = 收到 error 的本地时刻 − started_at */
+  latency_ms?: number;
 }
 
 export interface ComposerDraft {
@@ -44,9 +48,17 @@ export interface ComposerDraft {
   attachments: ID[];
 }
 
-/** 草稿按 `branchId ?? 'main'` 存 */
+/** 草稿 key，见 draftKey（编排决定 U37） */
 export type ComposerKey = string;
+/** U37 之前的主线草稿 key。保留导出（共享文件只追加），不再用作草稿 key */
 export const MAIN: ComposerKey = 'main';
+/** F3 追加（U37）：还没有对话 id 的主页草稿；主页发出首条后丢弃 */
+export const NEW_MAIN: ComposerKey = 'new:main';
+/** F3 追加（U37）：分支用 branchId；主线按对话存 `${conversationId}:main`；没有对话用 `new:main` */
+export function draftKey(conversationId: ID | null | undefined, branchId?: ID | null): ComposerKey {
+  if (branchId) return branchId;
+  return conversationId ? `${conversationId}:main` : NEW_MAIN;
+}
 
 /** F3 追加：模型档位（规格 1-输入框-模型档位），随发送写入请求头 `X-Model-Tier` */
 export type ModelTier = 'high' | 'fast';
@@ -58,6 +70,8 @@ export interface SendTarget {
   branch_id?: ID;
   /** F3 追加：模型档位，缺省为 high（不发请求头） */
   model_tier?: ModelTier;
+  /** F3 追加（U37）：从哪份草稿取内容；缺省为 draftKey(conversation_id, branch_id)。主页传 NEW_MAIN */
+  draft_key?: ComposerKey;
 }
 
 /** F3 追加：SSE 连接状态（规格 1-对话栏-流式连接「状态」） */
@@ -146,14 +160,14 @@ export const useChat = create<ChatState>()((set, get) => {
     setConversation: (id) => set({ conversationId: id, activeBranchId: null }),
     setActiveBranch: (id) => set({ activeBranchId: id }),
     streaming: null,
-    composer: { [MAIN]: emptyDraft() },
+    composer: { [NEW_MAIN]: emptyDraft() },
     turn: null,
 
     setDraft: (key, patch) =>
       set((s) => ({ composer: { ...s.composer, [key]: { ...(s.composer[key] ?? emptyDraft()), ...patch } } })),
 
     send: (target) => {
-      const key = target.branch_id ?? MAIN;
+      const key = target.draft_key ?? draftKey(target.conversation_id, target.branch_id);
       const draft = get().composer[key] ?? emptyDraft();
       const body: SendMessageBody = {
         client_msg_id: newClientMsgId(),
@@ -177,12 +191,20 @@ export const useChat = create<ChatState>()((set, get) => {
       if (body.branch_id) turn.branch_id = body.branch_id;
       set({ turn, streaming: null });
       // 发送后清空当前草稿：文字、强制 Skill、附件；@ 引用随文字一起清掉，范围回到“全部材料”；联网开关与“不用材料”保留
-      get().setDraft(key, {
+      const rest: Partial<ComposerDraft> = {
         text: '',
         forced_skill: undefined,
         attachments: [],
         scope: draft.scope.mode === 'selected' ? { mode: 'all' } : draft.scope,
-      });
+      };
+      if (key === NEW_MAIN) {
+        // U37：主页草稿发出首条后丢弃；联网开关与范围带到这段对话的主线草稿（与发送后清空的规则一致）
+        const target_key = draftKey(target.conversation_id, target.branch_id);
+        set((s) => {
+          const { [NEW_MAIN]: _drop, ...others } = s.composer;
+          return { composer: { ...others, [target_key]: { ...emptyDraft(), web_search: draft.web_search, ...rest } } };
+        });
+      } else get().setDraft(key, rest);
       handle = sendMessageStream(target.conversation_id, body, handlers(), {
         headers: tierHeaders(target.model_tier),
       });
@@ -232,6 +254,7 @@ export const useChat = create<ChatState>()((set, get) => {
               text: '',
               citations: [],
               status: 'streaming',
+              started_at: Date.now(),
             },
           };
         }
@@ -263,10 +286,12 @@ export const useChat = create<ChatState>()((set, get) => {
           }
           case 'message.end':
             next.status = e.data.cancelled ? 'cancelled' : 'saved';
+            next.latency_ms = e.data.latency_ms;
             if (turn) turn = { ...turn, latency_ms: e.data.latency_ms, connection: 'live' };
             break;
           case 'error':
             next.status = 'error';
+            if (next.started_at !== undefined) next.latency_ms = Date.now() - next.started_at;
             if (turn)
               turn = { ...turn, error: { code: e.data.code, message: e.data.message, retriable: e.data.retriable } };
             break;

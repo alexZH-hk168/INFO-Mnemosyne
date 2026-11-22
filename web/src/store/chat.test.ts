@@ -3,7 +3,7 @@ import type { SseFixture } from '../mocks/fixture-types';
 import full from '../../../docs/contract/fixtures/sse-turn-full.json';
 import cancel from '../../../docs/contract/fixtures/sse-turn-cancel.json';
 import failed from '../../../docs/contract/fixtures/sse-turn-error.json';
-import { MAIN, useChat } from './chat';
+import { draftKey, NEW_MAIN, useChat } from './chat';
 import { tabForEvidence, useEvidence } from './evidence';
 import { DEFAULT_SIZES, useLayout } from './layout';
 import { useUI } from './ui';
@@ -27,7 +27,7 @@ describe('useChat', () => {
     const s = useChat.getState();
     expect(s.activeBranchId).toBeNull();
     expect(s.streaming).toBeNull();
-    expect(s.composer[MAIN]).toEqual({ text: '', web_search: false, scope: { mode: 'all' }, attachments: [] });
+    expect(s.composer[NEW_MAIN]).toEqual({ text: '', web_search: false, scope: { mode: 'all' }, attachments: [] });
   });
 
   it('applyEvent 回放完整回合：正文、步骤、证据、引用、状态都正确', () => {
@@ -102,10 +102,21 @@ describe('useChat', () => {
   });
 
   it('setDraft 合并修改草稿；主线与分支各自一份（F3，U25）', () => {
-    useChat.getState().setDraft(MAIN, { text: '主线' });
+    const k = draftKey('cnv_transformer');
+    useChat.getState().setDraft(k, { text: '主线' });
     useChat.getState().setDraft('br_x', { text: '分支', web_search: true });
-    expect(useChat.getState().composer[MAIN]).toMatchObject({ text: '主线', web_search: false });
+    expect(useChat.getState().composer[k]).toMatchObject({ text: '主线', web_search: false });
     expect(useChat.getState().composer.br_x).toMatchObject({ text: '分支', web_search: true, attachments: [] });
+  });
+
+  it('draftKey：分支用 branchId，主线按对话，没有对话用 new:main（U37）', () => {
+    expect(draftKey('cnv_a')).toBe('cnv_a:main');
+    expect(draftKey('cnv_a', 'br_1')).toBe('br_1');
+    expect(draftKey(null)).toBe(NEW_MAIN);
+    expect(NEW_MAIN).toBe('new:main');
+    // A 对话的草稿不会出现在 B
+    useChat.getState().setDraft(draftKey('cnv_a'), { text: 'A 的半句' });
+    expect(useChat.getState().composer[draftKey('cnv_b')]).toBeUndefined();
   });
 
   // send 的请求与流式行为见 src/chat/stream.test.ts（F3，跑在 MSW 上）

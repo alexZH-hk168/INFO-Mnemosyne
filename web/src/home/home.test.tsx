@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MAIN, useChat, emptyDraft } from '../store/chat';
+import { NEW_MAIN, useChat, emptyDraft } from '../store/chat';
 import { useUI } from '../store/ui';
 import { CARDS, getCard, neighborCard } from './cards';
 import { fanFit, fanNeededWidth, fanPose, FAN_MID_DROP, FAN_ROTATE, FAN_SPREAD, FAN_SPREAD_MIN } from './fan';
@@ -33,7 +33,7 @@ function mockMatchMedia(reduce: boolean) {
 beforeEach(() => {
   mockMatchMedia(true);
   useUI.setState({ modal: null });
-  useChat.setState({ composer: { [MAIN]: emptyDraft() } });
+  useChat.setState({ composer: { [NEW_MAIN]: emptyDraft() } });
 });
 
 describe('1-新建对话-主页（home.onboard）', () => {
@@ -229,7 +229,7 @@ describe('2-卡片介绍弹窗-试一试按钮（home.card-try）', () => {
     expect(useUI.getState().modal).toBeNull();
     const ta = within(screen.getByTestId('composer.box')).getByRole('textbox') as HTMLTextAreaElement;
     expect(ta.value).toBe(getCard('code').sampleQuestion);
-    expect(useChat.getState().composer[MAIN].text).toBe(getCard('code').sampleQuestion);
+    expect(useChat.getState().composer[NEW_MAIN].text).toBe(getCard('code').sampleQuestion);
     expect(useChat.getState().streaming).toBeNull();
     await waitFor(() => expect(ta).toHaveFocus());
   });
