@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import FourPane from '../layout/FourPane';
 import { marketControls } from '../mocks/market-world';
 import { renderWithClient, server, setupMarketMsw } from '../market/test-utils';
+import { useChat } from '../store/chat';
 import { useLayout } from '../store/layout';
 import { useUI } from '../store/ui';
 import { DELETE_CONFIRM_TEXT, EMPTY_TEXT } from './MemorySection';
@@ -166,10 +167,41 @@ describe('3-设置-记忆管理', () => {
     expect(await screen.findByTestId('settings.memory.empty')).toHaveTextContent(EMPTY_TEXT);
   });
 
-  it('查看来源：关闭设置，在右栏打开 kind=message 标签', async () => {
+  it('查看来源：有 source_conversation_id 时关闭设置、跳到该对话，并在右栏打开原消息', async () => {
     await openMemory();
     fireEvent.click(await screen.findByTestId('settings.memory.source:mem_hw3_sigmoid'));
     expect(useUI.getState().modal).toBeNull();
+    expect(useChat.getState().conversationId).toBe('cnv_backprop_hw3');
+    expect(useLayout.getState().view).toBe('conversation');
+    expect(window.location.pathname).toBe('/c/cnv_backprop_hw3');
     expect(useLayout.getState().rightTabs.at(-1)).toMatchObject({ kind: 'message', ref_id: 'msg_hw3_a2' });
+  });
+
+  it('查看来源：没有 source_conversation_id 时只在右栏打开原消息', async () => {
+    server.use(
+      http.get('*/api/memory/items', ({ request }) =>
+        new URL(request.url).searchParams.get('status') === 'superseded'
+          ? HttpResponse.json({ items: [] })
+          : HttpResponse.json({
+              items: [
+                {
+                  id: 'mem_x',
+                  scope: 'global',
+                  topic: 't',
+                  content: 'c',
+                  source_message_ids: ['msg_tf_u1'],
+                  status: 'active',
+                  confidence: 0.5,
+                },
+              ],
+            }),
+      ),
+    );
+    const before = window.location.pathname;
+    await openMemory();
+    fireEvent.click(await screen.findByTestId('settings.memory.source:mem_x'));
+    expect(useUI.getState().modal).toBeNull();
+    expect(window.location.pathname).toBe(before);
+    expect(useLayout.getState().rightTabs.at(-1)).toMatchObject({ kind: 'message', ref_id: 'msg_tf_u1' });
   });
 });

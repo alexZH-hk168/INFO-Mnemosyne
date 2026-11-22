@@ -76,11 +76,15 @@ export const PERMISSION_DOT: Record<InstalledPlugin['permissions'][number], stri
 /** 权限卡最后一行（规格 3-条目卡片-插件详情页「交互细则」，固定文案） */
 export const PERMISSION_NOTE = '以上为插件自行声明，第一版不做沙箱隔离';
 
-/**
- * v1 完整验收的插件（plugin-manifest.md：只做 ArXiv MCP Server 与 Fetch MCP Server）。
- * 详情页用 `PluginDetail.verified`；市场卡片的 `MarketItem` 没有这个字段，暂用本常量（未决 U29）。
- */
-export const V1_VERIFIED_PLUGINS: readonly string[] = ['arxiv', 'fetch'];
+/** 权限一行的文字：“联网：访问 arXiv 与 Semantic Scholar”（v0.3 permission_notes 缺省时只显示权限名） */
+export const permissionText = (
+  p: InstalledPlugin['permissions'][number],
+  notes?: Partial<Record<InstalledPlugin['permissions'][number], string>>,
+) => (notes?.[p] ? `${PERMISSION_LABEL[p]}：${notes[p]}` : PERMISSION_LABEL[p]);
+
+/** 启动命令一行：uvx arxiv-mcp-server --storage-path ~/.mnemosyne/plugins/arxiv */
+export const commandLine = (m: { command: string; args: string[] }) =>
+  [m.command, ...m.args].map((x) => (/\s/.test(x) ? JSON.stringify(x) : x)).join(' ');
 
 /** 显示用的仓库地址去掉协议，用于来源卡：github.com/blazickjp/arxiv-mcp-server */
 export const displayRepo = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/+$/, '');

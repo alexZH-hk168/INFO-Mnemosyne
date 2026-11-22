@@ -33,35 +33,12 @@ import { MARKET_DATA } from './market-data';
 /** 安装自检的模拟耗时（规格 3-安装-安装确认弹窗：约 5–30 s；演示缩短为 1.5 s，测试可改） */
 let selfCheckMs = 1500;
 
-/**
- * ArXiv MCP Server 上游完整工具清单：19 个工具名取自其 GitHub README「Tools」表（2026-11-23 核对），
- * 中文说明译自该表 Purpose 列。顺序：概念图 UI-09 列出的常用 8 个在前，其余按 README 顺序。
- * 契约 v0.2 的 fixture（get-plugins-id.ok.json）只列了 4 个；是否把 fixture 改为 19 个见未决 U28。
- */
-const ARXIV_UPSTREAM_TOOLS: PluginDetail['tools'] = [
-  { name: 'search_papers', description: '按关键词、分类、日期与排序检索 arXiv' },
-  { name: 'get_abstract', description: '按 arXiv ID 取元数据与摘要，不下载全文' },
-  { name: 'download_paper', description: '下载论文并转成本地 Markdown' },
-  { name: 'get_paper_outline', description: '分页返回论文的章节目录' },
-  { name: 'read_paper_section', description: '读取某一节正文（有长度上限）' },
-  { name: 'search_paper_text', description: '在单篇论文内检索段落，返回原文偏移' },
-  { name: 'export_citations', description: '导出 BibTeX' },
-  { name: 'citation_graph', description: '查参考文献与被引（经 Semantic Scholar）' },
-  { name: 'list_papers', description: '列出本地已保存的论文' },
-  { name: 'read_paper', description: '读取本地论文正文（默认有长度上限）' },
-  { name: 'get_paper_latex', description: '读取作者提交的 LaTeX 源（有长度上限）' },
-  { name: 'list_paper_latex_sections', description: '分页返回 LaTeX 章节目录' },
-  { name: 'get_paper_latex_section', description: '读取 LaTeX 的某一节' },
-  { name: 'watch_topic', description: '保存或更新一个 arXiv 主题订阅' },
-  { name: 'list_watches', description: '列出已保存的主题订阅' },
-  { name: 'check_alerts', description: '检查订阅主题有没有新论文' },
-  { name: 'unwatch_topic', description: '删除一个主题订阅' },
-  { name: 'semantic_search', description: '在已下载论文中按语义检索（需 [pro] 依赖）' },
-  { name: 'reindex', description: '重建本地语义索引（需 [pro] 依赖）' },
-];
-
-/** v1 完整验收的两个插件（plugin-manifest.md） */
-export const VERIFIED_PLUGIN_IDS: readonly ID[] = ['arxiv', 'fetch'];
+/** v1 完整验收的插件：取自市场 fixture 的 verified 字段（契约 v0.3） */
+function verifiedIds(): Set<ID> {
+  const f = fixtures['get-market-plugins.ok.json'] as RestFixture | undefined;
+  const items = f ? (f.body as MarketList).items : [];
+  return new Set(items.filter((m) => m.verified).map((m) => m.id));
+}
 
 /**
  * 演示用的历史版本记忆（fixture 只有 active 条目）：mem_hw3_sigmoid 被更新前的旧说法，
@@ -137,6 +114,7 @@ function marketList(type: 'plugin' | 'skill'): MarketList {
     items: MARKET_DATA.filter((m) => m.type === type).map((m): MarketItem => ({
       ...m,
       installed: installed.has(m.id),
+      ...(type === 'plugin' ? { verified: verifiedIds().has(m.id) } : {}),
     })),
   };
 }
@@ -158,10 +136,17 @@ function pluginDetail(id: ID): PluginDetail | null {
     status: installed ? installed.status : 'not_installed',
     permissions: installed?.permissions ?? base?.permissions ?? [],
     config_schema: installed?.config_schema ?? base?.config_schema ?? {},
-    tools: id === 'arxiv' ? structuredClone(ARXIV_UPSTREAM_TOOLS) : (base?.tools ?? []),
-    verified: VERIFIED_PLUGIN_IDS.includes(id),
+    tools: base?.tools ?? [],
+    verified: base?.verified ?? verifiedIds().has(id),
   };
   if (installed?.last_check_at) detail.last_check_at = installed.last_check_at;
+  if (installed?.config_set) detail.config_set = [...installed.config_set];
+  if (installed?.config) detail.config = { ...installed.config };
+  // v0.3 可选字段：只有 fixture 写了的插件才有（arxiv）
+  if (base?.manifest) detail.manifest = base.manifest;
+  if (base?.about_zh) detail.about_zh = base.about_zh;
+  if (base?.usage_zh) detail.usage_zh = base.usage_zh;
+  if (base?.permission_notes) detail.permission_notes = base.permission_notes;
   return detail;
 }
 
@@ -211,9 +196,21 @@ export const marketWorldHandlers: HttpHandler[] = [
     const input = (await request.json().catch(() => ({}))) as Partial<InstallPluginBody>;
     const config = input.config ?? {};
     const already = world.plugins.find((p) => p.id === id);
-    const missing = Object.entries(d.config_schema).find(
-      ([k, f]) => f.required && !config[k]?.trim() && !(already && f.secret),
-    );
+    // 契约 v0.3：未提供的键沿用已存值；空字符串表示清除；密钥只记“已设置”，不回传值
+    const set = new Set(already?.config_set ?? []);
+    const values: Record<string, string | number | boolean> = { ...(already?.config ?? {}) };
+    for (const [k, v] of Object.entries(config)) {
+      const field = d.config_schema[k];
+      if (!field) continue;
+      if (v.trim() === '') {
+        set.delete(k);
+        delete values[k];
+      } else {
+        set.add(k);
+        if (!field.secret) values[k] = v.trim();
+      }
+    }
+    const missing = Object.entries(d.config_schema).find(([k, f]) => f.required && !set.has(k));
     if (missing) return err(400, 'VALIDATION_ERROR', `缺少必填项：${missing[1].label}`);
     await delay(selfCheckMs);
     const fail = world.failing.get(id);
@@ -226,6 +223,8 @@ export const marketWorldHandlers: HttpHandler[] = [
       permissions: d.permissions,
       config_schema: d.config_schema,
       last_check_at: iso(),
+      config_set: [...set],
+      config: values,
     };
     world.plugins = already ? world.plugins.map((p) => (p.id === id ? plugin : p)) : [...world.plugins, plugin];
     return HttpResponse.json(plugin);

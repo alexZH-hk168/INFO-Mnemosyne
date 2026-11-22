@@ -14,7 +14,8 @@
     ],
     "status": "active",
     "valid_from": "2026-11-21T13:05:00Z",
-    "confidence": 0.86
+    "confidence": 0.86,
+    "source_conversation_id": "cnv_backprop_hw3"
   },
   "request": {
     "params": {

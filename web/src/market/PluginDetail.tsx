@@ -8,14 +8,7 @@ import { GlobeIcon, Spinner } from '../icons/Icons';
 import type { MarketRoute } from '../store/layout';
 import { useUI } from '../store/ui';
 import ConfigCard from './ConfigCard';
-import {
-  displayRepo,
-  formatStarsFull,
-  PERMISSION_DOT,
-  PERMISSION_LABEL,
-  PERMISSION_NOTE,
-  starsTooltip,
-} from './format';
+import { displayRepo, formatStarsFull, PERMISSION_DOT, PERMISSION_NOTE, permissionText, starsTooltip } from './format';
 import { useInstallPlugin, useMarketItem, useRegistryIndex, useUninstallPlugin } from './hooks';
 import { AlertIcon, LayersIcon, StarIcon } from './icons';
 import InstallButton from './InstallButton';
@@ -32,6 +25,8 @@ export default function PluginDetail({ id, tab }: { id: string; tab: MarketRoute
   const listTab: MarketRoute['tab'] = tab === 'installed' ? 'installed' : 'plugins';
   const d = detail.data;
   const name = d?.name ?? item?.name ?? id;
+  const allow = d?.manifest?.tools_allow;
+  const offCount = d && allow ? d.tools.filter((t) => !allow.includes(t.name)).length : 0;
 
   return (
     <div data-testid="market.plugin-detail" className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -68,12 +63,12 @@ export default function PluginDetail({ id, tab }: { id: string; tab: MarketRoute
                     )}
                   </div>
                 </div>
-                {item && (
+                {(d.about_zh || item) && (
                   <p
                     data-testid="market.plugin-detail.lead"
                     className="mb-[18px] mt-4 text-[14px] leading-[1.8] text-ink-2"
                   >
-                    {item.desc_zh}。
+                    {d.about_zh ?? `${item?.desc_zh}。`}
                   </p>
                 )}
 
@@ -82,10 +77,11 @@ export default function PluginDetail({ id, tab }: { id: string; tab: MarketRoute
                   <span className="text-[11.5px] font-normal text-muted">
                     安装后以 {d.id}__ 前缀出现在助手的工具清单里
                     {d.tools.length > 0 && ` · 共 ${d.tools.length} 个${d.tools.length > 8 ? '，列出常用 8 个' : ''}`}
+                    {offCount > 0 && `；${offCount} 个未启用`}
                   </span>
                 </h3>
                 {d.tools.length > 0 ? (
-                  <ToolTable tools={d.tools} />
+                  <ToolTable tools={d.tools} allow={d.manifest?.tools_allow} />
                 ) : (
                   <p
                     data-testid="market.plugin-tools.empty"
@@ -97,8 +93,8 @@ export default function PluginDetail({ id, tab }: { id: string; tab: MarketRoute
 
                 <h3 className="mb-2 mt-[18px] text-[13px] font-semibold text-ink">在 Mnemosyne 里怎么用</h3>
                 <p data-testid="market.plugin-detail.usage" className="text-[13px] leading-[1.8] text-ink-2">
-                  安装后插件默认在当前对话启用。提问时助手会按需调用上面的工具，工具结果会作为证据出现在回答里，可以点开核对；
-                  不想用时，在输入框的“插件”弹层里按对话关掉它即可。
+                  {d.usage_zh ??
+                    '安装后插件默认在当前对话启用。提问时助手会按需调用上面的工具，工具结果会作为证据出现在回答里，可以点开核对；不想用时，在输入框的“插件”弹层里按对话关掉它即可。'}
                 </p>
               </div>
 
@@ -117,7 +113,7 @@ export default function PluginDetail({ id, tab }: { id: string; tab: MarketRoute
                           className="h-[7px] w-[7px] flex-none rounded-pill"
                           style={{ background: PERMISSION_DOT[p] }}
                         />
-                        {PERMISSION_LABEL[p]}
+                        {permissionText(p, d.permission_notes)}
                         <code className="ml-auto font-mono text-[11px] text-faint">{p}</code>
                       </li>
                     ))}

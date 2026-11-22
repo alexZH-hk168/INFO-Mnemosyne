@@ -11,7 +11,7 @@ const NAMED_IN_MORE = 4;
 
 export interface ToolTableProps {
   tools: PluginDetail['tools'];
-  /** manifest `tools_allow`；未提供时不标“未启用”（契约 v0.2 的 PluginDetail 还没有这个字段，见未决 U28） */
+  /** `PluginDetail.manifest.tools_allow`（契约 v0.3）；省略＝全部开放，不标“未启用” */
   allow?: readonly string[];
 }
 

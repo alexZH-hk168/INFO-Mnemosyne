@@ -7,6 +7,7 @@ import { useMemory, useMemorySummary } from '../api/queries';
 import type { MemoryItem, Settings } from '../api/types';
 import { Spinner } from '../icons/Icons';
 import { tabFor } from '../lib/documents';
+import { goConversation } from '../lib/nav';
 import { useDeleteMemory, useSaveSettings, useUpdateMemory } from '../market/hooks';
 import ModalFrame from '../market/ModalFrame';
 import { useLayout } from '../store/layout';
@@ -185,7 +186,10 @@ function MemoryRow({ item, onDelete }: { item: MemoryItem; onDelete: () => void 
   const viewSource = () => {
     if (!source) return;
     closeModal();
-    // 规格：关闭设置，在右栏显示原消息（kind=message 标签，F4 渲染历史对话预览）
+    if (item.source_conversation_id) {
+      // 契约 v0.3：有来源对话时跳到该对话，并在右栏打开原消息（kind=message 标签，F4 渲染）
+      goConversation(item.source_conversation_id);
+    }
     useLayout.getState().openTab(tabFor('message', source, '历史对话'));
   };
 

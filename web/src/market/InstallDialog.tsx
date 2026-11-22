@@ -9,7 +9,7 @@ import { usePlugin } from '../api/queries';
 import { Spinner } from '../icons/Icons';
 import { useChat } from '../store/chat';
 import { useUI } from '../store/ui';
-import { PERMISSION_DOT, PERMISSION_LABEL, PERMISSION_NOTE } from './format';
+import { PERMISSION_DOT, PERMISSION_NOTE, permissionText } from './format';
 import { enableInConversation, useInstallPlugin, useMarketItem, useRegistryIndex } from './hooks';
 import { AlertIcon, CheckIcon } from './icons';
 import Logo from './Logo';
@@ -146,7 +146,7 @@ function InstallDialogBody({ pluginId }: { pluginId: string }) {
                     className="h-[7px] w-[7px] flex-none rounded-pill"
                     style={{ background: PERMISSION_DOT[p] }}
                   />
-                  {PERMISSION_LABEL[p]}
+                  {permissionText(p, d.permission_notes)}
                   <code className="ml-auto font-mono text-[11px] text-faint">{p}</code>
                 </li>
               ))}

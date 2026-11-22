@@ -182,6 +182,13 @@ test('3-安装-安装确认弹窗：自检失败路径（查看日志、重试�
 test('3-条目卡片-插件详情页：UI-09 复现；面包屑回列表', async ({ page }) => {
   await openMarket(page, '/market/plugin/arxiv');
   await expect(page.getByTestId('market.plugin-tools')).toBeVisible();
+  // 契约 v0.3：启动命令、权限说明、简介来自接口
+  await expect(page.getByTestId('market.plugin-config.command')).toHaveText(
+    'uvx arxiv-mcp-server --storage-path ~/.mnemosyne/plugins/arxiv',
+  );
+  await expect(page.getByTestId('market.plugin-detail.permissions')).toContainText(
+    '联网：访问 arXiv 与 Semantic Scholar',
+  );
   await page.evaluate(() => document.fonts.ready);
   await shot(page, '3-条目卡片-插件详情页');
   await page.getByTestId('market.breadcrumbs.tab').click();
@@ -195,6 +202,8 @@ test('3-插件详情-工具列表：折叠计数正确，展开显示全部 19 �
   await expect(more).toContainText('等 11 个');
   await more.click();
   await expect(page.locator('[data-testid^="market.plugin-tools.row:"]')).toHaveCount(19);
+  await expect(page.locator('[data-testid^="market.plugin-tools.off:"]')).toHaveCount(2);
+  await expect(page.getByTestId('market.plugin-tools.off:semantic_search')).toBeVisible();
   await shot(page, '3-插件详情-工具列表');
 });
 

@@ -12,7 +12,9 @@
       "network"
     ],
     "config_schema": {},
-    "last_check_at": "2026-11-22T06:00:02Z"
+    "last_check_at": "2026-11-22T06:00:02Z",
+    "config_set": [],
+    "config": {}
   },
   "request": {
     "params": {

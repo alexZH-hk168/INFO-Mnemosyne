@@ -7,7 +7,6 @@ import { ApiRequestError } from '../api/client';
 import type { MarketItem } from '../api/types';
 import { Spinner } from '../icons/Icons';
 import { useUI } from '../store/ui';
-import { V1_VERIFIED_PLUGINS } from './format';
 import { installKey, useImportSkill, useInstallState } from './hooks';
 import { CheckIcon } from './icons';
 import { openDetail } from './marketNav';
@@ -25,7 +24,8 @@ export default function InstallButton({ item, variant = 'card' }: InstallButtonP
   const pluginInstalling = useIsMutating({ mutationKey: installKey(item.id) }) > 0;
   const busy = item.type === 'plugin' ? pluginInstalling : importSkill.isPending;
   const testid = variant === 'card' ? `market.install-button:${item.id}` : 'market.install-button';
-  const unverified = item.type === 'plugin' && !V1_VERIFIED_PLUGINS.includes(item.id);
+  // v0.3：由市场条目的 verified 字段决定；字段缺省（旧后端）时不标
+  const unverified = item.type === 'plugin' && item.verified === false;
 
   const onClick = (e: MouseEvent) => {
     e.stopPropagation(); // 与卡片主体是兄弟节点，仍保险起见不冒泡

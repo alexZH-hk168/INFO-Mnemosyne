@@ -11,11 +11,13 @@ import { useLayout } from '../store/layout';
 import { useUI } from '../store/ui';
 import {
   categoriesOf,
+  commandLine,
   filterItems,
   formatStarsFull,
   formatStarsShort,
   initials,
   matchesQuery,
+  permissionText,
   sortItems,
 } from './format';
 import { headingsOf, highlight, parseBlocks, splitFrontMatter } from './markdownParse';
@@ -81,6 +83,11 @@ describe('format（纯函数）', () => {
     expect(byStars).toEqual([...byStars].sort((a, b) => b - a));
     expect(sortItems(plugins, 'stars')[0].id).toBe('markitdown');
     expect(sortItems(skills, 'name')[0].id).toBe('brainstorming');
+  });
+  it('权限文字与启动命令', () => {
+    expect(permissionText('network', { network: '访问 arXiv' })).toBe('联网：访问 arXiv');
+    expect(permissionText('fs_read')).toBe('读文件');
+    expect(commandLine({ command: 'uvx', args: ['a', '--p', '~/x y'] })).toBe('uvx a --p "~/x y"');
   });
   it('URL 查询串读写', () => {
     expect(readParams('?q=arxiv&cat=%E5%AD%A6%E6%9C%AF%E6%A3%80%E7%B4%A2&sort=stars')).toEqual({
@@ -368,6 +375,34 @@ describe('3-条目卡片-插件详情页 / 工具列表 / 配置卡 / 卸载', (
     expect(screen.getByTestId('market.plugin-detail.verified')).toHaveTextContent('已验收');
   });
 
+  it('契约 v0.3：启动命令、简介、用法、权限说明来自接口；不在 tools_allow 的工具标“未启用”', async () => {
+    openMarket('/market/plugin/arxiv');
+    expect(await screen.findByTestId('market.plugin-config.command')).toHaveTextContent(
+      'uvx arxiv-mcp-server --storage-path ~/.mnemosyne/plugins/arxiv',
+    );
+    expect(screen.getByTestId('market.plugin-detail.lead')).toHaveTextContent('论文下载到本地后按章节读取');
+    expect(screen.getByTestId('market.plugin-detail.usage')).toHaveTextContent('助手会调用 search_papers');
+    const perms = screen.getByTestId('market.plugin-detail.permissions');
+    expect(perms).toHaveTextContent('联网：访问 arXiv 与 Semantic Scholar');
+    expect(perms).toHaveTextContent('写文件：仅限论文存放目录（--storage-path）');
+    expect(screen.getByText(/共 19 个，列出常用 8 个；2 个未启用/)).toBeInTheDocument();
+    expect(screen.queryByTestId('market.plugin-tools.off:search_papers')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('market.plugin-tools.more'));
+    expect(screen.getByTestId('market.plugin-tools.off:semantic_search')).toHaveTextContent('未启用');
+    expect(screen.getByTestId('market.plugin-tools.off:reindex')).toHaveTextContent('未启用');
+    expect(screen.getAllByTestId(/^market\.plugin-tools\.off:/)).toHaveLength(2);
+  });
+
+  it('v0.3 字段缺省时退回：无 manifest 不显示启动命令，权限只写名称，用法用通用说明', async () => {
+    openMarket('/market/plugin/tavily');
+    await screen.findByTestId('market.plugin-config');
+    expect(screen.queryByTestId('market.plugin-config.command')).not.toBeInTheDocument();
+    expect(screen.getByTestId('market.plugin-detail.permissions')).toHaveTextContent('联网');
+    expect(screen.getByTestId('market.plugin-detail.permissions')).not.toHaveTextContent('联网：');
+    expect(screen.getByTestId('market.plugin-detail.usage')).toHaveTextContent('安装后插件默认在当前对话启用');
+    expect(screen.queryByTestId(/^market\.plugin-tools\.off:/)).not.toBeInTheDocument();
+  });
+
   it('权限卡最后一行固定；来源卡；配置卡“此插件不需要 API Key。”；已安装右上“已安装”', async () => {
     openMarket('/market/plugin/arxiv');
     const perms = await screen.findByTestId('market.plugin-detail.permissions');
@@ -445,6 +480,51 @@ describe('3-条目卡片-插件详情页 / 工具列表 / 配置卡 / 卸载', (
     );
   });
 
+  it('配置卡：非密钥显示当前值；未改动时不能保存；可选密钥“清除”发空字符串', async () => {
+    const posted: unknown[] = [];
+    server.use(
+      http.get('*/api/plugins/demo', () =>
+        HttpResponse.json({
+          id: 'demo',
+          name: 'Demo',
+          version: '1.0.0',
+          status: 'installed',
+          permissions: [],
+          config_schema: {
+            MAX_RESULTS: { required: false, secret: false, label: '最多结果数' },
+            SEMANTIC_SCHOLAR_API_KEY: { required: false, secret: true, label: 'Semantic Scholar Key' },
+          },
+          config_set: ['MAX_RESULTS', 'SEMANTIC_SCHOLAR_API_KEY'],
+          config: { MAX_RESULTS: 50 },
+          tools: [],
+          verified: false,
+        }),
+      ),
+      http.post('*/api/plugins/demo', async ({ request }) => {
+        posted.push(await request.json());
+        return HttpResponse.json({
+          id: 'demo',
+          name: 'Demo',
+          version: '1.0.0',
+          status: 'installed',
+          permissions: [],
+          config_schema: {},
+        });
+      }),
+    );
+    openMarket('/market/plugin/demo');
+    expect(await screen.findByTestId('market.plugin-config.field:MAX_RESULTS')).toHaveTextContent('50');
+    expect(screen.getByTestId('market.plugin-config.field:SEMANTIC_SCHOLAR_API_KEY')).toHaveTextContent('已设置');
+    fireEvent.click(screen.getByTestId('market.plugin-config.edit'));
+    expect(screen.getByTestId('market.plugin-config.input:MAX_RESULTS')).toHaveValue('50');
+    expect(screen.getByTestId('market.plugin-config.save')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('market.plugin-config.clear:SEMANTIC_SCHOLAR_API_KEY'));
+    fireEvent.change(screen.getByTestId('market.plugin-config.input:MAX_RESULTS'), { target: { value: '20' } });
+    fireEvent.click(screen.getByTestId('market.plugin-config.save'));
+    await waitFor(() => expect(posted).toHaveLength(1));
+    expect(posted[0]).toEqual({ config: { MAX_RESULTS: '20', SEMANTIC_SCHOLAR_API_KEY: '' } });
+  });
+
   it('卸载：二次确认后 DELETE，卡片回到“安装”，项目栏数字即时更新', async () => {
     openMarket('/market/plugin/markitdown');
     const count = await screen.findByTestId('sidebar.market-entry.count');
@@ -469,6 +549,40 @@ describe('3-条目卡片-插件详情页 / 工具列表 / 配置卡 / 卸载', (
     expect(useLayout.getState().marketRoute).toEqual({ tab: 'plugins' });
     expect(`${window.location.pathname}${window.location.search}`).toBe('/market/plugins?q=arxiv');
     expect(await cards()).toEqual(['arxiv']);
+  });
+});
+
+describe('模拟后端：POST /api/plugins/{id} 的 v0.3 合并语义', () => {
+  const post = (id: string, config: Record<string, string>) =>
+    fetch(`http://localhost/api/plugins/${id}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ config }),
+    });
+  it('未提供的键沿用已存值；空字符串清除；密钥只回键名不回值', async () => {
+    const r1 = await (await post('tavily', { TAVILY_API_KEY: 'tvly-secret' })).json();
+    expect(r1.config_set).toEqual(['TAVILY_API_KEY']);
+    expect(JSON.stringify(r1)).not.toContain('tvly-secret');
+    const r2 = await post('tavily', {}); // 重新检查：沿用已存的 Key
+    expect(r2.status).toBe(200);
+    expect((await r2.json()).config_set).toEqual(['TAVILY_API_KEY']);
+    const r3 = await post('tavily', { TAVILY_API_KEY: '' }); // 清除必填 Key → 校验失败
+    expect(r3.status).toBe(400);
+  });
+  it('市场条目带 verified；字段缺省时卡片不标“未验收”', async () => {
+    const list = await (await fetch('http://localhost/api/market/plugins')).json();
+    expect(list.items.filter((i: { verified?: boolean }) => i.verified).map((i: { id: string }) => i.id)).toEqual([
+      'arxiv',
+      'fetch',
+    ]);
+    server.use(
+      http.get('*/api/market/plugins', () =>
+        HttpResponse.json({ items: plugins.map(({ id, ...rest }) => ({ id, ...rest })) }),
+      ),
+    );
+    openMarket('/market/plugins');
+    await cards();
+    expect(screen.queryByTestId(/^market\.install-button\.unverified:/)).not.toBeInTheDocument();
   });
 });
 
