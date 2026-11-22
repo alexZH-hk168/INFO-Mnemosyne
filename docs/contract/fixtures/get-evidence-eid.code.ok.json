@@ -1,0 +1,32 @@
+{
+  "endpoint": "GET /api/evidence/{eid}",
+  "kind": "ok",
+  "description": "transformer.py 第 7 行（F4 追加，代码预览的 L7 胶囊）",
+  "status": 200,
+  "body": {
+    "id": "evd_tfpy_l7",
+    "source_type": "material",
+    "source_id": "doc_transformer_py",
+    "title": "transformer.py",
+    "locator": {
+      "path": "transformer.py",
+      "lines": [
+        7,
+        7
+      ]
+    },
+    "quote": "scores = q @ k.transpose(-2, -1) / math.sqrt(d_k)",
+    "sha256": "0725ac16a463145af6db584a5d36ddfd49cb7b94e3c4fdcbeb45beab1d2a5eeb",
+    "cited_by": [
+      {
+        "message_id": "msg_code_a1",
+        "label": "E1"
+      }
+    ]
+  },
+  "request": {
+    "params": {
+      "eid": "evd_tfpy_l7"
+    }
+  }
+}

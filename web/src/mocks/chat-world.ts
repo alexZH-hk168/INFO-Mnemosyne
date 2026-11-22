@@ -344,6 +344,9 @@ function touchSummary(st: ConvState) {
 }
 
 const PLACEHOLDER_TITLE = (fx<RestFixture>('post-projects-pid-conversations.ok.json').body as Conversation).title;
+/** F4：代码问答回合的触发材料（sse-turn-code.json 的 scope.document_ids） */
+const CODE_DOC = ((fx<SseFixture>('sse-turn-code.json').request?.body as SendMessageBody | undefined)?.scope
+  .document_ids ?? [])[0];
 
 export const chatWorldHandlers: HttpHandler[] = [
   http.post('*/api/projects/:pid/conversations', async ({ params, request }) => {
@@ -400,7 +403,9 @@ export const chatWorldHandlers: HttpHandler[] = [
           },
         ]
       : [];
-    const events = rewrite(fx<SseFixture>('sse-turn-full.json').events, ids, extra);
+    // F4 追加：@ 引用了 transformer.py 的提问用代码问答回合（引用代码 L7、历史对话“作业 3”、网页快照），其余仍用 sse-turn-full
+    const codeTurn = body.scope?.mode === 'selected' && (body.scope.document_ids ?? []).includes(CODE_DOC);
+    const events = rewrite(fx<SseFixture>(codeTurn ? 'sse-turn-code.json' : 'sse-turn-full.json').events, ids, extra);
     const t = iso();
     const user: Message = {
       id: ids.user_message_id,

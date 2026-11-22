@@ -17,7 +17,7 @@ import CenterPane from './CenterPane';
 import CollapsedRail from './CollapsedRail';
 import { PanelControlContext, type PanelControl } from './panelControl';
 import ResizeHandle, { CHAT_MIN } from './ResizeHandle';
-import RightPlaceholder from './RightPlaceholder';
+import RightPane from '../preview/RightPane';
 import Toasts, { ConnectionBar } from './Toasts';
 import { useBootstrap } from './useBootstrap';
 import { useShortcuts } from './useShortcuts';
@@ -146,7 +146,7 @@ export default function FourPane() {
           <CollapsedRail index={3} />
         ) : (
           <div className="h-full flex-none" style={{ width: w3 }}>
-            <RightPlaceholder />
+            <RightPane />
           </div>
         )}
       </div>

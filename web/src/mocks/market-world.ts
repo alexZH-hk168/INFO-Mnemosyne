@@ -161,11 +161,12 @@ function skillDetail(s: Skill): SkillDetail {
 }
 
 function convList(cid: ID): ConversationPlugin[] {
-  const saved = world.convPlugins.get(cid) ?? [];
+  const saved = world.convPlugins.get(cid);
   // 只列已安装的插件；卸载后开关消失（规格 3-插件详情-卸载）
+  // 编排决定（F4 修，待用户追认）：没保存过设置的对话默认启用全部已安装插件，与 UI-09“安装后默认在当前对话启用”一致
   return world.plugins.map((p) => {
-    const hit = saved.find((c) => c.plugin_id === p.id);
-    return { plugin_id: p.id, enabled: hit?.enabled ?? false, status: p.status };
+    const hit = saved?.find((c) => c.plugin_id === p.id);
+    return { plugin_id: p.id, enabled: saved ? (hit?.enabled ?? false) : true, status: p.status };
   });
 }
 

@@ -134,9 +134,9 @@ describe('2-插件与Skill-市场页', () => {
     expect(await screen.findByTestId('market.page')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar.market-entry')).toBeInTheDocument();
     expect(screen.queryByTestId('files.panel')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('right.placeholder')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('right.panel')).not.toBeInTheDocument();
     act(() => useLayout.getState().setView('home'));
-    expect(await screen.findByTestId('right.placeholder')).toBeInTheDocument();
+    expect(await screen.findByTestId('right.panel')).toBeInTheDocument();
     expect(useLayout.getState().collapsed).toEqual([false, false, false, false]);
   });
 

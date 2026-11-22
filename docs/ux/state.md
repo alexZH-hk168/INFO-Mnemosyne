@@ -47,12 +47,17 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 
 ### `useEvidence`（`evidence.ts`）
 
-| 字段 / action            | 说明                                            |
-| ------------------------ | ----------------------------------------------- |
-| `selectedEvidenceId`     | 当前在右栏定位的证据                            |
-| `messageEvidence`        | 当前回答的证据 id 列表（证据栏左右切换用）      |
-| `select(eid, messageId)` | 设置选中并调用 `useLayout.openTab` 打开对应预览 |
-| `hover`                  | `{eid, rect} \| null`，悬停浮层用               |
+| 字段 / action                   | 说明                                                                                                                                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `selectedEvidenceId`            | 当前在右栏定位的证据                                                                                                                                                           |
+| `messageEvidence`               | 当前回答的证据 id 列表（证据栏左右切换用）                                                                                                                                     |
+| `select(eid, messageId)`        | 设置选中并调用 `useLayout.openTab` 打开对应预览                                                                                                                                |
+| `hover`                         | `{eid, rect} \| null`，悬停浮层用                                                                                                                                              |
+| `selectedMessageId`             | （F4 追加）当前证据是从哪条回答打开的（证据栏“被主线第 N 条回答引用”与左右切换用）                                                                                             |
+| `select(eid, messageId, opts?)` | （F4 追加可选参数）`opts.evidence`：历史消息的证据不在流式池里时由调用方传入，用来打开对应标签；`opts.evidenceIds`：本回答的证据顺序，缺省沿用流式池顺序（池为空时为 `[eid]`） |
+| `setMessageEvidence(ids)`       | （F4 追加）证据栏按回答的引用（去掉 removed、同一证据只算一次、按序号）算出列表后写回                                                                                          |
+
+`useLayout.openTab` （F4 追加，规格 1-右栏-标签条）：右栏最多 `MAX_TABS = 8` 个标签，超出时关闭最早的、未激活的非分支标签。
 
 ### `useUI`（`ui.ts`）
 

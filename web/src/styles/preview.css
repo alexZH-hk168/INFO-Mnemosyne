@@ -1,0 +1,160 @@
+/* F4 右栏预览样式：pdf.js 文本层、证据高亮、查找命中、Markdown 文档。颜色只引用 tokens.css。 */
+
+/* pdf.js 文本层（TextLayer 按 --total-scale-factor 与 --font-height 排字；文字透明，只为选择与复制） */
+.mn-pdf-text {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 2;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.mn-pdf-text :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+.mn-pdf-text > :not(.markedContent),
+.mn-pdf-text .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.mn-pdf-text .markedContent {
+  display: contents;
+}
+.mn-pdf-text ::selection {
+  background: var(--find-hl);
+}
+
+/* 证据高亮：底色 #fbe8a6（--evi-hl），正片叠底让原文字透出来，上下细描边 */
+.mn-pdf-hl {
+  z-index: 1;
+  background: var(--evi-hl);
+  mix-blend-mode: multiply;
+  border-top: 1px solid var(--evi-hl-line);
+  border-bottom: 1px solid var(--evi-hl-line);
+  border-radius: 2px;
+}
+.mn-pdf-find {
+  z-index: 1;
+  background: var(--find-hl);
+  mix-blend-mode: multiply;
+}
+.mn-pdf-find-active {
+  z-index: 1;
+  background: var(--find-hl-active);
+  mix-blend-mode: multiply;
+}
+
+/* 网页快照、历史对话的高亮 */
+.mn-text-hl {
+  background: var(--evi-hl);
+  color: inherit;
+  border-radius: 2px;
+  padding: 1px 0;
+}
+
+/* 标签条横向滚动，不显示滚动条 */
+.mn-tabstrip {
+  scrollbar-width: none;
+}
+.mn-tabstrip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Markdown 文档预览 */
+.mn-md-doc {
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+.mn-md-doc :is(h1, h2, h3, h4) {
+  color: var(--ink);
+  font-weight: 600;
+  margin: 1em 0 0.4em;
+}
+.mn-md-doc h1 {
+  font-size: 18px;
+  font-family: var(--font-serif);
+}
+.mn-md-doc h2 {
+  font-size: 15px;
+}
+.mn-md-doc h3 {
+  font-size: 14px;
+}
+.mn-md-doc p {
+  margin: 0.4em 0;
+}
+.mn-md-doc :is(ul, ol) {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+}
+.mn-md-doc ul {
+  list-style: disc;
+}
+.mn-md-doc ol {
+  list-style: decimal;
+}
+.mn-md-doc blockquote {
+  border-left: 3px solid var(--line);
+  padding-left: 0.8em;
+  color: var(--muted);
+  margin: 0.6em 0;
+}
+.mn-md-doc pre {
+  background: var(--code-bg);
+  border-radius: var(--radius-btn-sm);
+  padding: 8px 12px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.mn-md-doc :not(pre) > code {
+  background: var(--code-bg);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+.mn-md-doc table {
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 12.5px;
+}
+.mn-md-doc :is(th, td) {
+  border: 1px solid var(--line);
+  padding: 3px 10px;
+}
+.mn-md-doc th {
+  background: var(--panel);
+  font-weight: 600;
+}
+.mn-md-compact {
+  font-size: 13px;
+}
+.mn-md-compact :is(h1, h2, h3) {
+  margin: 0.3em 0;
+  font-size: 14px;
+  font-family: inherit;
+}
+.mn-md-hl {
+  background: var(--evi-hl);
+  border-radius: 3px;
+  box-shadow: 0 0 0 3px var(--evi-hl);
+}

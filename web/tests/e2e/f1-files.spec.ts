@@ -37,7 +37,7 @@ test('上传 PDF：2 s 内出现解析进度，模拟 3 s 后变为 ready；进�
   await expect(row).not.toHaveAttribute('aria-disabled');
   // ready 后点击：右栏出现该文件标签，行变为选中样式
   await row.click();
-  await expect(page.locator('[data-testid^="right.placeholder-tab:pdf:doc_up"]')).toBeVisible();
+  await expect(page.locator('[data-testid^="right.tabs.tab:pdf:doc_up"]')).toBeVisible();
   await expect(row).toHaveAttribute('aria-current', 'true');
 });
 
@@ -96,7 +96,7 @@ test('网页来源行：点击在右栏打开快照标签', async ({ page }) => 
   await openApp(page);
   const row = page.getByTestId('files.web-row:doc_web_pytorch_sdpa');
   await row.click();
-  await expect(page.getByTestId('right.placeholder-tab:web:ws_pytorch_sdpa')).toBeVisible();
+  await expect(page.getByTestId('right.tabs.tab:web:ws_pytorch_sdpa')).toBeVisible();
   await expect(row).toHaveAttribute('aria-current', 'true');
   await shot(page, '1-文件分组-网页来源行');
 });

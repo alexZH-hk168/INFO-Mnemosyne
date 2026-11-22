@@ -103,4 +103,15 @@
   --perm-note: #d8d5ce;
   --card-hl: #d9d4c9;
   --danger-bg: #fbefec;
+
+  /* F4 追加：右栏预览（取自 UI-06）——PDF 页间底色、页阴影、“证据 N”外挂标签、证据栏底色、查找命中、bbox 高亮描边 */
+  --pdf-gutter: #eeece8;
+  --pdf-page-shadow: 0 1px 2px rgba(29, 28, 26, 0.08), 0 4px 14px -6px rgba(29, 28, 26, 0.18);
+  --evi-tag: #c0902f;
+  --evi-bar-bg: #fbf6ea;
+  --evi-bar-web-bg: #f1f4f8;
+  --evi-bar-msg-bg: #f4f3f0;
+  --evi-hl-line: #e6c766;
+  --find-hl: rgba(77, 132, 196, 0.28);
+  --find-hl-active: rgba(77, 132, 196, 0.5);
 }

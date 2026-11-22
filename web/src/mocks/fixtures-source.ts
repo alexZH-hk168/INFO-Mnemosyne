@@ -423,13 +423,16 @@ interface EvidenceSeed {
   quote: string;
 }
 
-const EV: Record<'fn4' | 'l05' | 'web' | 'p5' | 'hw3', EvidenceSeed> = {
+const EV: Record<'fn4' | 'l05' | 'web' | 'p5' | 'hw3' | 'code', EvidenceSeed> = {
+  // F4：bbox 由 web/scripts/measure-bbox.py 用 PyMuPDF 1.26.4 对 arXiv:1706.03762v7（sha256 bdfaa68d…df697，
+  // 页面 612×792 pt，MediaBox=CropBox=[0 0 612 792]，无旋转）实测：证据句逐词外接矩形求并，原点左上、单位 pt（契约 evidence-locator.md）。
+  // 第 4 页脚注 4 共 3 行（含上标“4”与 Σ 的上下标）；第 5 页 h = 8 一句共 2 行。
   fn4: {
     id: 'evd_att_p4_fn4',
     source_type: 'material',
     source_id: DOC.attention,
     title: 'Attention Is All You Need',
-    locator: { page: 4, sentence_ids: ['s4_fn4_1', 's4_fn4_2'], bbox: [107.6, 640.3, 504.2, 684.9] },
+    locator: { page: 4, sentence_ids: ['s4_fn4_1', 's4_fn4_2'], bbox: [107.8, 700.3, 504.0, 724.0] },
     quote:
       'To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q \u00b7 k = \u03a3 q_i k_i, has mean 0 and variance d_k.',
   },
@@ -454,7 +457,7 @@ const EV: Record<'fn4' | 'l05' | 'web' | 'p5' | 'hw3', EvidenceSeed> = {
     source_type: 'material',
     source_id: DOC.attention,
     title: 'Attention Is All You Need',
-    locator: { page: 5, sentence_ids: ['s5_031', 's5_032'], bbox: [107.6, 402.0, 504.2, 426.5] },
+    locator: { page: 5, sentence_ids: ['s5_031', 's5_032'], bbox: [108.0, 234.1, 504.0, 256.0] },
     quote:
       'In this work we employ h = 8 parallel attention layers, or heads. For each of these we use d_k = d_v = d_model/h = 64.',
   },
@@ -465,6 +468,15 @@ const EV: Record<'fn4' | 'l05' | 'web' | 'p5' | 'hw3', EvidenceSeed> = {
     title: '反向传播 · 作业 3',
     locator: { message_id: 'msg_hw3_a2', char_range: rangeOf(hw3Msgs[1].content, hw3Quote) },
     quote: hw3Quote,
+  },
+  // F4 追加：transformer.py 第 7 行（与 get-documents-did-raw.ok.json 的原文一致），给代码预览的 L7 胶囊用
+  code: {
+    id: 'evd_tfpy_l7',
+    source_type: 'material',
+    source_id: DOC.tfpy,
+    title: 'transformer.py',
+    locator: { path: 'transformer.py', lines: [7, 7] },
+    quote: 'scores = q @ k.transpose(-2, -1) / math.sqrt(d_k)',
   },
 };
 // pptx 的 char_range 要与 quote 长度一致
@@ -494,6 +506,7 @@ const CLIENT = {
   resume: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
   cancel: 'c9d8e7f6-a5b4-4c3d-8e2f-1a0b9c8d7e6f',
   error: 'd1e2f3a4-b5c6-4d7e-8f90-a1b2c3d4e5f6',
+  code: 'e4f5a6b7-c8d9-4e0f-9a1b-2c3d4e5f6a7b', // F4 追加：代码问答回合
 };
 
 const q1 = '结合第 5 讲课件，讲讲注意力为什么要除以 √dₖ。最好和我上次作业卡住的地方联系起来。';
@@ -1007,6 +1020,72 @@ err(
   '消息内容不能为空',
 );
 
+// F4 追加：@ 引用 transformer.py 提问的回合。引用代码第 7 行（L7）、历史对话“作业 3”与网页快照，三条都 supported，
+// 让代码预览、历史对话预览、网页快照预览都能从对话里的胶囊打开（mocks/chat-world.ts 按 @ 引用选用本回合）。
+const qCode = '@transformer.py 第 7 行在算什么？';
+const codeDeltas = [
+  '第 7 行先算 q 和每个 k 的点积，再除以 √dₖ 做缩放[[E1]]。',
+  '不缩放时 softmax 容易饱和，和你作业 3 里 sigmoid 输入太大、梯度传不回去是同一类问题[[E2]]。',
+  'The Illustrated Transformer 里也是先把分数除以 8 再做 softmax，梯度更稳定[[E3]]。',
+];
+const codeContent = codeDeltas.join('');
+const codeSteps: Step[] = [
+  {
+    step_id: 'stp_code_1',
+    kind: 'search_materials',
+    label: '检索项目材料：1 份材料命中',
+    status: 'done',
+    duration_ms: 640,
+  },
+  {
+    step_id: 'stp_code_2',
+    kind: 'recall_memory',
+    label: '参考历史对话：反向传播 · 作业 3',
+    status: 'done',
+    duration_ms: 310,
+  },
+];
+sse(
+  'sse-turn-code.json',
+  'POST /api/conversations/{cid}/messages',
+  '代码问答回合（F4）：@ transformer.py 提问，引用代码第 7 行、历史对话“作业 3”、网页快照，3 条引用均 supported',
+  {
+    params: { cid: CID },
+    body: {
+      client_msg_id: CLIENT.code,
+      content: qCode,
+      web_search: false,
+      scope: { mode: 'selected', document_ids: [DOC.tfpy] },
+    } satisfies SendMessageBody,
+  },
+  numbered([
+    {
+      event: 'message.start',
+      data: { message_id: 'msg_code_a1', client_msg_id: CLIENT.code, user_message_id: 'msg_code_u1' },
+    },
+    { event: 'step', data: { ...codeSteps[0], status: 'running' } },
+    { event: 'step', data: { ...codeSteps[0] } },
+    evidenceEvent(EV.code, 'E1'),
+    { event: 'step', data: { ...codeSteps[1], status: 'running' } },
+    { event: 'step', data: { ...codeSteps[1] } },
+    evidenceEvent(EV.hw3, 'E2'),
+    evidenceEvent(EV.web, 'E3'),
+    ...codeDeltas.map((text): EventNoSeq => ({ event: 'delta', data: { text } })),
+    { event: 'citation', data: cite(codeContent, 'cit_code_1', EV.code, 'E1', 'supported') },
+    { event: 'citation', data: cite(codeContent, 'cit_code_2', EV.hw3, 'E2', 'supported') },
+    { event: 'citation', data: cite(codeContent, 'cit_code_3', EV.web, 'E3', 'supported') },
+    {
+      event: 'message.end',
+      data: {
+        message_id: 'msg_code_a1',
+        usage: { prompt_tokens: 2210, completion_tokens: 142 },
+        latency_ms: 4630,
+        cancelled: false,
+      },
+    },
+  ]),
+);
+
 const resumeEvents = fullTurnEvents({
   message_id: 'msg_rs_a1',
   client_msg_id: CLIENT.resume,
@@ -1336,6 +1415,116 @@ files.push({
 });
 err('GET /api/documents/{did}/raw', '材料不存在', { params: { did: 'doc_missing' } }, 'NOT_FOUND', '材料不存在');
 
+// F4 追加：笔记（Markdown，text/plain）与 Notebook（ipynb 原文件）的 raw 样例，给右栏代码/文档预览用。
+// PDF 与 PPTX（转换后的 PDF）是二进制，由 mocks/preview-world.ts 从 web/public/samples/ 取文件应答，不进 fixture。
+const notesMd = [
+  '# 注意力笔记',
+  '',
+  '## 1. 缩放点积注意力',
+  '',
+  '$$\\mathrm{Attention}(Q, K, V) = \\mathrm{softmax}\\left(\\frac{QK^\\top}{\\sqrt{d_k}}\\right)V$$',
+  '',
+  '- Q、K 的维度是 $d_k$，V 的维度是 $d_v$。',
+  '- 每个 query 和所有 key 做点积，得到一行分数。',
+  '- 分数除以 $\\sqrt{d_k}$ 后再过 softmax。',
+  '',
+  '## 2. 为什么要除以 √dₖ',
+  '',
+  '假设 q、k 的每个分量独立、均值 0、方差 1：',
+  '',
+  '1. 单项 $q_i k_i$ 的均值是 0，方差是 1。',
+  '2. $d_k$ 项相加，点积的方差是 $d_k$，标准差是 $\\sqrt{d_k}$。',
+  '3. $d_k = 64$ 时标准差是 8，softmax 的输入差距被拉大。',
+  '',
+  '> softmax 饱和后输出接近 one-hot，梯度几乎为 0。',
+  '',
+  '## 3. 和作业 3 的联系',
+  '',
+  '- sigmoid 输入很大时导数趋近 0，和 softmax 饱和是同一件事。',
+  '- 解决思路都是把输入拉回梯度较大的区间。',
+  '',
+  '## 4. 多头注意力',
+  '',
+  '| 参数 | 取值 |',
+  '| --- | --- |',
+  '| $h$ | 8 |',
+  '| $d_{model}$ | 512 |',
+  '| $d_k = d_v$ | 64 |',
+  '',
+  '```python',
+  'scores = q @ k.transpose(-2, -1) / math.sqrt(d_k)',
+  '```',
+  '',
+  '## 待复习',
+  '',
+  '- 位置编码为什么用正弦余弦。',
+].join('\n');
+files.push({
+  file: 'get-documents-did-raw.md.ok.json',
+  content: {
+    endpoint: 'GET /api/documents/{did}/raw',
+    kind: 'ok',
+    description: 'Markdown 笔记原文（text/plain，40 行）',
+    request: { params: { did: DOC.notes } },
+    status: 200,
+    content_type: 'text/plain',
+    body: notesMd,
+  },
+});
+
+const nbCell = (cell_type: 'markdown' | 'code', source: string[], outputs?: string[]) =>
+  cell_type === 'markdown'
+    ? { cell_type, metadata: {}, source: source.map((l, i) => (i < source.length - 1 ? `${l}\n` : l)) }
+    : {
+        cell_type,
+        execution_count: null,
+        metadata: {},
+        source: source.map((l, i) => (i < source.length - 1 ? `${l}\n` : l)),
+        outputs: (outputs ?? []).map((text) => ({ output_type: 'stream', name: 'stdout', text: [text] })),
+      };
+const trainNotebook = {
+  nbformat: 4,
+  nbformat_minor: 5,
+  metadata: { kernelspec: { name: 'python3', display_name: 'Python 3', language: 'python' } },
+  cells: [
+    nbCell('markdown', ['# 训练一个小 Transformer', '', '用玩具数据验证缩放点积注意力。']),
+    nbCell('code', ['import math', 'import torch', 'from transformer import scaled_dot_product_attention']),
+    nbCell('markdown', ['## 1. 数据']),
+    nbCell('code', [
+      'torch.manual_seed(0)',
+      'q = torch.randn(2, 4, 64)',
+      'k = torch.randn(2, 4, 64)',
+      'v = torch.randn(2, 4, 64)',
+    ]),
+    nbCell('markdown', ['## 2. 不缩放时的分数尺度']),
+    nbCell('code', ['raw = q @ k.transpose(-2, -1)', 'print(raw.std().item())'], ['8.03\n']),
+    nbCell('markdown', ['## 3. 缩放后']),
+    nbCell(
+      'code',
+      ['out, w = scaled_dot_product_attention(q, k, v)', 'print(w.max(dim=-1).values.mean().item())'],
+      ['0.61\n'],
+    ),
+    nbCell('markdown', ['## 4. 对照：不除以 √dₖ']),
+    nbCell('code', ['w_raw = torch.softmax(raw, dim=-1)', 'print(w_raw.max(dim=-1).values.mean().item())'], ['0.97\n']),
+    nbCell('markdown', ['不缩放时权重接近 one-hot。']),
+    nbCell('code', ['loss = out.pow(2).mean()', 'loss.backward()']),
+    nbCell('markdown', ['## 5. 小结']),
+    nbCell('code', ['print("done")'], ['done\n']),
+  ],
+};
+files.push({
+  file: 'get-documents-did-raw.ipynb.ok.json',
+  content: {
+    endpoint: 'GET /api/documents/{did}/raw',
+    kind: 'ok',
+    description: 'Notebook 原文件（ipynb JSON，14 个单元格）',
+    request: { params: { did: DOC.ipynb } },
+    status: 200,
+    content_type: 'text/plain', // code 组（含 ipynb）按 rest-api.md 返回 text/plain，正文为 .ipynb 的 JSON 文本
+    body: `${JSON.stringify(trainNotebook, null, 1)}\n`,
+  },
+});
+
 ok<JobResult>(
   'POST /api/documents/{did}/reparse',
   '重新解析',
@@ -1394,6 +1583,13 @@ ok<Evidence>(
   { params: { eid: EV.hw3.id } },
   evidenceFull(EV.hw3, [], { context_messages: hw3Msgs }),
   'message',
+);
+ok<Evidence>(
+  'GET /api/evidence/{eid}',
+  'transformer.py 第 7 行（F4 追加，代码预览的 L7 胶囊）',
+  { params: { eid: EV.code.id } },
+  evidenceFull(EV.code, [{ message_id: 'msg_code_a1', label: 'E1' }]),
+  'code',
 );
 err(
   'GET /api/evidence/{eid}',

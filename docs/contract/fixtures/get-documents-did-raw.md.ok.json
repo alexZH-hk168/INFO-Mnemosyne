@@ -1,0 +1,13 @@
+{
+  "endpoint": "GET /api/documents/{did}/raw",
+  "kind": "ok",
+  "description": "Markdown 笔记原文（text/plain，40 行）",
+  "request": {
+    "params": {
+      "did": "doc_attention_notes"
+    }
+  },
+  "status": 200,
+  "content_type": "text/plain",
+  "body": "# 注意力笔记\n\n## 1. 缩放点积注意力\n\n$$\\mathrm{Attention}(Q, K, V) = \\mathrm{softmax}\\left(\\frac{QK^\\top}{\\sqrt{d_k}}\\right)V$$\n\n- Q、K 的维度是 $d_k$，V 的维度是 $d_v$。\n- 每个 query 和所有 key 做点积，得到一行分数。\n- 分数除以 $\\sqrt{d_k}$ 后再过 softmax。\n\n## 2. 为什么要除以 √dₖ\n\n假设 q、k 的每个分量独立、均值 0、方差 1：\n\n1. 单项 $q_i k_i$ 的均值是 0，方差是 1。\n2. $d_k$ 项相加，点积的方差是 $d_k$，标准差是 $\\sqrt{d_k}$。\n3. $d_k = 64$ 时标准差是 8，softmax 的输入差距被拉大。\n\n> softmax 饱和后输出接近 one-hot，梯度几乎为 0。\n\n## 3. 和作业 3 的联系\n\n- sigmoid 输入很大时导数趋近 0，和 softmax 饱和是同一件事。\n- 解决思路都是把输入拉回梯度较大的区间。\n\n## 4. 多头注意力\n\n| 参数 | 取值 |\n| --- | --- |\n| $h$ | 8 |\n| $d_{model}$ | 512 |\n| $d_k = d_v$ | 64 |\n\n```python\nscores = q @ k.transpose(-2, -1) / math.sqrt(d_k)\n```\n\n## 待复习\n\n- 位置编码为什么用正弦余弦。"
+}

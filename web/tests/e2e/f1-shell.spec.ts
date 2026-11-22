@@ -11,7 +11,7 @@ test('1440 宽时左两栏只能再变宽 32 px（右栏先让到 400，对话�
 
 test('应用外壳：1440×900 左两栏与 UI-05 对齐（±4 px），直接打开分支地址时右栏打开该分支', async ({ page }) => {
   await openApp(page, '/c/cnv_transformer/b/br_variance', { fixedClock: true });
-  await expect(page.getByTestId('right.placeholder-tab:branch:br_variance')).toBeVisible();
+  await expect(page.getByTestId('right.tabs.tab:branch:br_variance')).toBeVisible();
   await expect(page.getByTestId('sidebar.conversation-row:cnv_transformer')).toHaveAttribute('aria-current', 'page');
   // UI-05 实测：项目栏 x=8、宽 252；文件栏 x=268、宽 236（外层 padding 8、拖拽条 8）
   const p = await box(page.getByTestId('sidebar.panel'));

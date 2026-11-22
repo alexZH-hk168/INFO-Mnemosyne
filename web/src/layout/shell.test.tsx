@@ -35,10 +35,10 @@ describe('1-启动-应用外壳', () => {
     expect(screen.getByTestId('sidebar.panel').parentElement).toHaveStyle({ width: '252px' });
     expect(screen.getByTestId('files.panel').parentElement).toHaveStyle({ width: '236px' });
     // 1440 宽时右栏让位，保证对话栏 ≥ 480：1440 − 16 − 24 − 252 − 236 − 480 = 432
-    expect(screen.getByTestId('right.placeholder').parentElement).toHaveStyle({ width: '432px' });
+    expect(screen.getByTestId('right.panel').parentElement).toHaveStyle({ width: '432px' });
     act(() => setViewport(1680, 1050));
     await waitFor(() =>
-      expect(screen.getByTestId('right.placeholder').parentElement).toHaveStyle({ width: `${DEFAULT_SIZES[3]}px` }),
+      expect(screen.getByTestId('right.panel').parentElement).toHaveStyle({ width: `${DEFAULT_SIZES[3]}px` }),
     );
   });
 
@@ -76,7 +76,7 @@ describe('1-启动-应用外壳', () => {
   it('直接打开 /c/:cid/b/:bid：右栏自动打开该分支标签，项目取自对话', async () => {
     window.history.replaceState(null, '', '/c/cnv_transformer/b/br_variance');
     renderWithClient(<FourPane />);
-    expect(await screen.findByTestId('right.placeholder-tab:branch:br_variance')).toHaveTextContent('方差为什么是');
+    expect(await screen.findByTestId('right.tabs.tab:branch:br_variance')).toHaveTextContent('方差为什么是');
     expect(useLayout.getState().view).toBe('conversation');
     expect(useChat.getState()).toMatchObject({ conversationId: 'cnv_transformer', activeBranchId: 'br_variance' });
     await waitFor(() => expect(useChat.getState().projectId).toBe('prj_dlintro'));

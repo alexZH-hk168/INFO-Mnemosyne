@@ -3,3 +3,6 @@ dist
 test-results
 playwright-report
 *.local
+
+# F4：示例论文 PDF 不入 git（arXiv 非独占许可不授权再分发），用 web/scripts/fetch-samples.sh 下载
+public/samples/attention-is-all-you-need.pdf

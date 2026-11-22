@@ -51,10 +51,10 @@
             "s5_032"
           ],
           "bbox": [
-            107.6,
-            402,
-            504.2,
-            426.5
+            108,
+            234.1,
+            504,
+            256
           ]
         },
         "quote": "In this work we employ h = 8 parallel attention layers, or heads. For each of these we use d_k = d_v = d_model/h = 64.",
