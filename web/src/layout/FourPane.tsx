@@ -7,6 +7,8 @@ import FileColumn from '../files/FileColumn';
 import { useViewportWidth } from '../lib/useViewportWidth';
 import NewProjectDialog from '../project/NewProjectDialog';
 import ProjectColumn from '../project/ProjectColumn';
+import { InstallDialog } from '../market';
+import SettingsDialog from '../settings/SettingsDialog';
 import { useChat } from '../store/chat';
 import { COLLAPSED_WIDTH, sizeLimits, useLayout, type PanelIndex } from '../store/layout';
 import { useUI } from '../store/ui';
@@ -106,6 +108,8 @@ export default function FourPane() {
   const getRoom2 = useCallback(() => room.current[2], []);
 
   const gap = <div aria-hidden="true" className="w-2 flex-none" />;
+  // F6：市场页占据中间区与右栏位置，文件栏、右栏在市场页隐藏（规格 2-插件与Skill-市场页）；只是不渲染，不改 store，离开市场页即恢复四栏原状态
+  const market = view === 'market';
 
   return (
     <PanelControlContext.Provider value={control}>
@@ -121,20 +125,24 @@ export default function FourPane() {
             <ProjectColumn />
           </div>
         )}
-        {!effective[0] && !effective[1] ? <ResizeHandle index={0} width={w0} getGrowRoom={getRoom0} /> : gap}
-        {effective[1] ? (
+        {market ? null : !effective[0] && !effective[1] ? (
+          <ResizeHandle index={0} width={w0} getGrowRoom={getRoom0} />
+        ) : (
+          gap
+        )}
+        {market ? null : effective[1] ? (
           <CollapsedRail index={1} />
         ) : (
           <div className="h-full flex-none" style={{ width: w1 }}>
             <FileColumn />
           </div>
         )}
-        {!effective[1] ? <ResizeHandle index={1} width={w1} getGrowRoom={getRoom1} /> : gap}
+        {market ? gap : !effective[1] ? <ResizeHandle index={1} width={w1} getGrowRoom={getRoom1} /> : gap}
         <div className="flex h-full min-w-0 flex-1">
           <CenterPane />
         </div>
-        {!effective[3] ? <ResizeHandle index={2} width={w3} getGrowRoom={getRoom2} /> : gap}
-        {effective[3] ? (
+        {market ? null : !effective[3] ? <ResizeHandle index={2} width={w3} getGrowRoom={getRoom2} /> : gap}
+        {market ? null : effective[3] ? (
           <CollapsedRail index={3} />
         ) : (
           <div className="h-full flex-none" style={{ width: w3 }}>
@@ -143,6 +151,8 @@ export default function FourPane() {
         )}
       </div>
       {modal?.kind === 'new-project' && <NewProjectDialog />}
+      {modal?.kind === 'install' && <InstallDialog />}
+      {modal?.kind === 'settings' && <SettingsDialog />}
       <Toasts />
       {offline && <ConnectionBar />}
     </PanelControlContext.Provider>

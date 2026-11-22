@@ -1,4 +1,4 @@
-// Mnemosyne 接口类型草案 v0.2（2026-11-22）
+// Mnemosyne 接口类型草案 v0.3（2026-11-23；v0.3 只追加可选字段）
 // 来源：docs/contract/*.md。F0 里程碑把本文件拷到 web/src/api/types.ts，之后两处保持一致。
 // 字段保持 snake_case，与后端 JSON 一致。
 // 字符偏移（sentence_start/end、anchor_start/end、char_range）一律左闭右开、按 Unicode 码点计数；
@@ -85,13 +85,23 @@ export type SseEvent =
 export interface MarketItem {
   id: ID; type: 'plugin' | 'skill'; name: string; owner: string; official: boolean;
   stars: number; stars_date: string; license: string; category: string; desc_zh: string; repo_url: string; installed: boolean;
+  verified?: boolean; // v0.3：是否属于 v1 完整验收（只对插件有意义）
 }
 export interface InstalledPlugin {
   id: ID; name: string; version: string; status: 'installed' | 'error' | 'disabled' | 'not_installed';
   permissions: ('network' | 'fs_read' | 'fs_write' | 'exec')[];
   config_schema: Record<string, { required: boolean; secret: boolean; label: string }>; last_check_at?: ISODate;
+  config_set?: string[]; // v0.3：已设置的配置键名（含密钥键名，不回传密钥值）
+  config?: Record<string, string | number | boolean>; // v0.3：已存的非密钥配置值
 }
-export interface PluginDetail extends InstalledPlugin { tools: { name: string; description: string }[]; verified: boolean }
+export interface PluginDetail extends InstalledPlugin {
+  tools: { name: string; description: string }[]; verified: boolean;
+  // v0.3：适配清单（mnemosyne-plugin.json）的启动信息；tools_allow 省略＝全部工具开放
+  manifest?: { transport: 'stdio' | 'http'; command: string; args: string[]; tools_allow?: string[] };
+  about_zh?: string; // v0.3：详情页简介
+  usage_zh?: string; // v0.3：“在 Mnemosyne 里怎么用”
+  permission_notes?: Partial<Record<InstalledPlugin['permissions'][number], string>>; // v0.3：每项权限的具体范围
+}
 export interface ConversationPlugin { plugin_id: ID; enabled: boolean; status: InstalledPlugin['status']; reason?: string }
 export interface Skill { id: ID; name: string; description: string; dir_path: string; source_url?: string; license?: string; enabled: boolean }
 export interface SkillDetail extends Skill { skill_md: string; files: string[] }
@@ -104,4 +114,5 @@ export interface Settings {
 export interface MemoryItem {
   id: ID; scope: 'global' | 'project' | 'branch'; scope_id?: ID; topic: string; content: string;
   source_message_ids: ID[]; status: 'active' | 'superseded' | 'deleted'; valid_from?: ISODate; valid_to?: ISODate; confidence: number;
+  source_conversation_id?: ID; // v0.3：来源消息所在对话，“查看来源”据此跳转
 }

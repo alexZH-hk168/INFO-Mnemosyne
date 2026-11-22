@@ -2,7 +2,7 @@
 
 本目录是前后端之间**唯一**的接口定义。UX 规格（`docs/ux/specs/`）里的“接口”一栏、前端 MSW mock、后端路由与测试，都以这里为准。来源是飞书立项稿《INFO5000- Mnemosyne 开发》第 6、8、10 章（revision 24），本目录在其基础上补齐了响应结构。
 
-版本：**v0.2 草案（2026-11-22）**。v0.2 由编排 Agent 在用户授权下决定，待用户追认；确认后改为 v1.0 并冻结。
+版本：**v0.3 草案（2026-11-23）**。v0.2、v0.3 由编排 Agent 在用户授权下决定，待用户追认；确认后改为 v1.0 并冻结。
 
 | 文件 | 内容 |
 |---|---|
@@ -31,3 +31,4 @@
 |---|---|---|---|
 | v0.1 | 2026-11-22 | 初稿 | 立项稿第 6、8、10 章 |
 | v0.2 | 2026-11-22 | `Document` 加 `group`、`cells?`、`snapshot_id?`，文件列表按 `group` 分组；SSE `evidence` 加 `source_id`、`sha256?`；`PluginDetail.verified` 写入 rest-api，未安装插件 `status=not_installed`；错误体加 `details?`；插件/Skill id 不加前缀；偏移统一左闭右开、按码点；regenerate 的 `message.start` 字段；`context_messages` 含被引消息本身 | F0 提出 U11–U18，编排 Agent 决定，待用户追认 |
+| v0.3 | 2026-11-23 | 只追加可选字段，不改名不删：`PluginDetail` 加 `manifest?`（transport、command、args、tools_allow?）、`about_zh?`、`usage_zh?`、`permission_notes?`；`MarketItem` 加 `verified?`；`InstalledPlugin` 加 `config_set?`、`config?`（仅非密钥值）；`MemoryItem` 加 `source_conversation_id?`；`POST /api/plugins/{id}` 写明未提供的键沿用已存值、空字符串表示清除；fixture `get-plugins-id.ok.json` 的 ArXiv 工具改为上游 README 的 19 个 | F6 提出 U28–U31，编排 Agent 决定，待用户追认 |

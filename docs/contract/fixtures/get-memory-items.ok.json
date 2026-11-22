@@ -16,7 +16,8 @@
         ],
         "status": "active",
         "valid_from": "2026-11-21T13:05:00Z",
-        "confidence": 0.86
+        "confidence": 0.86,
+        "source_conversation_id": "cnv_backprop_hw3"
       },
       {
         "id": "mem_pref_conclusion",
@@ -28,7 +29,8 @@
         ],
         "status": "active",
         "valid_from": "2026-11-22T06:20:00Z",
-        "confidence": 0.7
+        "confidence": 0.7,
+        "source_conversation_id": "cnv_transformer"
       },
       {
         "id": "mem_br_variance",
@@ -41,7 +43,8 @@
         ],
         "status": "active",
         "valid_from": "2026-11-22T06:25:16Z",
-        "confidence": 0.8
+        "confidence": 0.8,
+        "source_conversation_id": "cnv_transformer"
       }
     ]
   },

@@ -78,4 +78,29 @@
   --shadow-card-hover: 0 2px 4px rgba(29, 28, 26, 0.06), 0 26px 52px -14px rgba(29, 28, 26, 0.26);
   --shadow-pop: 0 6px 20px -4px rgba(29, 28, 26, 0.14);
   --shadow-modal: 0 40px 90px -24px rgba(29, 28, 26, 0.32);
+
+  /* F6 追加：市场条目首字色块（按顺序轮换）、官方/社区小标签、已安装按钮、工具名、代码块、权限圆点（取自 UI-07～10） */
+  --logo-1: #4a78b0;
+  --logo-2: #4f946a;
+  --logo-3: #c2892c;
+  --logo-4: #7a63ae;
+  --logo-5: #3f8c87;
+  --logo-6: #c05a4b;
+  --logo-7: #6b675f;
+  --logo-8: #2e5687;
+  --tag-official-bg: #eef4fb;
+  --tag-official-ink: #2e5687;
+  --tag-community-bg: #f3f1ec;
+  --tag-community-ink: #6b675f;
+  --done-bg: #eef6f3;
+  --done-line: #bcdccf;
+  --tool-ink: #25625e;
+  --code-bg: #f6f5f2;
+  --code-ink: #3d3b37;
+  --perm-network: #c2892c;
+  --perm-fs: #4a78b0;
+  --perm-exec: #c05a4b;
+  --perm-note: #d8d5ce;
+  --card-hl: #d9d4c9;
+  --danger-bg: #fbefec;
 }

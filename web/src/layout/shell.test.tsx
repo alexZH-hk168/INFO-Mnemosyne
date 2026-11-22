@@ -86,7 +86,7 @@ describe('1-启动-应用外壳', () => {
     window.history.replaceState(null, '', '/market/skills');
     await renderShell();
     expect(useLayout.getState()).toMatchObject({ view: 'market', marketRoute: { tab: 'skills' } });
-    expect(screen.getByTestId('center.market-placeholder')).toBeInTheDocument();
+    expect(screen.getByTestId('market.page')).toBeInTheDocument();
     act(() => {
       window.history.pushState(null, '', '/c/cnv_backprop_hw3');
       window.dispatchEvent(new PopStateEvent('popstate'));

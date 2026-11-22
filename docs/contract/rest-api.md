@@ -66,8 +66,8 @@
 | GET | `/api/market/plugins` | — | `{ items: MarketItem[] }` |
 | GET | `/api/market/skills` | — | `{ items: MarketItem[] }` |
 | GET | `/api/plugins` | — | `{ plugins: InstalledPlugin[] }` |
-| GET | `/api/plugins/{id}` | — | `PluginDetail = InstalledPlugin & { tools: {name, description}[], verified: bool }`；`verified`＝是否属于 v1 完整验收的插件。未安装时同样返回 `PluginDetail`，字段取自市场 manifest 与上游工具清单，`status: "not_installed"`（v0.2） |
-| POST | `/api/plugins/{id}` | `{ config: Record<string,string> }` | `InstalledPlugin`；内部完成启动与 `tools/list` 自检，失败返回 `PLUGIN_SELF_CHECK_FAILED`，日志尾部放在错误体 `error.details.log_tail`（v0.2） |
+| GET | `/api/plugins/{id}` | — | `PluginDetail = InstalledPlugin & { tools: {name, description}[], verified: bool, manifest?, about_zh?, usage_zh?, permission_notes? }`；`verified`＝是否属于 v1 完整验收的插件。未安装时同样返回 `PluginDetail`，字段取自市场 manifest 与上游工具清单，`status: "not_installed"`（v0.2）。v0.3 可选字段见下 |
+| POST | `/api/plugins/{id}` | `{ config: Record<string,string> }` | `InstalledPlugin`；内部完成启动与 `tools/list` 自检，失败返回 `PLUGIN_SELF_CHECK_FAILED`，日志尾部放在错误体 `error.details.log_tail`（v0.2）。安装、改配置、“重新检查”共用此接口：`config` 中**未提供的键沿用已存值**，值为空字符串表示清除该键；`{ config: {} }` 即按已存配置重新自检（v0.3） |
 | DELETE | `/api/plugins/{id}` | — | `{ ok: true }` |
 | GET | `/api/conversations/{cid}/plugins` | — | `{ plugins: {plugin_id, enabled, status, reason?}[] }` |
 | PUT | `/api/conversations/{cid}/plugins` | `{ enabled_plugin_ids: string[] }` | 同上 |
@@ -76,9 +76,15 @@
 | POST | `/api/skills/import` | `{ source: "github" \| "local", url?, path? }` | `Skill`；`SKILL.md` 头部缺 `name`/`description` 返回 `SKILL_INVALID` |
 | PUT | `/api/skills/{id}` | `{ enabled }` | `Skill` |
 
-`MarketItem = {id, type: "plugin"|"skill", name, owner, official, stars, stars_date, license, category, desc_zh, repo_url, installed}`
+`MarketItem = {id, type: "plugin"|"skill", name, owner, official, stars, stars_date, license, category, desc_zh, repo_url, installed, verified?}`；`verified?`（v0.3）：是否属于 v1 完整验收，只对插件给出，前端据此在卡片上标“未验收”。
 
 `InstalledPlugin = {id, name, version, status: "installed"|"error"|"disabled"|"not_installed", permissions: string[], config_schema, last_check_at?}`；`not_installed` 只出现在 `GET /api/plugins/{id}` 的未安装应答中（v0.2）。
+
+v0.3 追加的可选字段（只增不改）：
+
+- `InstalledPlugin.config_set?: string[]`：已设置的配置键名（含密钥键名）；密钥值永不回传。`InstalledPlugin.config?: Record<string, string|number|boolean>`：已存的**非密钥**配置值。
+- `PluginDetail.manifest?: {transport: "stdio"|"http", command, args: string[], tools_allow?: string[]}`：取自适配清单（[plugin-manifest.md](./plugin-manifest.md)），详情页“配置”卡显示启动命令；`tools` 中不在 `tools_allow` 里的工具标“未启用”，省略 `tools_allow`＝全部开放。
+- `PluginDetail.about_zh?`：详情页简介；`usage_zh?`：“在 Mnemosyne 里怎么用”；`permission_notes?: {network?, fs_read?, fs_write?, exec?}`：每项权限的具体范围（如“访问 arXiv 与 Semantic Scholar”）。缺省时前端只显示权限名。
 
 `Skill = {id, name, description, dir_path, source_url?, license?, enabled}`
 
@@ -90,7 +96,7 @@
 |---|---|---|---|
 | GET | `/api/settings` | — | `Settings` |
 | PUT | `/api/settings` | `Partial<Settings>` | `Settings` |
-| GET | `/api/memory/items?scope=&q=&status=active` | — | `{ items: MemoryItem[] }` |
+| GET | `/api/memory/items?scope=&q=&status=active` | — | `{ items: MemoryItem[] }`；`MemoryItem.source_conversation_id?`（v0.3）：来源消息所在对话，“查看来源”据此跳到该对话 |
 | PUT | `/api/memory/items/{id}` | `{ content }` | `MemoryItem` |
 | DELETE | `/api/memory/items/{id}` | — | `{ ok: true }`；条目进屏蔽列表，不会被重新抽取 |
 | GET | `/api/memory/summary` | — | `{ content, version, updated_at }` |

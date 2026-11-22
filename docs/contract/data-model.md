@@ -29,7 +29,7 @@
 
 | 表 | 字段 |
 |---|---|
-| memory_items | id, scope（global \| project \| branch）, scope_id, topic, content, source_message_ids_json, status（active \| superseded \| deleted）, superseded_by, valid_from, valid_to, confidence REAL, created_at |
+| memory_items | id, scope（global \| project \| branch）, scope_id, topic, content, source_message_ids_json, status（active \| superseded \| deleted）, superseded_by, valid_from, valid_to, confidence REAL, created_at；v0.3 加 source_conversation_id（来源消息所在对话，可空） |
 | memory_topics | id, scope, scope_id, name, md_path, updated_at |
 | memory_summaries | id, scope, scope_id, content（L4 画像，≤ 800 token）, version INT, updated_at |
 | conversation_digests | id, conversation_id, branch_id, upto_message_id, content, updated_at |
@@ -40,7 +40,7 @@
 
 | 表 | 字段 |
 |---|---|
-| plugins | id（即 manifest 的 `id`，不加前缀）, name, version, manifest_json, config_json（API Key 加密存储）, status（installed \| error \| disabled）, last_check_at |
+| plugins | id（即 manifest 的 `id`，不加前缀）, name, version, manifest_json, config_json（API Key 加密存储）, status（installed \| error \| disabled）, last_check_at。v0.3：接口的 `config_set` 由 config_json 的键名得出，`config` 只返回非密钥值；`PluginDetail.manifest` 取自 manifest_json 的 transport/command/args/tools_allow |
 | skills | id（即 SKILL.md 的 `name`，不加前缀）, name, description, dir_path, source_url, license, enabled INT |
 | conversation_plugins | conversation_id, plugin_id, enabled INT |
 | jobs | id, kind（parse_document \| index_web \| extract_memory \| rewrite_digest \| rewrite_profile）, payload_json, status（queued \| running \| done \| failed）, attempts INT, error, created_at, finished_at |

@@ -15,7 +15,9 @@
           "fs_write"
         ],
         "config_schema": {},
-        "last_check_at": "2026-11-22T06:00:00Z"
+        "last_check_at": "2026-11-22T06:00:00Z",
+        "config_set": [],
+        "config": {}
       },
       {
         "id": "fetch",
@@ -26,7 +28,9 @@
           "network"
         ],
         "config_schema": {},
-        "last_check_at": "2026-11-22T06:00:02Z"
+        "last_check_at": "2026-11-22T06:00:02Z",
+        "config_set": [],
+        "config": {}
       },
       {
         "id": "markitdown",
@@ -37,7 +41,9 @@
           "fs_read"
         ],
         "config_schema": {},
-        "last_check_at": "2026-11-22T06:00:05Z"
+        "last_check_at": "2026-11-22T06:00:05Z",
+        "config_set": [],
+        "config": {}
       }
     ]
   }

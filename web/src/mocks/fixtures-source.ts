@@ -756,10 +756,13 @@ const tree: ConversationTree = {
 
 const INSTALLED_PLUGINS = ['arxiv', 'fetch', 'markitdown'];
 const INSTALLED_SKILLS = ['pdf', 'literature-review'];
+/** v1 完整验收的两个插件（plugin-manifest.md）；v0.3 起由市场条目的 verified 字段带出 */
+const VERIFIED_PLUGINS = ['arxiv', 'fetch'];
 const market = (type: MarketItem['type']): MarketList => ({
   items: MARKET_DATA.filter((m) => m.type === type).map((m) => ({
     ...m,
     installed: (type === 'plugin' ? INSTALLED_PLUGINS : INSTALLED_SKILLS).includes(m.id),
+    ...(type === 'plugin' ? { verified: VERIFIED_PLUGINS.includes(m.id) } : {}),
   })),
 });
 
@@ -772,6 +775,8 @@ const plugins: InstalledPlugin[] = [
     permissions: ['network', 'fs_write'],
     config_schema: {},
     last_check_at: '2026-11-22T06:00:00Z',
+    config_set: [],
+    config: {},
   },
   {
     id: 'fetch',
@@ -781,6 +786,8 @@ const plugins: InstalledPlugin[] = [
     permissions: ['network'],
     config_schema: {},
     last_check_at: '2026-11-22T06:00:02Z',
+    config_set: [],
+    config: {},
   },
   {
     id: 'markitdown',
@@ -790,18 +797,57 @@ const plugins: InstalledPlugin[] = [
     permissions: ['fs_read'],
     config_schema: {},
     last_check_at: '2026-11-22T06:00:05Z',
+    config_set: [],
+    config: {},
   },
 ];
+
+// ArXiv 详情：工具清单与启动参数核对自上游 README（https://github.com/blazickjp/arxiv-mcp-server ，
+// 2026-11-23 取 main 分支 README，sha256 0e537bf1…；“Tools” 表写明共 19 个工具）。
+// 中文说明译自 README 的 Purpose 列；顺序把概念图 UI-09 列出的常用 8 个放前面，其余按 README 顺序。
+// tools_allow：semantic_search、reindex 在 README 中标注 “Requires [pro]”（需额外安装本地向量依赖），v1 不开放，其余 17 个开放。
+// --storage-path 是 README 的启动参数，Mnemosyne 指到自己的插件目录（plugin-manifest.md 示例）。
+const ARXIV_TOOLS: PluginDetail['tools'] = [
+  { name: 'search_papers', description: '按关键词、分类、日期和排序检索 arXiv' },
+  { name: 'get_abstract', description: '按 arXiv ID 取元数据与摘要，不下载全文' },
+  { name: 'download_paper', description: '下载论文并转成本地 Markdown' },
+  { name: 'get_paper_outline', description: '分页返回论文的章节目录' },
+  { name: 'read_paper_section', description: '读取某一节正文（有长度上限）' },
+  { name: 'search_paper_text', description: '在单篇论文内检索段落，返回原文偏移' },
+  { name: 'export_citations', description: '为一个或多个 arXiv ID 导出 BibTeX' },
+  { name: 'citation_graph', description: '查参考文献与被引（经 Semantic Scholar）' },
+  { name: 'list_papers', description: '列出本地已保存的论文' },
+  { name: 'read_paper', description: '读取本地已保存论文的正文（有长度上限）' },
+  { name: 'get_paper_latex', description: '读取作者提交的 LaTeX 源（有长度上限）' },
+  { name: 'list_paper_latex_sections', description: '分页返回 LaTeX 章节目录' },
+  { name: 'get_paper_latex_section', description: '读取 LaTeX 的某一节（有长度上限）' },
+  { name: 'watch_topic', description: '保存或更新一个 arXiv 主题订阅' },
+  { name: 'list_watches', description: '列出已保存的主题订阅' },
+  { name: 'check_alerts', description: '检查订阅的主题有没有新论文' },
+  { name: 'unwatch_topic', description: '删除一个主题订阅' },
+  { name: 'semantic_search', description: '按语义相似度检索已下载的论文（需 [pro] 依赖）' },
+  { name: 'reindex', description: '重建本地语义索引（需 [pro] 依赖）' },
+];
+const ARXIV_PRO_ONLY = ['semantic_search', 'reindex'];
 
 const arxivDetail: PluginDetail = {
   ...plugins[0],
   verified: true,
-  tools: [
-    { name: 'search_papers', description: '按关键词、作者或分类检索 arXiv 论文' },
-    { name: 'get_abstract', description: '读取指定论文的摘要' },
-    { name: 'download_paper', description: '下载论文 PDF 到插件存储目录' },
-    { name: 'read_paper', description: '读取已下载论文的正文' },
-  ],
+  tools: ARXIV_TOOLS,
+  manifest: {
+    transport: 'stdio',
+    command: 'uvx',
+    args: ['arxiv-mcp-server', '--storage-path', '~/.mnemosyne/plugins/arxiv'],
+    tools_allow: ARXIV_TOOLS.map((t) => t.name).filter((n) => !ARXIV_PRO_ONLY.includes(n)),
+  },
+  about_zh:
+    '查找 arXiv 预印本并读论文。论文下载到本地后按章节读取，适合精读时边问边查原文；返回的题录、章节文本会作为证据进入回答，带 arXiv ID 和章节位置。',
+  usage_zh:
+    '在对话里直接问“帮我找 2024 年以后关于长程记忆评测的 arXiv 论文”，助手会调用 search_papers；让它下载某篇论文后，回答里的引用会定位到对应章节。也可以在输入框的“插件”弹层里按对话关闭它。',
+  permission_notes: {
+    network: '访问 arXiv 与 Semantic Scholar',
+    fs_write: '仅限论文存放目录（--storage-path）',
+  },
 };
 
 const skillOf = (id: string, enabled: boolean): Skill => {
@@ -847,6 +893,7 @@ const memoryItems: MemoryItem[] = [
     status: 'active',
     valid_from: T.hw3,
     confidence: 0.86,
+    source_conversation_id: CID_HW3,
   },
   {
     id: 'mem_pref_conclusion',
@@ -857,6 +904,7 @@ const memoryItems: MemoryItem[] = [
     status: 'active',
     valid_from: T.tf,
     confidence: 0.7,
+    source_conversation_id: CID,
   },
   {
     id: 'mem_br_variance',
@@ -868,6 +916,7 @@ const memoryItems: MemoryItem[] = [
     status: 'active',
     valid_from: '2026-11-22T06:25:16Z',
     confidence: 0.8,
+    source_conversation_id: CID,
   },
 ];
 
