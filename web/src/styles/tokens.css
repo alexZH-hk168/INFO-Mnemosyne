@@ -47,4 +47,21 @@
   --radius-btn-sm: 7px;
   --radius-chip: 5px;
   --radius-pill: 999px;
+
+  /* ---- F1 追加（只追加，不改上面的值）---- */
+  /* 文件类型色块（规格 1-文件分组-文件行「交互细则」） */
+  --ft-pdf: #c9584a;
+  --ft-pptx: #d0793d;
+  --ft-code: #4b6f9e;
+  --ft-ipynb: #e08a2c;
+  --ft-md: #7d7a73;
+  /* 拖拽条悬停竖线（规格 1-外壳-分栏拖拽条） */
+  --handle: #9d998f;
+  /* 头像底色、拖拽上传区虚线（概念图 common.css） */
+  --avatar: #dedbd4;
+  --drop-line: #d7d3cb;
+  /* 错误：解析失败红点、错误提示、表单错误字 */
+  --danger: #c0573f;
+  /* 弹窗遮罩 */
+  --scrim: rgba(29, 28, 26, 0.28);
 }

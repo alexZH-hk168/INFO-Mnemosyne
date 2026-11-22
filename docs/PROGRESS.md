@@ -7,7 +7,7 @@
 | 里程碑 | 内容 | 依赖 | 状态 | 认领（分支 · 日期） |
 |---|---|---|---|---|
 | F0 | 契约 fixtures、`web/` 脚手架、tokens、MSW、类型、store 骨架 | 契约 v1.0 确认（用户已同意按 v0.1 草案开工） | 完成（待编排 Agent 验收与合并） | feat/F0-scaffold · 2026-11-22 |
-| F1 | 外壳、拖拽与收起、项目栏、文件栏 | F0 | 未开始 | |
+| F1 | 外壳、拖拽与收起、项目栏、文件栏 | F0 | 完成（待编排 Agent 验收与合并；U19–U23 待确认） | feat/F1-shell（worktree `worktrees/F1-shell`，端口 5171）· 2026-11-23 |
 | F2 | 主页、卡片与动效、卡片弹窗 | F0 | 未开始 | |
 | F3 | 输入框、对话流、SSE 客户端、证据胶囊、步骤行、来源列表 | F0、F1 | 未开始 | |
 | F4 | 右栏标签、PDF/PPT/代码/网页/历史对话预览、证据栏 | F3 | 未开始 | |
@@ -61,8 +61,16 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U8 | “试一试”示例材料：论文、代码、课件各用哪份 | F2 | 2026-11-22 |
 | U9 | 用户卡片显示名是否加 `display_name` 设置项 | F1 | 2026-11-22 |
 | U10 | License | 仓库 | 2026-11-22 |
+| U19 | 分栏没用 react-resizable-panels（v2 只支持百分比，state.md 按 px 定宽度与上下限），改为自写 px 布局 + 指针拖拽；依赖未删。是否接受、是否从 package.json 移除 | F1、F4 | 2026-11-23 |
+| U20 | ⌘/Ctrl+1、Ctrl+2 在 Windows/Linux 的 Chrome 里是切换浏览器标签，页面拦不到（Mac 的 ⌘1 同理）；是否换成 ⌘/Ctrl+Shift+1/2 或 Alt+1/2 | F1 | 2026-11-23 |
+| U21 | 对话标题为空时规格要显示首条用户消息前 20 字，但 `ConversationSummary` 不含消息内容；现显示“新对话”。是否给列表接口加 `preview` 或由后端保证 title 非空 | F1、B1 | 2026-11-23 |
+| U22 | 1440 宽时四栏默认宽 252+236+560 放不下对话栏 480，现由右栏让位到 432（拖右栏最小 400）；左两栏只能再拉宽 32 px。是否接受，或把右栏默认宽改小 | F1、F4 | 2026-11-23 |
+| U23 | 新建对话后“输入框获得焦点”、文件行拖到输入框的接收，依赖 F2/F3 的输入框；F1 只负责切到主页与 `application/x-mn-document` 拖拽数据 | F2、F3 | 2026-11-23 |
 
 ## 动作日志
+
+- 2026-11-23 · [F1] 外壳、项目栏、文件栏 · 完成 · 分支 feat/F1-shell · npm run check 通过 · 单测 225/225（含 F0）· e2e 28/28（workers=2，含 F0 的 3 条）· 左两栏与 UI-05 概念图 HTML 逐元素对位最大偏差 2 px · 截图 web/tests/screenshots/ 下 22 份规格各 1 张 + `1-启动-应用外壳@1680x1050.png` · 共享文件只追加：tokens.css、tailwind.config.ts、mocks/handlers.ts（`getMockScenario`）；store/api/契约未改 · 未决 U19–U23
+- 2026-11-23 · [F1] 外壳、项目栏、文件栏 · 开始 · 分支 feat/F1-shell（worktree `INFO5000项目/worktrees/F1-shell`，dev 端口 5171）
 
 - 2026-11-22 21:06 · [F0] 契约 fixtures 与前端脚手架 · 完成 · 分支 feat/F0-scaffold · npm run check 通过（84 份 fixture、38/38 接口）· 单测 150/150 · e2e 3/3 · 截图 web/tests/screenshots/F0-占位页-tokens.png
 - 2026-11-22 21:06 · [F0] 契约 · 契约变更 v0.2 · 编排 Agent 决定，待用户追认：rest-api.md、sse-events.md、types.ts、data-model.md、evidence-locator.md、contract/README.md、ux/state.md 按 U11–U18 修改；规格源 specs_a.py（文件栏按 group 分组、网页来源行用 `snapshot_id`）已重新生成；fixtures 重新生成

@@ -32,6 +32,10 @@ export function setMockScenario(endpoint: string, scenario: Scenario): void {
 export function resetMockScenarios(): void {
   scenarios.clear();
 }
+/** F1 追加：读取某个接口当前指定的场景（world.ts 用它判断是否让位给 fixture） */
+export function getMockScenario(endpoint: string): Scenario | undefined {
+  return scenarios.get(endpoint);
+}
 
 // ---------------------------------------------------------------- 选样例
 function filesFor(def: EndpointDef) {

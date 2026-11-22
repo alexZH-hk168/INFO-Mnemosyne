@@ -1,19 +1,17 @@
-import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import App from './App';
+import { renderWithClient, setupMsw } from './test/f1-utils';
 
-describe('F0 占位页', () => {
-  it('渲染标题与 MSW 状态行（请求中）', () => {
-    vi.stubGlobal('fetch', () => new Promise(() => {}));
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        <App />
-      </QueryClientProvider>,
-    );
-    expect(screen.getByTestId('f0.placeholder')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: 'Mnemosyne' })).toBeInTheDocument();
-    expect(screen.getByTestId('f0.msw-status')).toHaveTextContent('正在请求');
-    vi.unstubAllGlobals();
+setupMsw();
+
+describe('App', () => {
+  it('渲染四栏外壳（F1 替换了 F0 的 tokens 占位页）', async () => {
+    renderWithClient(<App />);
+    expect(screen.getByTestId('shell.app')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar.panel')).toBeInTheDocument();
+    expect(screen.getByTestId('files.panel')).toBeInTheDocument();
+    expect(screen.getByTestId('center.pane')).toBeInTheDocument();
+    expect(await screen.findByTestId('sidebar.project-row:prj_dlintro')).toBeInTheDocument();
   });
 });

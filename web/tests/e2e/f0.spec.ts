@@ -21,17 +21,18 @@ const fixtures = Object.fromEntries(
     .map((f) => [f, JSON.parse(readFileSync(join(fixturesDir, f), 'utf8')) as Fx]),
 );
 
+// F1 起首页是四栏外壳（F0 的 tokens 占位页已替换）：等外壳渲染、MSW 就绪后再测。
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('f0.msw-status')).toContainText('MSW 已接管');
+  await expect(page.getByTestId('shell.app')).toBeVisible();
+  await page.waitForFunction(() => 'setMockScenario' in ((window as unknown as { __mnMock?: object }).__mnMock ?? {}));
 });
 
-test('占位页：tokens 与字体生效，并截图', async ({ page }) => {
-  const placeholder = page.getByTestId('f0.placeholder');
-  await expect(placeholder).toHaveCSS('background-color', 'rgb(251, 250, 248)'); // --canvas
-  await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', /Noto Serif SC/);
-  await expect(page.getByTestId('f0.msw-status')).toContainText(
-    `返回 ${(fixtures['get-projects.ok.json'].body as { projects: unknown[] }).projects.length} 个项目`,
+test('tokens 与字体生效（F1 起在外壳上检查；F0 占位页截图保留原文件不再重拍）', async ({ page }) => {
+  await expect(page.getByTestId('shell.app')).toHaveCSS('background-color', 'rgb(251, 250, 248)'); // --canvas
+  await expect(page.getByText('Mnemosyne', { exact: true })).toHaveCSS('font-family', /Noto Serif SC/);
+  await expect(page.locator('[data-testid^="sidebar.project-row:"]')).toHaveCount(
+    (fixtures['get-projects.ok.json'].body as { projects: unknown[] }).projects.length,
   );
   await page.evaluate(() => document.fonts.ready);
   const loaded = await page.evaluate(async () => {
@@ -40,7 +41,6 @@ test('占位页：tokens 与字体生效，并截图', async ({ page }) => {
     return want.map((f) => [f, document.fonts.check(f, '汉A')]);
   });
   for (const [font, ok] of loaded) expect(ok, `${font} 未加载`).toBe(true);
-  await page.screenshot({ path: 'tests/screenshots/F0-占位页-tokens.png', fullPage: false });
 });
 
 test('浏览器里每份 REST 成功/错误样例都由 MSW 按 fixture 应答', async ({ page }) => {
