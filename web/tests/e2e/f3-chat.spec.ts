@@ -99,7 +99,7 @@ test.describe('对话栏与证据', () => {
     await chip.click();
     await expect(chip).toHaveAttribute('aria-pressed', 'true');
     // 右栏现在是 F1 占位，标签由 useLayout.openTab 打开（预览内容 F4）
-    await expect(page.getByTestId('right.placeholder').getByText('Attention Is All You Need')).toBeVisible();
+    await expect(page.getByTestId('right.panel').getByText('Attention Is All You Need')).toBeVisible();
     await page.mouse.move(5, 450);
     await expect(hover).toBeHidden();
     await shot(page, '1-助手回答-证据胶囊');

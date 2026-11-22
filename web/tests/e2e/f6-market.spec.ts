@@ -46,10 +46,10 @@ test('2-插件与Skill-市场页：UI-07 插件市场 18 张卡、三列；UI-08
 
 test('2-插件与Skill-市场页：离开市场页（点对话）恢复四栏', async ({ page }) => {
   await openMarket(page);
-  await expect(page.getByTestId('right.placeholder')).toHaveCount(0);
+  await expect(page.getByTestId('right.panel')).toHaveCount(0);
   await page.getByTestId('sidebar.conversation-row:cnv_transformer').click();
   await expect(page.getByTestId('files.panel')).toBeVisible();
-  await expect(page.getByTestId('right.placeholder')).toBeVisible();
+  await expect(page.getByTestId('right.panel')).toBeVisible();
 });
 
 test('2-市场页-标签切换：改路由 /market/:tab，保留搜索词、清空类别；刷新后停留在当前标签；方向键可切换', async ({

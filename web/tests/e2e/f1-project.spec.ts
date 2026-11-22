@@ -117,7 +117,7 @@ test('对话行：点击 URL 为 /c/:cid；点分支数在右栏打开最近一�
   await expect(page.getByTestId('chat.panel') /* F3：对话栏替换了占位 */).toBeVisible();
   await page.getByTestId('sidebar.conversation-row.branches:cnv_transformer').click();
   await expect(page).toHaveURL(/\/c\/cnv_transformer$/);
-  await expect(page.getByTestId('right.placeholder-tab:branch:br_onehot')).toHaveAttribute('data-active', 'true');
+  await expect(page.getByTestId('right.tabs.tab:branch:br_onehot')).toHaveAttribute('data-active', 'true');
 });
 
 test('加载更多：首页 3 条，点击再取一页，连续点击不重复请求，没有更多时消失', async ({ page }) => {

@@ -43,6 +43,8 @@ export const DEFAULT_SIZES: Sizes = [252, 236, 480, 560];
 export const COLLAPSED_WIDTH = 44;
 const CHAT: PanelIndex = 2;
 const RIGHT: PanelIndex = 3;
+/** 右栏最多标签数（规格 1-右栏-标签条，F4 追加） */
+export const MAX_TABS = 8;
 
 function viewportWidth(): number {
   return typeof window === 'undefined' ? 1440 : window.innerWidth;
@@ -103,7 +105,14 @@ export const useLayout = create<LayoutState>()(
           set({ activeTab: existing.id, collapsed });
           return;
         }
-        set({ rightTabs: [...s.rightTabs, tab], activeTab: tab.id, collapsed });
+        // F4（规格 1-右栏-标签条）：最多 8 个标签，超过时关闭最早的、未激活的非分支标签
+        let tabs = [...s.rightTabs, tab];
+        while (tabs.length > MAX_TABS) {
+          const victim = tabs.find((t) => t.kind !== 'branch' && t.id !== s.activeTab && t.id !== tab.id);
+          if (!victim) break;
+          tabs = tabs.filter((t) => t !== victim);
+        }
+        set({ rightTabs: tabs, activeTab: tab.id, collapsed });
       },
       closeTab: (id) =>
         set((s) => {

@@ -1,0 +1,208 @@
+{
+  "endpoint": "POST /api/conversations/{cid}/messages",
+  "kind": "sse",
+  "description": "代码问答回合（F4）：@ transformer.py 提问，引用代码第 7 行、历史对话“作业 3”、网页快照，3 条引用均 supported",
+  "status": 200,
+  "content_type": "text/event-stream",
+  "events": [
+    {
+      "event": "message.start",
+      "data": {
+        "message_id": "msg_code_a1",
+        "client_msg_id": "e4f5a6b7-c8d9-4e0f-9a1b-2c3d4e5f6a7b",
+        "user_message_id": "msg_code_u1",
+        "seq": 1
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_code_1",
+        "kind": "search_materials",
+        "label": "检索项目材料：1 份材料命中",
+        "status": "running",
+        "duration_ms": 640,
+        "seq": 2
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_code_1",
+        "kind": "search_materials",
+        "label": "检索项目材料：1 份材料命中",
+        "status": "done",
+        "duration_ms": 640,
+        "seq": 3
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_tfpy_l7",
+        "label": "E1",
+        "source_type": "material",
+        "source_id": "doc_transformer_py",
+        "title": "transformer.py",
+        "locator": {
+          "path": "transformer.py",
+          "lines": [
+            7,
+            7
+          ]
+        },
+        "quote": "scores = q @ k.transpose(-2, -1) / math.sqrt(d_k)",
+        "sha256": "0725ac16a463145af6db584a5d36ddfd49cb7b94e3c4fdcbeb45beab1d2a5eeb",
+        "seq": 4
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_code_2",
+        "kind": "recall_memory",
+        "label": "参考历史对话：反向传播 · 作业 3",
+        "status": "running",
+        "duration_ms": 310,
+        "seq": 5
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_code_2",
+        "kind": "recall_memory",
+        "label": "参考历史对话：反向传播 · 作业 3",
+        "status": "done",
+        "duration_ms": 310,
+        "seq": 6
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_hw3_sigmoid",
+        "label": "E2",
+        "source_type": "message",
+        "source_id": "msg_hw3_a2",
+        "title": "反向传播 · 作业 3",
+        "locator": {
+          "message_id": "msg_hw3_a2",
+          "char_range": [
+            3,
+            43
+          ]
+        },
+        "quote": "sigmoid 输入很大时导数 σ(x)(1−σ(x)) 趋近 0，梯度传不回去",
+        "sha256": "6832ede80730c49dd4db5e08e7d2c06fa7a38fe171f5230b9dc36c7aa25742f1",
+        "seq": 7
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_jalammar_scale",
+        "label": "E3",
+        "source_type": "web",
+        "source_id": "ws_jalammar_illustrated",
+        "title": "The Illustrated Transformer",
+        "locator": {
+          "snapshot_id": "ws_jalammar_illustrated",
+          "char_range": [
+            210,
+            388
+          ]
+        },
+        "quote": "The third and fourth steps are to divide the scores by 8 (the square root of the dimension of the key vectors used in the paper – 64). This leads to having more stable gradients.",
+        "sha256": "5c526d76ffe7ca970bc45f53389a7c44102b75e3f9bd03a9b9e92e4e705634bb",
+        "seq": 8
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "第 7 行先算 q 和每个 k 的点积，再除以 √dₖ 做缩放[[E1]]。",
+        "seq": 9
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "不缩放时 softmax 容易饱和，和你作业 3 里 sigmoid 输入太大、梯度传不回去是同一类问题[[E2]]。",
+        "seq": 10
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "The Illustrated Transformer 里也是先把分数除以 8 再做 softmax，梯度更稳定[[E3]]。",
+        "seq": 11
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_code_1",
+        "eid": "evd_tfpy_l7",
+        "label": "E1",
+        "sentence_start": 0,
+        "sentence_end": 32,
+        "verdict": "supported",
+        "seq": 12
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_code_2",
+        "eid": "evd_hw3_sigmoid",
+        "label": "E2",
+        "sentence_start": 32,
+        "sentence_end": 85,
+        "verdict": "supported",
+        "seq": 13
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_code_3",
+        "eid": "evd_jalammar_scale",
+        "label": "E3",
+        "sentence_start": 85,
+        "sentence_end": 142,
+        "verdict": "supported",
+        "seq": 14
+      }
+    },
+    {
+      "event": "message.end",
+      "data": {
+        "message_id": "msg_code_a1",
+        "usage": {
+          "prompt_tokens": 2210,
+          "completion_tokens": 142
+        },
+        "latency_ms": 4630,
+        "cancelled": false,
+        "seq": 15
+      }
+    }
+  ],
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    },
+    "body": {
+      "client_msg_id": "e4f5a6b7-c8d9-4e0f-9a1b-2c3d4e5f6a7b",
+      "content": "@transformer.py 第 7 行在算什么？",
+      "web_search": false,
+      "scope": {
+        "mode": "selected",
+        "document_ids": [
+          "doc_transformer_py"
+        ]
+      }
+    }
+  }
+}

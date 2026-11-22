@@ -15,10 +15,10 @@
         "s4_fn4_2"
       ],
       "bbox": [
-        107.6,
-        640.3,
-        504.2,
-        684.9
+        107.8,
+        700.3,
+        504,
+        724
       ]
     },
     "quote": "To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Σ q_i k_i, has mean 0 and variance d_k.",

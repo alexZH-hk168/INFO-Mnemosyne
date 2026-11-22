@@ -111,7 +111,7 @@ describe('1-文件分组-文件行', () => {
       { id: 'pdf:doc_attention', kind: 'pdf', ref_id: 'doc_attention', title: 'Attention Is All You Need' },
     ]);
     expect(row).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByTestId('right.placeholder-tab:pdf:doc_attention')).toBeInTheDocument();
+    expect(screen.getByTestId('right.tabs.tab:pdf:doc_attention')).toBeInTheDocument();
     const data = new Map<string, string>();
     fireEvent.dragStart(row, {
       dataTransfer: { setData: (k: string, v: string) => data.set(k, v), effectAllowed: '' },

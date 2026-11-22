@@ -23,6 +23,8 @@ const pt = async (page: Page, id: string) => {
 };
 /** 收起第 i 栏（点栏头的收起按钮） */
 const collapse = async (page: Page, i: 1 | 3) => {
+  // F4（编排决定，原 U40）：主页无标签时右栏已自动收起，此时不用再点
+  if (await page.getByTestId(`shell.collapsed-rail:${i}`).isVisible()) return;
   await page.getByTestId(`shell.collapse-button:${i}`).click();
   await expect(page.getByTestId(`shell.collapsed-rail:${i}`)).toBeVisible();
   await settle(page, 500);
@@ -50,6 +52,11 @@ test('1-新建对话-主页：标题、主页输入框自动聚焦、三张卡�
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('今天要学习什么？');
   await expect(page.getByTestId('composer.box').getByRole('textbox')).toBeFocused();
   for (const c of CARDS) await expect(page.getByTestId(`home.card:${c.id}`)).toBeVisible();
+  // F4（编排决定，原 U40）：主页无标签时右栏运行时自动收起（与 UI-01 一致），不写 localStorage
+  await expect(page.getByTestId('shell.collapsed-rail:3')).toBeVisible();
+  expect(
+    await page.evaluate(() => JSON.parse(localStorage.getItem('mn.layout.v1') ?? '{}').state?.collapsed?.[3] ?? false),
+  ).toBe(false);
   await page.mouse.move(5, 5);
   await shot(page, '1-新建对话-主页');
   await collapse(page, 3);
@@ -64,6 +71,10 @@ test('1-新建对话-主页：标题、主页输入框自动聚焦、三张卡�
 test('1-新建对话-主页：中间区 480 px（对话栏下限）时扇面收紧并缩放，卡片完整落在中间区内、不被右栏盖住', async ({
   page,
 }) => {
+  // F4（原 U40）：主页右栏默认自动收起；先手动展开，让中间区回到 480 下限
+  await page.getByTestId('shell.collapsed-rail.expand:3').click();
+  await expect(page.getByTestId('right.panel')).toBeVisible();
+  await settle(page, 500);
   const center = await box(page, 'center.pane');
   expect(Math.round(center.width)).toBe(480);
   const s = await fanScale(page);
