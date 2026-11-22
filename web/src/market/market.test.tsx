@@ -136,7 +136,8 @@ describe('2-插件与Skill-市场页', () => {
     expect(screen.queryByTestId('files.panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('right.panel')).not.toBeInTheDocument();
     act(() => useLayout.getState().setView('home'));
-    expect(await screen.findByTestId('right.panel')).toBeInTheDocument();
+    // F4（编排决定，原 U40）：主页无标签时右栏运行时自动收起
+    expect(await screen.findByTestId('shell.collapsed-rail:3')).toBeInTheDocument();
     expect(useLayout.getState().collapsed).toEqual([false, false, false, false]);
   });
 

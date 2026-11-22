@@ -35,6 +35,7 @@ export default function FourPane() {
   const collapsed = useLayout((s) => s.collapsed);
   const storeToggle = useLayout((s) => s.toggle);
   const view = useLayout((s) => s.view);
+  const rightEmpty = useLayout((s) => s.rightTabs.length === 0);
   const projectId = useChat((s) => s.projectId);
   const conversationId = useChat((s) => s.conversationId);
   const modal = useUI((s) => s.modal);
@@ -51,9 +52,12 @@ export default function FourPane() {
       if (i === 1 && vw < NARROW_FILES) return 'narrow:1';
       // 规格 1-外壳-文件栏：新对话且无材料时默认收起；用户手动展开后尊重用户选择
       if (i === 1 && projectId && view === 'home' && !conversationId && docsEmpty) return `empty:${projectId}`;
+      // 编排决定（原 U40，F4）：主页且右栏没有标签时运行时自动收起（与 UI-01 一致）；不写 localStorage、不改用户保存的 collapsed；
+      // 一打开标签就展开，离开主页回到原来的 collapsed 状态
+      if (i === 3 && view === 'home' && rightEmpty) return 'home-empty:3';
       return null;
     },
-    [vw, projectId, view, conversationId, docsEmpty],
+    [vw, projectId, view, conversationId, docsEmpty, rightEmpty],
   );
 
   const effective = useMemo(

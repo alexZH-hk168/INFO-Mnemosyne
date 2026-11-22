@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test';
 import { box, drag, mock, openApp, persistedLayout, shot } from './f1-helpers';
 
 test('1440 宽时左两栏只能再变宽 32 px（右栏先让到 400，对话栏不小于 480）', async ({ page }) => {
-  await openApp(page);
+  // F4（编排决定，原 U40）：主页无标签时右栏自动收起，右栏让位在对话页里测
+  await openApp(page, '/c/cnv_transformer');
   await drag(page, page.getByTestId('shell.resize-handle:0'), 100);
   expect((await box(page.getByTestId('sidebar.panel'))).width).toBe(284);
   expect((await box(page.getByTestId('center.pane'))).width).toBe(480);
@@ -97,7 +98,8 @@ test('拖动流畅度：拖动过程中每帧都更新宽度（记录 rAF 间隔
 });
 
 test('收起按钮与竖条：三处收起，刷新保持；点竖条展开；四种组合下对话栏吸收剩余空间', async ({ page }) => {
-  await openApp(page);
+  // F4（原 U40）：主页无标签时右栏自动收起，三处收起按钮在对话页里测
+  await openApp(page, '/c/cnv_transformer');
   const btn0 = page.getByTestId('shell.collapse-button:0');
   await btn0.hover();
   await shot(page, '1-外壳-栏收起按钮');

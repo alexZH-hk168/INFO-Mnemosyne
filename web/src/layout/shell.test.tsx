@@ -15,7 +15,9 @@ setupMsw();
 
 const persisted = () => JSON.parse(localStorage.getItem('mn.layout.v1') ?? '{}').state;
 
-async function renderShell() {
+async function renderShell(opts: { conversation?: boolean } = {}) {
+  // F4（编排决定，原 U40）：主页无标签时右栏自动收起；测右栏本身行为的用例改在对话页里做
+  if (opts.conversation) window.history.replaceState(null, '', '/c/cnv_transformer');
   const r = renderWithClient(<FourPane />);
   await screen.findByTestId('sidebar.project-row:prj_dlintro');
   return r;
@@ -30,7 +32,7 @@ describe('1-启动-应用外壳', () => {
   });
 
   it('默认取项目列表第一个项目，四栏宽 252 / 236 / 弹性 / 右栏', async () => {
-    await renderShell();
+    await renderShell({ conversation: true });
     await waitFor(() => expect(useChat.getState().projectId).toBe('prj_dlintro'));
     expect(screen.getByTestId('sidebar.panel').parentElement).toHaveStyle({ width: '252px' });
     expect(screen.getByTestId('files.panel').parentElement).toHaveStyle({ width: '236px' });
@@ -40,6 +42,40 @@ describe('1-启动-应用外壳', () => {
     await waitFor(() =>
       expect(screen.getByTestId('right.panel').parentElement).toHaveStyle({ width: `${DEFAULT_SIZES[3]}px` }),
     );
+  });
+
+  it('主页且右栏无标签：运行时自动收起（UI-01），不写 localStorage；打开标签展开；离开主页回到原 collapsed', async () => {
+    await renderShell();
+    expect(useLayout.getState().view).toBe('home');
+    expect(screen.getByTestId('shell.collapsed-rail:3')).toBeInTheDocument();
+    expect(screen.queryByTestId('right.panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('shell.app')).toHaveAttribute('data-collapsed', '0001');
+    expect(useLayout.getState().collapsed[3]).toBe(false);
+    expect(persisted()?.collapsed ?? [false, false, false, false]).toEqual([false, false, false, false]);
+    // 打开标签就展开
+    fireEvent.click(await screen.findByTestId('files.file-row:doc_attention'));
+    expect(await screen.findByTestId('right.panel')).toBeInTheDocument();
+    // 关掉最后一个标签，回到主页空态：再次自动收起
+    act(() => useLayout.getState().closeTab('pdf:doc_attention'));
+    expect(screen.getByTestId('shell.collapsed-rail:3')).toBeInTheDocument();
+    // 离开主页：回到用户保存的 collapsed（未收起）
+    act(() => {
+      useChat.getState().setConversation('cnv_transformer');
+      useLayout.getState().setView('conversation');
+    });
+    expect(screen.getByTestId('right.panel.empty')).toBeInTheDocument();
+    // 用户保存过“右栏收起”：离开主页后仍收起
+    act(() => useLayout.getState().toggle(3));
+    expect(screen.getByTestId('shell.collapsed-rail:3')).toBeInTheDocument();
+    expect(persisted().collapsed[3]).toBe(true);
+  });
+
+  it('主页无标签时手动展开右栏：只是运行时状态，不写 localStorage', async () => {
+    await renderShell();
+    fireEvent.click(screen.getByTestId('shell.collapsed-rail.expand:3'));
+    expect(screen.getByTestId('right.panel.empty')).toBeInTheDocument();
+    expect(useLayout.getState().collapsed[3]).toBe(false);
+    expect(persisted()?.collapsed ?? [false, false, false, false]).toEqual([false, false, false, false]);
   });
 
   it('后端不可达：顶部显示“无法连接后端”，各栏保留骨架', async () => {
@@ -98,7 +134,7 @@ describe('1-启动-应用外壳', () => {
 
 describe('1-外壳-分栏拖拽条', () => {
   it('role=separator，aria-valuenow 为当前宽度；← / → 每次 ±16 px', async () => {
-    await renderShell();
+    await renderShell({ conversation: true });
     const h0 = screen.getByTestId('shell.resize-handle:0');
     expect(h0).toHaveAttribute('role', 'separator');
     expect(h0).toHaveAttribute('aria-orientation', 'vertical');
@@ -126,7 +162,7 @@ describe('1-外壳-分栏拖拽条', () => {
   });
 
   it('一侧收起时不渲染拖拽条', async () => {
-    await renderShell();
+    await renderShell({ conversation: true });
     act(() => useLayout.getState().toggle(1));
     expect(screen.queryByTestId('shell.resize-handle:0')).not.toBeInTheDocument();
     expect(screen.queryByTestId('shell.resize-handle:1')).not.toBeInTheDocument();
@@ -136,7 +172,7 @@ describe('1-外壳-分栏拖拽条', () => {
 
 describe('1-外壳-栏收起按钮 / 1-外壳-收起态竖条', () => {
   it('三处收起按钮各收起对应栏并写入 localStorage', async () => {
-    await renderShell();
+    await renderShell({ conversation: true });
     expect(screen.getByTestId('shell.collapse-button:0')).toHaveAccessibleName('收起项目栏');
     fireEvent.click(screen.getByTestId('shell.collapse-button:0'));
     fireEvent.click(screen.getByTestId('shell.collapse-button:1'));
@@ -157,7 +193,7 @@ describe('1-外壳-栏收起按钮 / 1-外壳-收起态竖条', () => {
   });
 
   it('右栏竖条显示已打开标签数；有新标签打开时自动展开', async () => {
-    await renderShell();
+    await renderShell({ conversation: true });
     fireEvent.click(screen.getByTestId('shell.collapse-button:3'));
     expect(screen.queryByTestId('shell.collapsed-rail.tab-count')).not.toBeInTheDocument();
     fireEvent.click(await screen.findByTestId('files.file-row:doc_attention'));
@@ -169,7 +205,7 @@ describe('1-外壳-栏收起按钮 / 1-外壳-收起态竖条', () => {
 
 describe('1-外壳-全局快捷键', () => {
   it('Alt(Option)+1 / Alt+2 切换左两栏（按 event.code），Ctrl 与 ⌘ 的 . 切换右栏，K 新建对话', async () => {
-    await renderShell();
+    await renderShell({ conversation: true });
     // Mac 上 Option+1 的 e.key 是“¡”，只认 e.code
     fireEvent.keyDown(window, { key: '¡', code: 'Digit1', altKey: true });
     fireEvent.keyDown(window, { key: '2', code: 'Digit2', altKey: true });

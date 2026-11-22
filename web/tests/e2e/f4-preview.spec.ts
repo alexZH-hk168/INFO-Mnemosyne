@@ -243,6 +243,33 @@ test.describe('代码、历史对话、网页快照（@ transformer.py 的回合
 });
 
 test.describe('标签条与外壳', () => {
+  test('主页无标签时右栏自动收起（UI-01）；打开标签展开；离开主页回到用户保存的 collapsed（原 U40）', async ({
+    page,
+  }) => {
+    await openApp(page, '/', { fixedClock: true });
+    await expect(page.getByTestId('shell.collapsed-rail:3')).toBeVisible();
+    await expect(page.getByTestId('right.panel')).toHaveCount(0);
+    // 打开标签就展开
+    await page.getByTestId('files.file-row:doc_transformer_py').click();
+    await expect(page.getByTestId('right.code-preview')).toBeVisible();
+    // 关掉最后一个标签：主页又自动收起，且没写 localStorage
+    await page.getByTestId('right.tabs.close:code:doc_transformer_py').click();
+    await expect(page.getByTestId('shell.collapsed-rail:3')).toBeVisible();
+    const saved = () =>
+      page.evaluate(() => JSON.parse(localStorage.getItem('mn.layout.v1') ?? '{}').state?.collapsed?.[3] ?? false);
+    expect(await saved()).toBe(false);
+    // 离开主页：右栏回到未收起（用户保存的状态）
+    await page.getByTestId('sidebar.conversation-row:cnv_transformer').click();
+    await expect(page.getByTestId('right.panel.empty')).toBeVisible();
+    // 用户在对话页收起右栏（写入 localStorage），回主页再打开标签也会展开
+    await page.getByTestId('shell.collapse-button:3').click();
+    expect(await saved()).toBe(true);
+    await page.keyboard.press('Control+k');
+    await expect(page.getByTestId('home.onboard')).toBeVisible();
+    await expect(page.getByTestId('shell.collapsed-rail:3')).toBeVisible();
+    await page.getByTestId('files.file-row:doc_transformer_py').click();
+    await expect(page.getByTestId('right.code-preview')).toBeVisible();
+  });
   test('切换、× 关闭激活相邻、中键关闭、更多菜单、收起；无标签显示空态', async ({ page }) => {
     await openConversation(page);
     await expect(page.getByTestId('right.panel.empty')).toHaveText('点回答里的证据，或在文件栏选一个文件预览');
