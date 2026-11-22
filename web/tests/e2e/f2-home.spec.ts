@@ -1,5 +1,6 @@
 // F2 端到端：主页、能力卡片扇形与悬停、卡片介绍弹窗（共享元素过渡、←/→、焦点管理）、试一试、减少动效、长任务。
 // 每份规格“下一级”表的每一行一条交互测试，并按 1440×900 截图到 tests/screenshots/<规格名>.png。
+// 集成后主页在四栏外壳的中间区里：默认 1440×900 下中间区只有 480 px（对话栏下限），扇面按宽度收紧并缩放。
 import { expect, test, type Page } from '@playwright/test';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,29 +13,78 @@ const activeTestId = (page: Page) => page.evaluate(() => document.activeElement?
 const box = async (page: Page, id: string) => (await page.getByTestId(id).boundingBox())!;
 /** 等 spring 停稳 */
 const settle = (page: Page, ms = 900) => page.waitForTimeout(ms);
+/** 扇面当前缩放（Onboard 按中间区宽度与窗口高度计算） */
+const fanScale = async (page: Page) => Number(await page.getByTestId('home.onboard').getAttribute('data-fan-scale'));
+/** 卡片上一个不被相邻卡片压住的点（相对卡片外接框）：左卡偏左、右卡偏右、中卡居中 */
+const RATIO: Record<string, number> = { paper: 0.3, code: 0.5, slides: 0.7 };
+const pt = async (page: Page, id: string) => {
+  const b = await box(page, `home.card:${id}`);
+  return { position: { x: Math.round(b.width * RATIO[id]), y: Math.round(b.height * 0.45) } };
+};
+/** 收起第 i 栏（点栏头的收起按钮） */
+const collapse = async (page: Page, i: 1 | 3) => {
+  await page.getByTestId(`shell.collapse-button:${i}`).click();
+  await expect(page.getByTestId(`shell.collapsed-rail:${i}`)).toBeVisible();
+  await settle(page, 500);
+};
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
+  await expect(page.getByTestId('shell.app')).toBeVisible();
   await expect(page.getByTestId('home.onboard')).toBeVisible();
+  await expect(page.getByTestId('sidebar.project-row:prj_dlintro')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await settle(page, 400);
 });
 
-test('1-新建对话-主页：标题、主页输入框自动聚焦、三张卡；截图', async ({ page }) => {
+test('1-新建对话-主页：标题、主页输入框自动聚焦、三张卡；默认四栏、右栏收起、对照 UI-01 三种截图', async ({ page }) => {
+  // “主页本身不发请求”在单元测试里验（外壳的项目栏、文件栏会请求 /api，端到端里分不清来源）
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('今天要学习什么？');
   await expect(page.getByTestId('composer.box').getByRole('textbox')).toBeFocused();
-  // 主页本身不发 /api 请求
-  const apiCalls: string[] = [];
-  page.on('request', (r) => new URL(r.url()).pathname.startsWith('/api/') && apiCalls.push(r.url()));
-  await page.reload();
-  await expect(page.getByTestId('home.onboard')).toBeVisible();
-  await settle(page, 400);
-  expect(apiCalls).toEqual([]);
+  for (const c of CARDS) await expect(page.getByTestId(`home.card:${c.id}`)).toBeVisible();
   await page.mouse.move(5, 5);
   await shot(page, '1-新建对话-主页');
+  await collapse(page, 3);
+  await page.mouse.move(5, 5);
+  await shot(page, '1-新建对话-主页-右栏收起');
+  // UI-01 的样子：新对话无材料时文件栏默认收起、无右栏；模拟数据里项目有材料，所以手动收起文件栏
+  await collapse(page, 1);
+  await page.mouse.move(5, 5);
+  await shot(page, '1-新建对话-主页-对照UI-01');
+});
+
+test('1-新建对话-主页：中间区 480 px（对话栏下限）时扇面收紧并缩放，卡片完整落在中间区内、不被右栏盖住', async ({
+  page,
+}) => {
+  const center = await box(page, 'center.pane');
+  expect(Math.round(center.width)).toBe(480);
+  const s = await fanScale(page);
+  expect(s).toBeLessThan(1);
+  expect(s).toBeGreaterThan(0.55);
+  for (const c of CARDS) {
+    const b = await box(page, `home.card:${c.id}`);
+    expect(b.x).toBeGreaterThanOrEqual(center.x);
+    expect(b.x + b.width).toBeLessThanOrEqual(center.x + center.width);
+    // 卡片上的点命中的是卡片本身（没有被文件栏、右栏或相邻卡片拦截）
+    const { position } = await pt(page, c.id);
+    const hit = await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x, y)?.closest('[data-testid^="home.card:"]')?.getAttribute('data-testid'),
+      [b.x + position.x, b.y + position.y],
+    );
+    expect(hit).toBe(`home.card:${c.id}`);
+  }
+  // 右栏收起后中间区 868 px：只需略收紧间距、不再缩放；三栏都收起时恢复设计间距 246
+  await collapse(page, 3);
+  expect(await fanScale(page)).toBe(1);
+  const spread = Number(await page.getByTestId('home.card-fan').getAttribute('data-spread'));
+  expect(spread).toBeGreaterThan(150);
+  expect(spread).toBeLessThanOrEqual(246);
+  await collapse(page, 1);
+  expect(Number(await page.getByTestId('home.card-fan').getAttribute('data-spread'))).toBe(246);
 });
 
 test('1-新建对话-主页：窗口高度 < 760 时卡片缩到 0.85，且不与输入框重叠', async ({ page }) => {
+  await collapse(page, 3); // 先让中间区够宽，只剩高度缩放
   await page.setViewportSize({ width: 1440, height: 700 });
   await settle(page, 300);
   const scale = await page
@@ -63,7 +113,8 @@ test('1-主页-能力卡片组：左右 ±8°、中间略低；悬停抬起 12 p
   expect(center(before.code)).toBeGreaterThan(center(before.paper) + 10);
   expect(center(before.code)).toBeGreaterThan(center(before.slides) + 10);
 
-  await page.getByTestId('home.card:paper').hover({ position: { x: 60, y: 120 } });
+  const s = await fanScale(page);
+  await page.getByTestId('home.card:paper').hover(await pt(page, 'paper'));
   await settle(page);
   expect(await angle('paper')).toBe(0);
   const lifted = await page
@@ -72,13 +123,14 @@ test('1-主页-能力卡片组：左右 ±8°、中间略低；悬停抬起 12 p
   expect(lifted).toBeCloseTo(-12, 0);
   const codeAfter = await box(page, 'home.card:code');
   const slidesAfter = await box(page, 'home.card:slides');
-  expect(codeAfter.x - before.code.x).toBeCloseTo(24, 0);
-  expect(slidesAfter.x - before.slides.x).toBeCloseTo(24, 0);
+  // 让开 24 px 是扇面内坐标，屏幕上乘以扇面缩放
+  expect(Math.abs(codeAfter.x - before.code.x - 24 * s)).toBeLessThan(1);
+  expect(Math.abs(slidesAfter.x - before.slides.x - 24 * s)).toBeLessThan(1);
 
-  await page.getByTestId('home.card:code').hover();
+  await page.getByTestId('home.card:code').hover(await pt(page, 'code'));
   await settle(page);
   const paperAfter = await box(page, 'home.card:paper');
-  expect(paperAfter.x - before.paper.x).toBeLessThan(-20);
+  expect(Math.abs(paperAfter.x - before.paper.x + 24 * s)).toBeLessThan(1);
   await shot(page, '1-主页-能力卡片组');
 });
 
@@ -112,7 +164,7 @@ test('1-能力卡片组-单张卡片：Tab 依次聚焦三张卡（焦点可见�
 test('单张卡片 → 点击三张都能打开对应介绍弹窗（共享元素过渡从卡片原位放大）；三张截图', async ({ page }) => {
   for (const c of CARDS) {
     const card = page.getByTestId(`home.card:${c.id}`);
-    await card.hover({ position: { x: 40, y: 40 } });
+    await card.hover(await pt(page, c.id));
     await settle(page);
     // 在页面里点击并在两帧后量面板：过渡初期面板的视觉框应接近原卡片（从原位放大）
     const m = await page.evaluate(async (id) => {
@@ -171,7 +223,7 @@ test('2-能力卡片-卡片介绍弹窗：键盘 Enter 打开，←/→ 循环�
 
 test('2-卡片介绍弹窗-知道了按钮：遮罩、右上 ×、知道了都关闭（250 ms 收回），焦点回到原卡片；截图', async ({ page }) => {
   for (const how of ['home.card-modal-scrim', 'home.card-modal-close', 'home.card-dismiss']) {
-    await page.getByTestId('home.card:slides').click({ position: { x: 200, y: 60 } });
+    await page.getByTestId('home.card:slides').click(await pt(page, 'slides'));
     const modal = page.getByTestId('home.card-modal');
     await expect(modal).toBeVisible();
     await settle(page);
@@ -193,7 +245,7 @@ test('2-卡片介绍弹窗-知道了按钮：遮罩、右上 ×、知道了都�
 test('2-卡片介绍弹窗-试一试按钮：关闭弹窗、主页输入框出现示例问题（不发送）；截图', async ({ page }) => {
   const posts: string[] = [];
   page.on('request', (r) => r.method() === 'POST' && posts.push(r.url()));
-  await page.getByTestId('home.card:paper').click({ position: { x: 60, y: 120 } });
+  await page.getByTestId('home.card:paper').click(await pt(page, 'paper'));
   await settle(page);
   await page.getByTestId('home.card-try').click();
   await expect(page.getByTestId('home.card-modal')).toHaveCount(0);
@@ -213,7 +265,7 @@ test('减少动效：悬停无位移、封面静态、弹窗只做透明度、�
   await settle(page, 400);
   const before = await box(page, 'home.card:paper');
   const shadowBefore = await page.getByTestId('home.card:paper').evaluate((el) => getComputedStyle(el).boxShadow);
-  await page.getByTestId('home.card:paper').hover({ position: { x: 60, y: 120 } });
+  await page.getByTestId('home.card:paper').hover(await pt(page, 'paper'));
   await settle(page, 500);
   const after = await box(page, 'home.card:paper');
   expect(after).toEqual(before);
@@ -225,7 +277,7 @@ test('减少动效：悬停无位移、封面静态、弹窗只做透明度、�
     ),
   );
   expect(names).toEqual(['none', 'none', 'none', 'none']);
-  await page.getByTestId('home.card:paper').click({ position: { x: 60, y: 120 } });
+  await page.getByTestId('home.card:paper').click(await pt(page, 'paper'));
   const modal = page.getByTestId('home.card-modal');
   await expect(modal).toBeVisible();
   const tf = await modal.evaluate((el) => getComputedStyle(el).transform);
@@ -242,7 +294,7 @@ test('悬停与弹窗动画期间无长任务（> 50 ms；预热一轮后的稳�
   await page.evaluate(() => document.fonts.ready);
   // 预热一轮：首次打开弹窗会加载弹窗里才用到的字重、编译模块；只度量稳态交互
   for (const c of CARDS) {
-    await page.getByTestId(`home.card:${c.id}`).click({ position: { x: 60, y: 60 } });
+    await page.getByTestId(`home.card:${c.id}`).click(await pt(page, c.id));
     await settle(page, 500);
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('home.card-modal')).toHaveCount(0);
@@ -256,11 +308,11 @@ test('悬停与弹窗动画期间无长任务（> 50 ms；预热一轮后的稳�
     }).observe({ type: 'longtask', buffered: false });
   });
   for (const c of CARDS) {
-    await page.getByTestId(`home.card:${c.id}`).hover({ position: { x: 60, y: 60 } });
+    await page.getByTestId(`home.card:${c.id}`).hover(await pt(page, c.id));
     await settle(page, 500);
   }
   for (const c of CARDS) {
-    await page.getByTestId(`home.card:${c.id}`).click({ position: { x: 60, y: 60 } });
+    await page.getByTestId(`home.card:${c.id}`).click(await pt(page, c.id));
     await settle(page, 700);
     await page.keyboard.press('ArrowRight');
     await settle(page, 400);

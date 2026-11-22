@@ -1,11 +1,11 @@
 // 单元测试：F2 主页与能力卡片（规格 03-主页 六份）。每份规格“状态”表的每个状态一条渲染测试。
 // jsdom 里没有布局与动画：用 matchMedia 模拟“减少动效”，让弹窗关闭立即完成；位移动画在端到端测试里验。
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MAIN, useChat, emptyDraft } from '../store/chat';
 import { useUI } from '../store/ui';
 import { CARDS, getCard, neighborCard } from './cards';
-import { fanPose, FAN_MID_DROP, FAN_ROTATE } from './fan';
+import { fanFit, fanNeededWidth, fanPose, FAN_MID_DROP, FAN_ROTATE, FAN_SPREAD, FAN_SPREAD_MIN } from './fan';
 import { Onboard } from './Onboard';
 
 function mockMatchMedia(reduce: boolean) {
@@ -36,6 +36,30 @@ describe('1-新建对话-主页（home.onboard）', () => {
     expect(box).toHaveAttribute('data-variant', 'home');
     expect(within(box).getByRole('textbox')).toHaveFocus();
     expect(screen.queryByText(/记忆/)).toBeNull();
+  });
+
+  it('主页本身不发请求（规格「交互细则」）', () => {
+    const fetchSpy = vi.fn(() => new Promise<Response>(() => {}));
+    vi.stubGlobal('fetch', fetchSpy);
+    render(<Onboard />);
+    fireEvent.click(screen.getByTestId('home.card:paper'));
+    fireEvent.click(screen.getByTestId('home.card-dismiss'));
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('自适应：中间区不够宽时先收紧间距、再缩放；窗口矮于 760 时乘 0.85', () => {
+    expect(fanFit(1000, 900)).toMatchObject({ spread: FAN_SPREAD, scale: 1 });
+    const mid = fanFit(760, 900);
+    expect(mid.spread).toBeLessThan(FAN_SPREAD);
+    expect(mid.spread).toBeGreaterThanOrEqual(FAN_SPREAD_MIN);
+    expect(mid.scale).toBe(1);
+    expect(fanNeededWidth(mid.spread)).toBeLessThanOrEqual(760);
+    // 对话栏下限 480，减去主页左右内边距 48
+    const narrow = fanFit(432, 900);
+    expect(narrow.spread).toBe(FAN_SPREAD_MIN);
+    expect(fanNeededWidth(narrow.spread) * narrow.scale).toBeLessThanOrEqual(432 + 0.5);
+    expect(fanFit(1000, 700).scale).toBeCloseTo(0.85, 5);
   });
 });
 

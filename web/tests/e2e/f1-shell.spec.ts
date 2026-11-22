@@ -125,18 +125,19 @@ test('收起按钮与竖条：三处收起，刷新保持；点竖条展开；�
   expect(combos.map(([, c]) => c)).toEqual([1268 - 208, 1268 - 208 - 192, 480]);
 });
 
-test('全局快捷键：Ctrl 与 Meta 两套都生效；Ctrl+K 新建对话', async ({ page }) => {
+test('全局快捷键：Alt+1 / Alt+2 切换左两栏；Ctrl 与 Meta 的 . 切换右栏；Ctrl+K 新建对话', async ({ page }) => {
   await openApp(page, '/c/cnv_transformer');
+  // 编排决定 U20：左两栏改用 Alt(Option)+1/2（⌘/Ctrl+1/2 在浏览器里是切换标签）；右栏仍是 ⌘/Ctrl+.
   for (const mod of ['Control', 'Meta']) {
-    await page.keyboard.press(`${mod}+1`);
+    await page.keyboard.press('Alt+Digit1');
     await expect(page.getByTestId('shell.collapsed-rail:0')).toBeVisible();
-    await page.keyboard.press(`${mod}+2`);
+    await page.keyboard.press('Alt+Digit2');
     await expect(page.getByTestId('shell.collapsed-rail:1')).toBeVisible();
     await page.keyboard.press(`${mod}+Period`);
     await expect(page.getByTestId('shell.collapsed-rail:3')).toBeVisible();
     if (mod === 'Control') await shot(page, '1-外壳-全局快捷键'); // 三栏都被快捷键收起后的状态
-    await page.keyboard.press(`${mod}+1`);
-    await page.keyboard.press(`${mod}+2`);
+    await page.keyboard.press('Alt+Digit1');
+    await page.keyboard.press('Alt+Digit2');
     await page.keyboard.press(`${mod}+Period`);
     await expect(page.getByTestId('sidebar.panel')).toBeVisible();
     await expect(page.getByTestId('files.panel')).toBeVisible();
@@ -193,6 +194,9 @@ test('键盘可达与焦点可见：Tab 能到达收起按钮且有 2 px 焦点�
   await openApp(page);
   await mock(page, 'resetMockScenarios');
   const target = page.getByTestId('shell.collapse-button:0');
+  // 集成 F2 后主页输入框按规格自动聚焦，Tab 起点不再是文档开头；先点一下外壳左上角的空白边距，
+  // 把顺序导航起点放回页面开头（等同于用户点空白处再按 Tab）
+  await page.mouse.click(3, 3);
   let reached = false;
   for (let i = 0; i < 6 && !reached; i += 1) {
     await page.keyboard.press('Tab');

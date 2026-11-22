@@ -1,22 +1,52 @@
 // 规格：1-新建对话-主页（home.onboard）
 // 没有打开对话时中间区显示的主页：宋体大标题“今天要学习什么？”、主页版输入框、扇形叠放的三张能力卡片。
-// 不显示记忆提示；主页本身不发请求。窗口高度 < 760 时卡片缩到 0.85（home.css）。
-import { useCallback, useRef, useState } from 'react';
+// 不显示记忆提示；主页本身不发请求。窗口高度 < 760 时卡片缩到 0.85。
+// 在四栏外壳里只有中间区宽度（最窄 480）：按自身宽度收紧卡片间距、仍放不下再缩放（fan.ts fanFit）。
+import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { useUI } from '../store/ui';
 import type { CardPose } from './Card';
 import { CardModal, type CardOrigin, type CloseReason } from './CardModal';
 import { CARD_IDS, getCard, isCardId, neighborCard, type CardId } from './cards';
 import { FanCards } from './FanCards';
-import { FAN_HEIGHT, fanPose } from './fan';
+import { FAN_SPREAD, fanFit, fanPose, type FanFit } from './fan';
 import { setMainDraftText } from './draft';
 import { HomeComposerShell } from './HomeComposerShell';
 import './home.css';
+
+/** 主页左右内边距（px-6） */
+const PAD_X = 24;
+const DESIGN_FIT: FanFit = { spread: FAN_SPREAD, widthScale: 1, heightScale: 1, scale: 1 };
+
+/** 监听主页宽度与窗口高度，算出扇面间距与缩放；量不到宽度（如 jsdom）时用设计尺寸 */
+function useFanFit(ref: RefObject<HTMLElement>): FanFit {
+  const [fit, setFit] = useState<FanFit>(DESIGN_FIT);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      const next = w > 0 ? fanFit(w - PAD_X * 2, window.innerHeight) : DESIGN_FIT;
+      setFit((prev) => (prev.spread === next.spread && Math.abs(prev.scale - next.scale) < 0.002 ? prev : next));
+    };
+    update();
+    window.addEventListener('resize', update);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    ro?.observe(el);
+    return () => {
+      window.removeEventListener('resize', update);
+      ro?.disconnect();
+    };
+  }, [ref]);
+  return fit;
+}
 
 export function Onboard() {
   const modal = useUI((s) => s.modal);
   const openModal = useUI((s) => s.openModal);
   const closeModal = useUI((s) => s.closeModal);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  const fit = useFanFit(rootRef);
   const cardEls = useRef(new Map<CardId, HTMLButtonElement>());
   const composerRef = useRef<HTMLTextAreaElement>(null);
   /** 打开弹窗的那张卡：弹窗期间隐藏，关闭时面板收回到它、焦点回到它 */
@@ -78,18 +108,26 @@ export function Onboard() {
 
   return (
     <div
+      ref={rootRef}
       data-testid="home.onboard"
+      data-fan-scale={fit.scale.toFixed(3)}
       className="mn-onboard flex h-full w-full flex-col items-center overflow-y-auto overflow-x-hidden bg-canvas px-6"
     >
       <div className="min-h-6 flex-[0.85]" />
-      <h1 className="font-serif text-[40px] font-semibold leading-[1.3] tracking-[0.02em] text-ink">
+      <h1 className="text-center font-serif text-[40px] font-semibold leading-[1.3] tracking-[0.02em] text-ink">
         今天要学习什么？
       </h1>
       <div className="mt-9 w-full max-w-[740px]">
         <HomeComposerShell ref={composerRef} />
       </div>
-      <div className="mt-[68px] shrink-0" style={{ marginBottom: `calc((var(--mn-fan-scale) - 1) * ${FAN_HEIGHT}px)` }}>
-        <FanCards hiddenCard={current && !revealed ? originId : null} onOpen={handleOpen} registerCard={registerCard} />
+      {/* 两侧卡片转 8° 后外角会高出卡组顶边约 20 px（随缩放），留出这部分再加 48 px 间距 */}
+      <div className="shrink-0" style={{ marginTop: Math.round(48 + 20 * fit.scale) }}>
+        <FanCards
+          hiddenCard={current && !revealed ? originId : null}
+          onOpen={handleOpen}
+          registerCard={registerCard}
+          fit={fit}
+        />
       </div>
       <div className="min-h-6 flex-[1.15]" />
       {current && (

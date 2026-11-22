@@ -7,8 +7,8 @@
 | 里程碑 | 内容 | 依赖 | 状态 | 认领（分支 · 日期） |
 |---|---|---|---|---|
 | F0 | 契约 fixtures、`web/` 脚手架、tokens、MSW、类型、store 骨架 | 契约 v1.0 确认（用户已同意按 v0.1 草案开工） | 完成（待编排 Agent 验收与合并） | feat/F0-scaffold · 2026-11-22 |
-| F1 | 外壳、拖拽与收起、项目栏、文件栏 | F0 | 完成（待编排 Agent 验收与合并；U19–U23 待确认） | feat/F1-shell（worktree `worktrees/F1-shell`，端口 5171）· 2026-11-23 |
-| F2 | 主页、卡片与动效、卡片弹窗 | F0 | 部分完成（待编排 Agent 验收；剩余：试一试上传示例材料等 U8，首次打开弹窗偶发长任务见 U27） | feat/F2-home · 2026-11-22 |
+| F1 | 外壳、拖拽与收起、项目栏、文件栏 | F0 | 完成（已合入本地 main；与 F2 的集成修复在 integ/F1F2，U19–U23 已由编排决定） | feat/F1-shell（worktree `worktrees/F1-shell`，端口 5171）· 2026-11-23 |
+| F2 | 主页、卡片与动效、卡片弹窗 | F0 | 完成（编排已验收；集成修复在 integ/F1F2；“试一试”上传示例材料仍待 U8） | feat/F2-home · 2026-11-22 |
 | F3 | 输入框、对话流、SSE 客户端、证据胶囊、步骤行、来源列表 | F0、F1 | 未开始 | |
 | F4 | 右栏标签、PDF/PPT/代码/网页/历史对话预览、证据栏 | F3 | 未开始 | |
 | F5 | 划词工具条、分支面板、分支标记、合并卡片 | F3、F4 | 未开始 | |
@@ -46,6 +46,15 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-22 | 契约 v0.2（原 U16）：所有字符偏移左闭右开、按 Unicode 码点计数，前端负责与 UTF-16 换算（F3 实现）；代码行号 `lines` 为从 1 开始的闭区间 | 编排 Agent 决定，待用户追认 |
 | 2026-11-22 | 契约 v0.2（原 U17）：regenerate 的 `message.start` 用原用户消息的 `user_message_id` 与 `client_msg_id`；`context_messages` 含被引消息本身及前后各 1 条（最多 3 条） | 编排 Agent 决定，待用户追认 |
 | 2026-11-22 | 契约 v0.2（原 U18）：`Document` 加 `cells?`（ipynb）、`snapshot_id?`（kind=web）；每个网页快照在文件栏以一条 `kind=web, group=web` 的 Document 呈现 | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | 分栏用自写 px 布局 + 指针拖拽，不用 react-resizable-panels；已从 `web/package.json` 与 lock 移除该依赖（原 U19） | 编排决定，待用户追认 |
+| 2026-11-22 | 左两栏快捷键改为 Alt(Option)+1 / Alt+2，按 `event.code`（`Digit1`/`Digit2`）判断，按住 ⌘/Ctrl 时不响应（避开 AltGr）；不再用 ⌘/Ctrl+1/2。⌘/Ctrl+. 与 ⌘/Ctrl+K 不变。已同步 `useShortcuts.ts`、`specs_a.py`（重新生成 1-外壳-全局快捷键）与 F1 测试（原 U20） | 编排决定，待用户追认 |
+| 2026-11-22 | 对话标题由后端保证非空（B1 在首条消息后生成标题）；前端保留“新对话”兜底；不改契约（原 U21） | 编排决定，待用户追认 |
+| 2026-11-22 | 接受 1440 宽时右栏让位到 432（拖动最小 400）（原 U22） | 编排决定，待用户追认 |
+| 2026-11-22 | 新建对话后输入框获得焦点、文件行拖到输入框的接收，交 F3（原 U23） | 编排决定，待用户追认 |
+| 2026-11-22 | 主页输入框占位文案保持规格“问点什么，或拖入论文、课件、代码”（规格优先于概念图），不改（原 U24） | 编排决定，待用户追认 |
+| 2026-11-22 | `useChat.setDraft(key, patch)` 交 F3 增加（同步 state.md），之后把 `web/src/home/draft.ts` 改为调用它（原 U25） | 编排决定，待用户追认 |
+| 2026-11-22 | 接受派生 testid `home.card-modal-close`、`home.card-modal-scrim`，以及“试一试”后焦点放到主页输入框（原 U26） | 编排决定，待用户追认 |
+| 2026-11-22 | 接受：预热后的稳态无 >50 ms 长任务即通过；首次打开弹窗偶发长任务不阻塞，真机 Chrome 性能面板复测留给用户（原 U27） | 编排决定，待用户追认 |
 
 ## 未决（需要用户拍板）
 
@@ -61,18 +70,10 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U8 | “试一试”示例材料：论文、代码、课件各用哪份 | F2 | 2026-11-22 |
 | U9 | 用户卡片显示名是否加 `display_name` 设置项 | F1 | 2026-11-22 |
 | U10 | License | 仓库 | 2026-11-22 |
-| U19 | 分栏没用 react-resizable-panels（v2 只支持百分比，state.md 按 px 定宽度与上下限），改为自写 px 布局 + 指针拖拽；依赖未删。是否接受、是否从 package.json 移除 | F1、F4 | 2026-11-23 |
-| U20 | ⌘/Ctrl+1、Ctrl+2 在 Windows/Linux 的 Chrome 里是切换浏览器标签，页面拦不到（Mac 的 ⌘1 同理）；是否换成 ⌘/Ctrl+Shift+1/2 或 Alt+1/2 | F1 | 2026-11-23 |
-| U21 | 对话标题为空时规格要显示首条用户消息前 20 字，但 `ConversationSummary` 不含消息内容；现显示“新对话”。是否给列表接口加 `preview` 或由后端保证 title 非空 | F1、B1 | 2026-11-23 |
-| U22 | 1440 宽时四栏默认宽 252+236+560 放不下对话栏 480，现由右栏让位到 432（拖右栏最小 400）；左两栏只能再拉宽 32 px。是否接受，或把右栏默认宽改小 | F1、F4 | 2026-11-23 |
-| U23 | 新建对话后“输入框获得焦点”、文件行拖到输入框的接收，依赖 F2/F3 的输入框；F1 只负责切到主页与 `application/x-mn-document` 拖拽数据 | F2、F3 | 2026-11-23 |
-| U24 | 主页输入框占位文案冲突：规格 1-外壳-输入框「状态」写“问点什么，或拖入论文、课件、代码”，UI-01 写“提一个问题，或拖入论文、代码、课件；/ 调用插件，@ 引用文件与笔记”。F2 外壳按规格；定下后 F3 统一 | F2、F3 | 2026-11-22 |
-| U25 | `useChat` 没有改输入框草稿的 action（state.md 只列 `composer` 字段）。“试一试”暂用 `useChat.setState` 写 `composer.main.text`（`web/src/home/draft.ts`）。建议 F3 在 state.md 与 chat.ts 加 `setDraft(key, patch)`，再把 draft.ts 改为调用它 | F2、F3 | 2026-11-22 |
-| U26 | 卡片弹窗右上 × 与遮罩没有规格 ID，现用派生 testid `home.card-modal-close`、`home.card-modal-scrim`；“试一试”后焦点放到主页输入框（规格未写）。是否接受，或在 specs_*.py 补 ID | F2 | 2026-11-22 |
-| U27 | 长任务验收：预热后的悬停/弹窗/切换/关闭在 dev 与生产构建下均无 >50 ms 长任务；但页面加载后**第一次**打开弹窗，在云电脑 headless Chromium（软件渲染）生产构建 11 轮中 4 轮出现一条 55–75 ms 长任务。未在有 GPU 的真机 Chrome 性能面板复测。是否以真机复测为准，或要求做首开预热 | F2 | 2026-11-22 |
 
 ## 动作日志
 
+- 2026-11-22 14:40 · [集成] F1+F2 集成修复 · 完成 · 分支 integ/F1F2 · 主页按中间区宽度自适应（先收紧卡片间距到 150、再缩放；1440 默认四栏中间区 480 时缩放 0.637）；F2 e2e 适配四栏；F1 Tab 测试改为先点外壳空白处重置导航起点；落地 U19–U27 编排决定 · npm run check 通过 · 单测 244/244 · e2e 39/39（workers=2）· 截图 web/tests/screenshots/1-新建对话-主页.png 等 F2 8 张 + 1-新建对话-主页-右栏收起.png、1-新建对话-主页-对照UI-01.png
 - 2026-11-23 · [编排] 合并 F1+F2 · 集成中 · 分支 integ/F1F2 · 冲突已解（tokens 合并，F2 遮罩改名 --scrim-frost；CenterPane 接入 Onboard；App/f0 测试取 F1 版本）· check 通过 · 单测 242/242 · e2e 31/38（f2-home 6 条、f1-shell 焦点 1 条在四栏外壳里失败，交 F2 修）
 - 2026-11-23 · [F1] 外壳、项目栏、文件栏 · 完成 · 分支 feat/F1-shell · npm run check 通过 · 单测 225/225（含 F0）· e2e 28/28（workers=2，含 F0 的 3 条）· 左两栏与 UI-05 概念图 HTML 逐元素对位最大偏差 2 px · 截图 web/tests/screenshots/ 下 22 份规格各 1 张 + `1-启动-应用外壳@1680x1050.png` · 共享文件只追加：tokens.css、tailwind.config.ts、mocks/handlers.ts（`getMockScenario`）；store/api/契约未改 · 未决 U19–U23
 - 2026-11-23 · [F1] 外壳、项目栏、文件栏 · 开始 · 分支 feat/F1-shell（worktree `INFO5000项目/worktrees/F1-shell`，dev 端口 5171）

@@ -168,13 +168,21 @@ describe('1-外壳-栏收起按钮 / 1-外壳-收起态竖条', () => {
 });
 
 describe('1-外壳-全局快捷键', () => {
-  it('Ctrl 与 ⌘ 的 1 / 2 / . 切换三栏，K 新建对话', async () => {
+  it('Alt(Option)+1 / Alt+2 切换左两栏（按 event.code），Ctrl 与 ⌘ 的 . 切换右栏，K 新建对话', async () => {
     await renderShell();
-    fireEvent.keyDown(window, { key: '1', ctrlKey: true });
-    fireEvent.keyDown(window, { key: '2', metaKey: true });
-    fireEvent.keyDown(window, { key: '.', ctrlKey: true });
+    // Mac 上 Option+1 的 e.key 是“¡”，只认 e.code
+    fireEvent.keyDown(window, { key: '¡', code: 'Digit1', altKey: true });
+    fireEvent.keyDown(window, { key: '2', code: 'Digit2', altKey: true });
+    fireEvent.keyDown(window, { key: '.', code: 'Period', ctrlKey: true });
     expect(useLayout.getState().collapsed).toEqual([true, true, false, true]);
-    fireEvent.keyDown(window, { key: '1', metaKey: true });
+    fireEvent.keyDown(window, { key: '.', code: 'Period', metaKey: true });
+    expect(useLayout.getState().collapsed[3]).toBe(false);
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1', altKey: true });
+    expect(useLayout.getState().collapsed[0]).toBe(false);
+    // ⌘/Ctrl+1/2 是浏览器切换标签的键，不再处理；AltGr（Ctrl+Alt）也不拦截
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1', ctrlKey: true });
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1', metaKey: true });
+    fireEvent.keyDown(window, { key: '1', code: 'Digit1', ctrlKey: true, altKey: true });
     expect(useLayout.getState().collapsed[0]).toBe(false);
     act(() => {
       useChat.getState().setConversation('cnv_transformer');
@@ -186,7 +194,7 @@ describe('1-外壳-全局快捷键', () => {
     expect(window.location.pathname).toBe('/');
   });
 
-  it('输入框聚焦时 ⌘1 仍生效，普通字符不被拦截', async () => {
+  it('输入框聚焦时 Alt+1 仍生效且不插入字符，普通字符不被拦截', async () => {
     await renderShell();
     const input = document.createElement('input');
     document.body.appendChild(input);
@@ -194,7 +202,15 @@ describe('1-外壳-全局快捷键', () => {
     const ev = new KeyboardEvent('keydown', { key: 'k', bubbles: true, cancelable: true });
     input.dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(false);
-    fireEvent.keyDown(input, { key: '1', metaKey: true });
+    const alt = new KeyboardEvent('keydown', {
+      key: '¡',
+      code: 'Digit1',
+      altKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    input.dispatchEvent(alt);
+    expect(alt.defaultPrevented).toBe(true);
     expect(useLayout.getState().collapsed[0]).toBe(true);
     input.remove();
   });

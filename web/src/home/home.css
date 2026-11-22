@@ -2,17 +2,8 @@
    带 .mn-anim 的元素在 prefers-reduced-motion 下关闭动画，回到静态封面。 */
 
 /* ---------- 主页 ---------- */
-.mn-onboard {
-  /* 窗口高度 < 760 时卡片缩小到 0.85（规格 1-新建对话-主页「状态」） */
-  --mn-fan-scale: 1;
-}
-@media (max-height: 759px) {
-  .mn-onboard {
-    --mn-fan-scale: 0.85;
-  }
-}
+/* 扇面缩放（中间区宽度与窗口高度）由 Onboard 算好后写在行内 transform；这里只定缩放原点 */
 .mn-fan {
-  transform: scale(var(--mn-fan-scale));
   transform-origin: 50% 0;
 }
 
