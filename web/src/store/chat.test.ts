@@ -101,9 +101,14 @@ describe('useChat', () => {
     expect(useChat.getState().conversationId).toBeNull();
   });
 
-  it('send 在 F0 尚未接 SSE 客户端，调用会明确报错', () => {
-    expect(() => useChat.getState().send({ conversation_id: 'cnv_transformer' })).toThrow(/F3/);
+  it('setDraft 合并修改草稿；主线与分支各自一份（F3，U25）', () => {
+    useChat.getState().setDraft(MAIN, { text: '主线' });
+    useChat.getState().setDraft('br_x', { text: '分支', web_search: true });
+    expect(useChat.getState().composer[MAIN]).toMatchObject({ text: '主线', web_search: false });
+    expect(useChat.getState().composer.br_x).toMatchObject({ text: '分支', web_search: true, attachments: [] });
   });
+
+  // send 的请求与流式行为见 src/chat/stream.test.ts（F3，跑在 MSW 上）
 });
 
 describe('useEvidence / useUI 骨架', () => {

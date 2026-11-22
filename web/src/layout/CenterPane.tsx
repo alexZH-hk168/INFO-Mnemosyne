@@ -1,6 +1,7 @@
 // 中间区：按 useLayout.view 切换（规格 1-启动-应用外壳「渲染中间区」）。
-// view=home 渲染 F2 的主页 Onboard（web/src/home）；
-// conversation（F3 对话栏）与 market（F6 市场页）同样先放占位。
+// view=home 渲染 F2 的主页 Onboard（web/src/home）；conversation 渲染 F3 的对话栏（web/src/chat/ChatColumn）；
+// market（F6 市场页）先放占位。
+import ChatColumn from '../chat/ChatColumn';
 import { useLayout } from '../store/layout';
 import { Onboard } from '../home';
 
@@ -23,9 +24,7 @@ export default function CenterPane() {
   return (
     <main data-testid="center.pane" data-view={view} className="relative h-full min-w-0 flex-1 overflow-hidden">
       {view === 'home' && <HomeSlot />}
-      {view === 'conversation' && (
-        <Placeholder testid="center.conversation-placeholder" title="对话栏" note="占位：F3 实现" />
-      )}
+      {view === 'conversation' && <ChatColumn />}
       {view === 'market' && (
         <Placeholder testid="center.market-placeholder" title="插件与 Skill" note="占位：F6 实现" />
       )}

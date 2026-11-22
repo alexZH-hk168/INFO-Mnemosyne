@@ -36,6 +36,11 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 | `send(target)` | 生成 `client_msg_id`，调 `POST /messages`，交给 SSE 客户端 |
 | `cancel()` | `POST /messages/{mid}/cancel` |
 | `applyEvent(e: SseEvent)` | SSE 客户端唯一的写入口 |
+| `setDraft(key, patch)` | （F3 追加，编排决定 U25）合并修改 `composer[key]`；`key = branchId ?? 'main'`，不存在时以空草稿为底 |
+| `turn` | （F3 追加）进行中/刚结束的一轮：`{kind: 'send'\|'regenerate', conversation_id, client_msg_id, content, parent_id?, branch_id?, regenerate_of?, user_message_id?, connection: 'live'\|'reconnecting'\|'lost', error?: {code, message, retriable}, latency_ms?} \| null`。发送后立即建立（乐观插入用户消息），`message.start` 补 `user_message_id`；SSE 事件只经 `applyEvent` 写入，连接状态由 SSE 客户端回调写入 |
+| `regenerate(mid, {conversation_id, parent_id?, model_tier?})` | （F3 追加）`POST /api/messages/{mid}/regenerate`，交给 SSE 客户端 |
+| `settleTurn()` | （F3 追加）对话栏确认 `['tree', cid]` 已含本轮消息后调用，去掉乐观显示；`streaming` 保留供证据定位 |
+| `send(target)` 的 `target.model_tier?: 'high'\|'fast'` | （F3 追加）模型档位，有值时请求头带 `X-Model-Tier: high\|fast`（规格 1-输入框-模型档位；契约未列该请求头，见 PROGRESS 未决） |
 
 ### `useEvidence`（`evidence.ts`）
 

@@ -1,14 +1,16 @@
 // 导航动作：同时改 store 与地址栏。各规格「下一级」表写的 store action + 路由都经这里。
 import type { ID } from '../api/types';
+import { requestComposerFocus } from '../chat/focus';
 import { useChat } from '../store/chat';
 import { useLayout, type MarketRoute } from '../store/layout';
 import { parseRoute, pushPath, routePath, type Route } from './router';
 
-/** 新建对话 / 回主页：setConversation(null)、view=home、路由 `/` */
+/** 新建对话 / 回主页：setConversation(null)、view=home、路由 `/`；主页输入框获得焦点（F3，U23） */
 export function goHome(): void {
   useChat.getState().setConversation(null);
   useLayout.getState().setView('home');
   pushPath('/');
+  requestComposerFocus('home');
 }
 
 /** 打开对话主线：setConversation(cid)、view=conversation、路由 `/c/:cid` */

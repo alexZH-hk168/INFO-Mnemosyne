@@ -3,6 +3,8 @@
 // 不显示记忆提示；主页本身不发请求。窗口高度 < 760 时卡片缩到 0.85。
 // 在四栏外壳里只有中间区宽度（最窄 480）：按自身宽度收紧卡片间距、仍放不下再缩放（fan.ts fanFit）。
 import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import Composer from '../chat/Composer';
+import { requestComposerFocus } from '../chat/focus';
 import { useUI } from '../store/ui';
 import type { CardPose } from './Card';
 import { CardModal, type CardOrigin, type CloseReason } from './CardModal';
@@ -10,7 +12,6 @@ import { CARD_IDS, getCard, isCardId, neighborCard, type CardId } from './cards'
 import { FanCards } from './FanCards';
 import { FAN_SPREAD, fanFit, fanPose, type FanFit } from './fan';
 import { setMainDraftText } from './draft';
-import { HomeComposerShell } from './HomeComposerShell';
 import './home.css';
 
 /** 主页左右内边距（px-6） */
@@ -48,7 +49,6 @@ export function Onboard() {
   const rootRef = useRef<HTMLDivElement>(null);
   const fit = useFanFit(rootRef);
   const cardEls = useRef(new Map<CardId, HTMLButtonElement>());
-  const composerRef = useRef<HTMLTextAreaElement>(null);
   /** 打开弹窗的那张卡：弹窗期间隐藏，关闭时面板收回到它、焦点回到它 */
   const [origin, setOrigin] = useState<{ id: CardId; openRotate: number } | null>(null);
   /** 收回动画过半后原卡片提前淡入 */
@@ -100,7 +100,7 @@ export function Onboard() {
       // 已在主页（新对话状态），无需另建对话。TODO(U8)：示例材料定了以后在这里上传
       // web/public/samples/<card>/ 到 POST /api/projects/{pid}/documents（同 sha256 跳过），上传中按钮转圈、弹窗不关。
       setMainDraftText(getCard(shown).sampleQuestion);
-      requestAnimationFrame(() => composerRef.current?.focus());
+      requestComposerFocus('home');
       return;
     }
     if (back) requestAnimationFrame(() => cardEls.current.get(back)?.focus());
@@ -118,7 +118,8 @@ export function Onboard() {
         今天要学习什么？
       </h1>
       <div className="mt-9 w-full max-w-[740px]">
-        <HomeComposerShell ref={composerRef} />
+        {/* F3：正式输入框的主页版（替换 F2 的 HomeComposerShell） */}
+        <Composer variant="home" autoFocus />
       </div>
       {/* 两侧卡片转 8° 后外角会高出卡组顶边约 20 px（随缩放），留出这部分再加 48 px 间距 */}
       <div className="shrink-0" style={{ marginTop: Math.round(48 + 20 * fit.scale) }}>

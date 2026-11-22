@@ -9,7 +9,7 @@
 | F0 | 契约 fixtures、`web/` 脚手架、tokens、MSW、类型、store 骨架 | 契约 v1.0 确认（用户已同意按 v0.1 草案开工） | 完成（待编排 Agent 验收与合并） | feat/F0-scaffold · 2026-11-22 |
 | F1 | 外壳、拖拽与收起、项目栏、文件栏 | F0 | 完成（已合入本地 main；与 F2 的集成修复在 integ/F1F2，U19–U23 已由编排决定） | feat/F1-shell（worktree `worktrees/F1-shell`，端口 5171）· 2026-11-23 |
 | F2 | 主页、卡片与动效、卡片弹窗 | F0 | 完成（编排已验收；集成修复在 integ/F1F2；“试一试”上传示例材料仍待 U8） | feat/F2-home · 2026-11-22 |
-| F3 | 输入框、对话流、SSE 客户端、证据胶囊、步骤行、来源列表 | F0、F1 | 未开始 | |
+| F3 | 输入框、对话流、SSE 客户端、证据胶囊、步骤行、来源列表 | F0、F1 | 完成（待合并） | feat/F3-chat（worktree `worktrees/F3-chat`，端口 5173）· 2026-11-23 |
 | F4 | 右栏标签、PDF/PPT/代码/网页/历史对话预览、证据栏 | F3 | 未开始 | |
 | F5 | 划词工具条、分支面板、分支标记、合并卡片 | F3、F4 | 未开始 | |
 | F6 | 市场页、插件/Skill 详情、安装弹窗、会话插件弹层、设置与记忆页 | F1、F3 | 未开始 | |
@@ -70,9 +70,17 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U8 | “试一试”示例材料：论文、代码、课件各用哪份 | F2 | 2026-11-22 |
 | U9 | 用户卡片显示名是否加 `display_name` 设置项 | F1 | 2026-11-22 |
 | U10 | License | 仓库 | 2026-11-22 |
+| U28 | 胶囊“1 · 脚注 4”：PDF locator 没有脚注字段，F3 先显示“1 · p.4”。要与 UI-05 一致需 locator 加 `footnote?` 或证据带现成的位置短语 | F3、B2、契约 | 2026-11-23 |
+| U29 | 步骤行秒数取各步 `duration_ms` 之和（fixture 为“3 步 · 4 秒”），UI-05 写“6 步 · 9 秒”接近整轮 `latency_ms`。是否改用整轮耗时 | F3 | 2026-11-23 |
+| U30 | 插件胶囊文字：对话栏列插件全名（ArXiv MCP Server · Fetch MCP Server · MarkItDown MCP），UI-11 用简称（网页检索 · PDF 解析 · arXiv）；简称从哪里来（manifest 加 `short_name`？） | F6 | 2026-11-23 |
+| U31 | 主线草稿 key 是 `'main'`（state.md 原设计），不区分对话：在 A 对话写一半切到 B，草稿跟着过去。是否改成按对话存（如 `cid:main`） | F3、state.md | 2026-11-23 |
+| U32 | @ 引用在文本里写成 `@文件名`，背后一层高亮画成标签、退格整块删除（不是 contenteditable 的真标签）。视觉接近规格；要真标签需换成 contenteditable，成本较高 | F3 | 2026-11-23 |
+| U33 | 分支面板 variant 占位“在分支里继续追问”取自 UI-05（规格只给了主页与对话两条）；主页输入框内层保留 UI-01 的“插件 · 3”胶囊，和托条“已启用 3 个插件”重复 | F3、F5 | 2026-11-23 |
 
 ## 动作日志
 
+- 2026-11-23 · [F3] 输入框、对话流、SSE 客户端、证据胶囊 · 完成 · 分支 feat/F3-chat · npm run check 通过 · 单测 308/308（F3 新增 64 条）· e2e 56/56（MN_PORT=5173，workers=2，含 F3 17 条）· 截图 web/tests/screenshots/ 下 F3 规格 20 张（F1/F2 截图未刷新）· 落地 U23（新建对话后输入框聚焦、文件行拖入加 @ 引用）与 U25（`useChat.setDraft`，`home/draft.ts` 改调）· 主页 `HomeComposerShell` 删除，换成 `chat/Composer` home variant · 共享文件：`store/chat.ts`（追加 setDraft/turn/regenerate/settleTurn/model_tier，`send` 由占位换成实现）、`api/sse.ts`（占位换成实现，追加回调与 regenerateMessageStream）、`docs/ux/state.md`（追加行）、`mocks/world.ts`（追加 upsertConversationSummary）、`mocks/browser.ts`（注册 chat-world）、新增 `mocks/chat-world.ts`；契约与 tokens 未改 · F1/F2 测试适配：对话占位 testid 换 `chat.panel`、主页 Tab 顺序跳过输入框控件、弹窗切换后等标题剩一个、home.test 包 QueryClient · 未决 U28–U33
+- 2026-11-23 · [F3] 输入框、对话流、SSE 客户端、证据胶囊 · 开始 · 分支 feat/F3-chat（worktree `INFO5000项目/worktrees/F3-chat`，dev 端口 5173）· 共享文件只追加：`web/src/store/chat.ts`、`web/src/api/sse.ts`、`docs/ux/state.md`、`web/src/mocks/*`
 - 2026-11-22 14:40 · [集成] F1+F2 集成修复 · 完成 · 分支 integ/F1F2 · 主页按中间区宽度自适应（先收紧卡片间距到 150、再缩放；1440 默认四栏中间区 480 时缩放 0.637）；F2 e2e 适配四栏；F1 Tab 测试改为先点外壳空白处重置导航起点；落地 U19–U27 编排决定 · npm run check 通过 · 单测 244/244 · e2e 39/39（workers=2）· 截图 web/tests/screenshots/1-新建对话-主页.png 等 F2 8 张 + 1-新建对话-主页-右栏收起.png、1-新建对话-主页-对照UI-01.png
 - 2026-11-23 · [编排] 合并 F1+F2 · 集成中 · 分支 integ/F1F2 · 冲突已解（tokens 合并，F2 遮罩改名 --scrim-frost；CenterPane 接入 Onboard；App/f0 测试取 F1 版本）· check 通过 · 单测 242/242 · e2e 31/38（f2-home 6 条、f1-shell 焦点 1 条在四栏外壳里失败，交 F2 修）
 - 2026-11-23 · [F1] 外壳、项目栏、文件栏 · 完成 · 分支 feat/F1-shell · npm run check 通过 · 单测 225/225（含 F0）· e2e 28/28（workers=2，含 F0 的 3 条）· 左两栏与 UI-05 概念图 HTML 逐元素对位最大偏差 2 px · 截图 web/tests/screenshots/ 下 22 份规格各 1 张 + `1-启动-应用外壳@1680x1050.png` · 共享文件只追加：tokens.css、tailwind.config.ts、mocks/handlers.ts（`getMockScenario`）；store/api/契约未改 · 未决 U19–U23

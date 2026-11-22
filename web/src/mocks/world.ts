@@ -261,3 +261,13 @@ export const worldControls = {
     world.projects = [];
   },
 };
+
+// ---------------------------------------------------------------- F3 追加
+/** F3：新建对话或标题变化后写回项目的对话列表（已存在则替换并移到最前，否则插到最前） */
+export function upsertConversationSummary(pid: ID, summary: ConversationSummary): void {
+  const before = world.conversations.get(pid) ?? [];
+  const list = before.filter((c) => c.id !== summary.id);
+  world.conversations.set(pid, [summary, ...list]);
+  const p = world.projects.find((x) => x.id === pid);
+  if (p && list.length === before.length) p.conversation_count += 1;
+}
