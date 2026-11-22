@@ -29,6 +29,13 @@ export default {
         'msg-ink': v('evi-msg-ink'),
       },
       ok: v('ok'),
+      // F1 追加
+      ft: { pdf: v('ft-pdf'), pptx: v('ft-pptx'), code: v('ft-code'), ipynb: v('ft-ipynb'), md: v('ft-md') },
+      handle: v('handle'),
+      avatar: v('avatar'),
+      'drop-line': v('drop-line'),
+      danger: v('danger'),
+      scrim: v('scrim'),
     },
     fontFamily: {
       sans: v('font-sans'),

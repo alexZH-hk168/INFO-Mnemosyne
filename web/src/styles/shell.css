@@ -1,0 +1,50 @@
+/* F1 外壳共用样式：图标按钮、浮起面板、骨架条、焦点环。颜色只引用 tokens.css。 */
+
+/* 28×28 图标按钮（规格 1-外壳-栏收起按钮：默认 --muted，悬停 --sel 底 + --ink，聚焦 2 px 焦点环） */
+.mn-iconbtn {
+  @apply inline-flex h-7 w-7 flex-none items-center justify-center rounded-btn-sm text-muted;
+}
+.mn-iconbtn:hover,
+.mn-iconbtn[aria-pressed='true'] {
+  @apply bg-sel text-ink;
+}
+
+/* 统一的键盘焦点环 */
+.mn-focus:focus-visible,
+.mn-iconbtn:focus-visible,
+[data-mn-focus]:focus-visible {
+  outline: 2px solid var(--handle);
+  outline-offset: 1px;
+}
+
+/* 浮起面板：--panel 底、--line 边、14 px 圆角（规格 1-启动-应用外壳） */
+.mn-floating {
+  @apply rounded-panel border border-line bg-panel;
+}
+
+/* 骨架条 */
+.mn-skel {
+  @apply rounded-btn-sm bg-panel-2;
+  animation: mn-pulse 1.4s ease-in-out infinite;
+}
+@keyframes mn-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* 竖排栏名（概念图 .rail .lbl） */
+.mn-vertical {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.2em;
+}
+
+/* 拖动分栏时禁止选中文字 */
+body.mn-resizing {
+  user-select: none;
+  cursor: col-resize;
+}
