@@ -1,8 +1,9 @@
 // 中间区：按 useLayout.view 切换（规格 1-启动-应用外壳「渲染中间区」）。
-// view=home 渲染 F2 的主页 Onboard（web/src/home）；
-// conversation（F3 对话栏）与 market（F6 市场页）同样先放占位。
+// view=home 渲染 F2 的主页 Onboard（web/src/home）；view=market 渲染 F6 的市场页（web/src/market）；
+// conversation（F3 对话栏）先放占位。
 import { useLayout } from '../store/layout';
 import { Onboard } from '../home';
+import { MarketPage } from '../market';
 
 function Placeholder({ testid, title, note }: { testid: string; title: string; note: string }) {
   return (
@@ -26,9 +27,7 @@ export default function CenterPane() {
       {view === 'conversation' && (
         <Placeholder testid="center.conversation-placeholder" title="对话栏" note="占位：F3 实现" />
       )}
-      {view === 'market' && (
-        <Placeholder testid="center.market-placeholder" title="插件与 Skill" note="占位：F6 实现" />
-      )}
+      {view === 'market' && <MarketPage />}
     </main>
   );
 }

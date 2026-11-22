@@ -12,7 +12,7 @@
 | F3 | 输入框、对话流、SSE 客户端、证据胶囊、步骤行、来源列表 | F0、F1 | 未开始 | |
 | F4 | 右栏标签、PDF/PPT/代码/网页/历史对话预览、证据栏 | F3 | 未开始 | |
 | F5 | 划词工具条、分支面板、分支标记、合并卡片 | F3、F4 | 未开始 | |
-| F6 | 市场页、插件/Skill 详情、安装弹窗、会话插件弹层、设置与记忆页 | F1、F3 | 未开始 | |
+| F6 | 市场页、插件/Skill 详情、安装弹窗、会话插件弹层、设置与记忆页 | F1、F3 | 部分完成（第一部分已实现并本地提交，未合 main；UI-09 的启动命令/未启用工具/用法文案待 U28；无概念图的弹窗待 U7 确认；会话插件弹层、斜杠列表、插件结果卡片留给 F6b） | feat/F6-market（worktree `worktrees/F6-market`，端口 5176）· 2026-11-23 |
 | B1 | 数据库、上传与解析、混合检索 | F 系列完成 | 未开始 | |
 | B2 | Agent 主回路、SSE、引用校验、续流与取消 | B1 | 未开始 | |
 | B3 | 长程记忆、分支可见性、插件运行时（ArXiv、Fetch）、Skill 加载 | B2 | 未开始 | |
@@ -70,8 +70,17 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U8 | “试一试”示例材料：论文、代码、课件各用哪份 | F2 | 2026-11-22 |
 | U9 | 用户卡片显示名是否加 `display_name` 设置项 | F1 | 2026-11-22 |
 | U10 | License | 仓库 | 2026-11-22 |
+| U28 | 契约 `PluginDetail` 缺 UI-09 需要的 manifest 字段：`command`/`args`/`transport`（配置卡“启动命令”与 `--storage-path` 可选参数）、`tools_allow`（工具表“未启用”）、长描述与“在 Mnemosyne 里怎么用”的示例、按权限的说明（如“联网：访问 arXiv 与 Semantic Scholar”）。另外 fixture `get-plugins-id.ok.json` 只列了 ArXiv 的 4 个工具，上游 README 是 19 个。现做法：启动命令不显示、工具不标未启用、用法写通用说明；MSW 有状态层用 README 的 19 个工具。建议：`PluginDetail` 加 `manifest: {transport, command, args, tools_allow?}`、`about_zh?`、`usage_zh?`、`permission_notes?: Record<perm,string>`，fixture 改为 19 个工具 | F6（3-条目卡片-插件详情页、3-插件详情-工具列表、3-插件详情-配置卡）、B3 | 2026-11-23 F6 |
+| U29 | `MarketItem` 没有 `verified`，卡片上“未验收”小字暂用前端常量（arxiv、fetch，来自 plugin-manifest.md）。建议给 `MarketItem` 加 `verified?: bool` | F6（2-市场页-条目卡片） | 2026-11-23 F6 |
+| U30 | 已安装插件的当前配置读不到（契约无 `config` 值、哪些密钥已设置）；“重新检查”与改配置时 `POST /api/plugins/{id}` 里留空的字段是否沿用已存值未定义。现做法：必填密钥在已安装时显示“已设置”，留空不发送；重新检查发 `{config:{}}`。建议：`InstalledPlugin` 加 `config_set: string[]` 与非密钥值，并写明“未提供的键沿用已存值” | F6（3-插件详情-配置卡、插件详情 status=error）、B3 | 2026-11-23 F6 |
+| U31 | `MemoryItem` 只有 `source_message_ids`，没有所属对话；“查看来源”只能关设置并在右栏开 `kind=message` 标签，打不开来源对话。建议加 `source_conversation_id?` 或由 `GET /api/evidence` 类接口解析 | F6（3-设置-记忆管理）、F4 | 2026-11-23 F6 |
+| U32 | 市场页“文件栏、右栏隐藏”必须改 F1 的 `layout/FourPane.tsx`（编排只允许改 CenterPane 与设置入口那一处）：已做最小改动（market 视图不渲染文件栏、右栏及其拖拽条，不改 store；并在弹窗处渲染 install/settings），以及 F1 两处断言 `center.market-placeholder`→`market.page`。请确认是否接受 | F1、F6 | 2026-11-23 F6 |
+| U33 | 卡片星数：规格写“千分位”，概念图 UI-07 是“3.3k”。现按概念图短格式，悬停提示与详情页用千分位（3,292） | F6（2-市场页-条目卡片） | 2026-11-23 F6 |
 
 ## 动作日志
+
+- 2026-11-23 · [F6] 市场、插件/Skill 详情、安装弹窗、设置与记忆（第一部分，14 份规格） · 部分完成（U28 契约缺字段使 UI-09 未完全复现；无概念图界面待 U7 确认；新增未决 U28–U33） · 分支 feat/F6-market · npm run check 通过 · 单测 299/299（F6 55 条）· e2e F6 19/19（`npx playwright test -c tests/playwright.f6.config.ts --workers=2`），全量回归 58/58（`MN_PORT=5176 npx playwright test --workers=2`）· 截图 web/tests/screenshots/ 下 2-插件与Skill-市场页.png 等 23 张 · 共享文件只追加：tokens.css（F6 token）、mocks/browser.ts（注册 marketWorldHandlers 与开关）、新增 mocks/market-world.ts；store/api/契约/state.md 未改 · 改动 F1 文件见 U32
+- 2026-11-23 · [F6] 市场、插件/Skill 详情、安装弹窗、设置与记忆（第一部分） · 开始 · 分支 feat/F6-market（worktree `INFO5000项目/worktrees/F6-market`，dev 端口 5176）
 
 - 2026-11-22 14:40 · [集成] F1+F2 集成修复 · 完成 · 分支 integ/F1F2 · 主页按中间区宽度自适应（先收紧卡片间距到 150、再缩放；1440 默认四栏中间区 480 时缩放 0.637）；F2 e2e 适配四栏；F1 Tab 测试改为先点外壳空白处重置导航起点；落地 U19–U27 编排决定 · npm run check 通过 · 单测 244/244 · e2e 39/39（workers=2）· 截图 web/tests/screenshots/1-新建对话-主页.png 等 F2 8 张 + 1-新建对话-主页-右栏收起.png、1-新建对话-主页-对照UI-01.png
 - 2026-11-23 · [编排] 合并 F1+F2 · 集成中 · 分支 integ/F1F2 · 冲突已解（tokens 合并，F2 遮罩改名 --scrim-frost；CenterPane 接入 Onboard；App/f0 测试取 F1 版本）· check 通过 · 单测 242/242 · e2e 31/38（f2-home 6 条、f1-shell 焦点 1 条在四栏外壳里失败，交 F2 修）

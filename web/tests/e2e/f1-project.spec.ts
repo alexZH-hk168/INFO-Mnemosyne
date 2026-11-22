@@ -42,7 +42,7 @@ test('插件与 Skill 入口：数字 4（3 插件 + 1 启用 Skill），点击�
   await expect(entry.getByTestId('sidebar.market-entry.count')).toHaveText('4');
   await entry.click();
   await expect(page).toHaveURL(/\/market\/plugins$/);
-  await expect(page.getByTestId('center.market-placeholder')).toBeVisible();
+  await expect(page.getByTestId('market.page')).toBeVisible();
   await expect(entry).toHaveCSS('background-color', 'rgb(233, 231, 226)'); // --sel
   await shot(page, '1-项目栏-插件与Skill入口');
 });
