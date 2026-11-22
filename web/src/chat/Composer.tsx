@@ -233,14 +233,34 @@ export default function Composer({
   };
 
   // ---------------------------------------------------------------- 编辑
+  // 改写文本后的光标位置：在新文本提交到 DOM 的同一次 layout 阶段里放回去。
+  // 不能用 requestAnimationFrame 推迟：页面忙时下一帧可能晚于后续按键，旧光标位置会把光标拉回中间，
+  // 触发 onSelect 收起 @ 列表、后续字符插到错误位置（INTEG2：F3+F6 集成后 e2e「@ 引用列表」稳定失败的根因）。
+  // 记下“期望的文本 + 光标”；只在 DOM 里正好是这段文本时放光标，文本没变（不会重渲染）或已被后续输入改掉时丢弃，不留过期位置。
+  const pendingCaret = useRef<{ text: string; pos: number } | null>(null);
+  const placeCaret = (text: string, pos: number) => {
+    const el = ta.current;
+    if (el && el.value === text) {
+      // 文本没变：React 不会重渲染，直接放
+      el.focus();
+      el.setSelectionRange(pos, pos);
+      pendingCaret.current = null;
+    } else pendingCaret.current = { text, pos };
+  };
+  useLayoutEffect(() => {
+    const p = pendingCaret.current;
+    const el = ta.current;
+    if (!p || !el) return;
+    pendingCaret.current = null;
+    if (el.value !== p.text) return;
+    el.focus();
+    el.setSelectionRange(p.pos, p.pos);
+  });
+
   const writeText = (text: string, caret?: number, extra: Partial<ComposerDraft> = {}) => {
     const next = { ...draft, ...extra };
     setDraft(key, { ...extra, text, scope: reconcileScope(next, text, titleOf) });
-    if (caret !== undefined)
-      requestAnimationFrame(() => {
-        ta.current?.focus();
-        ta.current?.setSelectionRange(caret, caret);
-      });
+    if (caret !== undefined) placeCaret(text, caret);
   };
 
   const onChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -260,11 +280,7 @@ export default function Composer({
     const ids = selectedIds.includes(doc.id) ? selectedIds : [...selectedIds, doc.id];
     const text = before + token + after;
     setDraft(key, { text, scope: { mode: 'selected', document_ids: ids } });
-    const pos = (before + token).length;
-    requestAnimationFrame(() => {
-      ta.current?.focus();
-      ta.current?.setSelectionRange(pos, pos);
-    });
+    placeCaret(text, (before + token).length);
   };
 
   const pick = (it: MenuItem) => {
@@ -292,10 +308,7 @@ export default function Composer({
     const pos = caret + pad.length + 1;
     setDraft(key, { text });
     openTrigger({ kind: 'mention', start: pos - 1, query: '' });
-    requestAnimationFrame(() => {
-      ta.current?.focus();
-      ta.current?.setSelectionRange(pos, pos);
-    });
+    placeCaret(text, pos);
   };
 
   /** 退格：光标紧跟 @ 标签时整块删除；在最前面时删掉 / Skill 标签 */

@@ -274,6 +274,28 @@ describe('2-艾特-文件引用列表', () => {
     expect((posts()[0].body as SendMessageBody).scope.document_ids).toHaveLength(2);
   });
 
+  it('选中后光标在同一次提交里放到标签后面，不等下一帧（INTEG2 回归：推迟恢复会把光标拉回、收起列表）', async () => {
+    const raf = vi.spyOn(window, 'requestAnimationFrame');
+    renderChat();
+    await ready();
+    const ta = textbox();
+    type(ta, '比较 @');
+    await screen.findByTestId('composer.mention');
+    raf.mockClear();
+    fireEvent.keyDown(ta, { key: 'Enter' });
+    const text = useChat.getState().composer[K].text;
+    expect(text).toBe('比较 @Attention Is All You Need ');
+    expect(ta.value).toBe(text);
+    expect(ta.selectionStart).toBe(text.length);
+    expect(document.activeElement).toBe(ta);
+    expect(raf).not.toHaveBeenCalled();
+    // 接着输入第二个 @：列表照常打开，不会被旧光标位置收起
+    type(ta, `${text}和 @L05`);
+    fireEvent.select(ta);
+    expect(await screen.findByTestId('composer.mention.item:doc_l05_attention')).toBeInTheDocument();
+    raf.mockRestore();
+  });
+
   it('退格整块删除 @ 标签；删掉最后一个后 scope 回到 all', async () => {
     renderChat();
     await ready();
