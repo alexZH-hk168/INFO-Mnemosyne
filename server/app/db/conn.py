@@ -10,7 +10,7 @@ import sqlite_vec
 
 from app.config import Config, get_config
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 1：初版；2：契约 v0.4 给 tool_calls 加 label
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 
@@ -58,6 +58,7 @@ def init_db(conn: sqlite3.Connection, config: Config | None = None) -> None:
     """建全部表（幂等）并检查向量表维度与当前嵌入配置一致。"""
     config = config or get_config()
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    _migrate(conn)
     existing = vec_table_dim(conn)
     if existing is None:
         create_vec_table(conn, config.embed_dim)
@@ -68,6 +69,13 @@ def init_db(conn: sqlite3.Connection, config: Config | None = None) -> None:
         )
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """已有数据库升级：CREATE TABLE IF NOT EXISTS 不会给旧表补列。"""
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(tool_calls)")}
+    if "label" not in cols:
+        conn.execute("ALTER TABLE tool_calls ADD COLUMN label TEXT")
 
 
 def recreate_vec_table(conn: sqlite3.Connection, dim: int) -> None:

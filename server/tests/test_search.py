@@ -141,8 +141,16 @@ def test_attention_footnote_retrievable_with_locator(client, db, run_jobs):
     assert 100 < bbox[0] < 125 and 695 < bbox[1] < 705 and 500 < bbox[2] < 510 and 718 < bbox[3] < 726
 
 
+F0_PLACEHOLDER_BBOX = [107.6, 640.3, 504.2, 684.9]  # F0 写进 fixture 的占位值，F4 实测值合并后会被替换
+_FIXTURE_BBOX = load_fixture("get-evidence-eid.ok")["body"]["locator"]["bbox"]
+
+
 @needs_attention
-@pytest.mark.xfail(strict=False, reason="fixture 里的 bbox 是 F0 的占位值；F4 用 PyMuPDF 实测后写回 fixture，再由编排复核两边一致")
+@pytest.mark.xfail(
+    _FIXTURE_BBOX == F0_PLACEHOLDER_BBOX,
+    strict=True,
+    reason="fixture 里的 bbox 仍是 F0 占位值；F4 实测值合并进 fixtures 后自动变为正常断言（容差 2 pt）",
+)
 def test_footnote_bbox_matches_fixture(client, db, run_jobs):
     pid = create_project(client)
     did = upload(client, pid, [("1706.03762v7.pdf", ATTENTION_PDF.read_bytes())]).json()["documents"][0]["id"]

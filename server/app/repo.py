@@ -54,10 +54,9 @@ def branch_count(conn: sqlite3.Connection, cid: str) -> int:
 
 
 def step_out(row: sqlite3.Row) -> m.Step:
-    args = _loads(row["args_json"], {})
-    result = _loads(row["result_json"], {})
+    # 契约 v0.4：步骤文案存在 tool_calls.label（原 U46）；缺失时退回 tool_name
     kind = row["tool_name"] if row["tool_name"] in STEP_KINDS else "plugin_tool"
-    label = (isinstance(args, dict) and args.get("label")) or (isinstance(result, dict) and result.get("label")) or row["tool_name"]
+    label = row["label"] or row["tool_name"]
     return m.Step(
         step_id=row["id"],
         kind=kind,

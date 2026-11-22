@@ -1,7 +1,12 @@
 """分支路径可见性（DEVELOPMENT.md：所有“当前分支路径”判断集中在此，检索、记忆召回、open_source、快照读取都调用它）。
 
-“当前路径”＝从叶子沿 parent_id 回到根的消息集合（data-model.md）。B1 只读接口没有“正在看哪个叶子”的参数，
-默认取对话的 active_leaf_id；合并后的分支（status=merged 且 merged_into_message_id 在路径上）其消息对主线可见。
+“当前路径”＝从叶子沿 parent_id 回到根的消息集合（data-model.md）。
+
+叶子怎么定（契约 v0.4，原 U44）：
+- 调用方给了 `leaf_id`（如分支面板里打开证据），且被判断的消息与 `leaf_id` 属于同一对话 → 用 `leaf_id`；
+- 否则用被判断消息所在对话的 `active_leaf_id`。跨对话的来源（例如召回的历史对话、在另一个对话里抓的网页）
+  不受当前对话叶子影响，按那个对话自己的当前路径判断。
+合并后的分支（status=merged 且 merged_into_message_id 在路径上）其消息对路径可见。
 """
 
 from __future__ import annotations
@@ -24,12 +29,23 @@ def path_to_root(conn: sqlite3.Connection, leaf_id: str | None) -> list[str]:
     return out
 
 
+def message_exists(conn: sqlite3.Connection, message_id: str) -> bool:
+    return conn.execute("SELECT 1 FROM messages WHERE id = ?", (message_id,)).fetchone() is not None
+
+
+def resolve_leaf(conn: sqlite3.Connection, conversation_id: str, leaf_id: str | None) -> str | None:
+    """leaf_id 属于该对话时用它，否则用该对话的 active_leaf_id。"""
+    if leaf_id:
+        row = conn.execute("SELECT conversation_id FROM messages WHERE id = ?", (leaf_id,)).fetchone()
+        if row is not None and row["conversation_id"] == conversation_id:
+            return leaf_id
+    row = conn.execute("SELECT active_leaf_id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
+    return row["active_leaf_id"] if row else None
+
+
 def visible_message_ids(conn: sqlite3.Connection, conversation_id: str, leaf_id: str | None = None) -> set[str]:
-    """对话在给定叶子（默认 active_leaf_id）下可见的消息集合：路径上的消息 + 已合并且合并点在路径上的分支消息。"""
-    if leaf_id is None:
-        row = conn.execute("SELECT active_leaf_id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
-        leaf_id = row["active_leaf_id"] if row else None
-    path = set(path_to_root(conn, leaf_id))
+    """对话在给定叶子（规则见模块说明）下可见的消息集合：路径上的消息 + 已合并且合并点在路径上的分支消息。"""
+    path = set(path_to_root(conn, resolve_leaf(conn, conversation_id, leaf_id)))
     for br in conn.execute(
         "SELECT id, merged_into_message_id FROM branches WHERE conversation_id = ? AND status = 'merged'", (conversation_id,)
     ):
@@ -59,7 +75,7 @@ def is_evidence_visible(conn: sqlite3.Connection, evidence: sqlite3.Row, leaf_id
 
 
 def is_snapshot_visible(conn: sqlite3.Connection, snapshot_id: str, leaf_id: str | None = None) -> bool:
-    """快照只要被某条在路径上（或未记录抓取消息）的网页证据引用，就可见；没有任何证据引用时视为可见。"""
+    """快照只要被某条可见的网页证据引用就可见；没有任何证据引用时视为可见。"""
     rows = conn.execute(
         "SELECT * FROM evidence WHERE source_type = 'web' AND source_id = ?", (snapshot_id,)
     ).fetchall()

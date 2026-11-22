@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, Response
 
 from app import models as m
 from app.api.deps import get_conn
-from app.branch.path import is_evidence_visible, is_snapshot_visible, visible_message_ids
+from app.branch.path import is_evidence_visible, is_snapshot_visible, message_exists, visible_message_ids
 from app.config import get_config
 from app.errors import ApiError, not_found
 from app.ids import new_id, now_iso
@@ -151,11 +151,16 @@ def reparse(did: str, conn: sqlite3.Connection = Depends(get_conn)):
 
 # ---------- 证据与快照 ----------
 
-def _context_messages(conn: sqlite3.Connection, mid: str) -> list[m.Message]:
+def _check_leaf(conn: sqlite3.Connection, leaf_id: str | None) -> None:
+    if leaf_id is not None and not message_exists(conn, leaf_id):
+        raise ApiError("VALIDATION_ERROR", "leaf_id 不是已有的消息")
+
+
+def _context_messages(conn: sqlite3.Connection, mid: str, leaf_id: str | None = None) -> list[m.Message]:
     row = conn.execute("SELECT * FROM messages WHERE id = ?", (mid,)).fetchone()
     if row is None:
         return []
-    visible = visible_message_ids(conn, row["conversation_id"])
+    visible = visible_message_ids(conn, row["conversation_id"], leaf_id)
     out = []
     if row["parent_id"] and row["parent_id"] in visible:
         parent = conn.execute("SELECT * FROM messages WHERE id = ?", (row["parent_id"],)).fetchone()
@@ -170,11 +175,13 @@ def _context_messages(conn: sqlite3.Connection, mid: str) -> list[m.Message]:
 
 
 @router.get("/evidence/{eid}")
-def get_evidence(eid: str, conn: sqlite3.Connection = Depends(get_conn)):
+def get_evidence(eid: str, leaf_id: str | None = None, conn: sqlite3.Connection = Depends(get_conn)):
+    """leaf_id（v0.4，可选）：按该叶到根的路径判可见性，不给时用 active_leaf_id（规则见 branch/path.py）。"""
     ev = conn.execute("SELECT * FROM evidence WHERE id = ?", (eid,)).fetchone()
     if ev is None:
         raise not_found("证据")
-    if not is_evidence_visible(conn, ev):
+    _check_leaf(conn, leaf_id)
+    if not is_evidence_visible(conn, ev, leaf_id):
         raise ApiError("NOT_VISIBLE_ON_PATH", "该证据不在当前分支路径上")
     body = m.Evidence(
         id=ev["id"],
@@ -185,17 +192,18 @@ def get_evidence(eid: str, conn: sqlite3.Connection = Depends(get_conn)):
         quote=ev["quote"],
         sha256=ev["sha256"],
         cited_by=cited_by(conn, eid),
-        context_messages=_context_messages(conn, ev["source_id"]) if ev["source_type"] == "message" else None,
+        context_messages=_context_messages(conn, ev["source_id"], leaf_id) if ev["source_type"] == "message" else None,
     )
     return m.dump(body)
 
 
 @router.get("/web_snapshots/{sid}")
-def get_web_snapshot(sid: str, conn: sqlite3.Connection = Depends(get_conn)):
+def get_web_snapshot(sid: str, leaf_id: str | None = None, conn: sqlite3.Connection = Depends(get_conn)):
     row = conn.execute("SELECT * FROM web_snapshots WHERE id = ?", (sid,)).fetchone()
     if row is None:
         raise not_found("网页快照")
-    if not is_snapshot_visible(conn, sid):
+    _check_leaf(conn, leaf_id)
+    if not is_snapshot_visible(conn, sid, leaf_id):
         raise ApiError("NOT_VISIBLE_ON_PATH", "该网页快照不在当前分支路径上")
     snap = m.WebSnapshot(
         id=row["id"],

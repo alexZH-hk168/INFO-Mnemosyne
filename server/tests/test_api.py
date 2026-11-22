@@ -106,6 +106,80 @@ def test_message_evidence_context_filtered(world, client):
     assert ev["context_messages"][1]["steps"] == [] and "steps" not in ev["context_messages"][0]
 
 
+# ---------- leaf_id（契约 v0.4，原 U44） ----------
+
+def test_leaf_id_opens_branch_evidence(world, client):
+    # 分支面板里传分支叶子：分支内抓的网页可见；不传或传主线叶子仍 403
+    for path in ("/api/evidence/evd_sibling_branch", "/api/web_snapshots/ws_sibling_branch"):
+        assert client.get(path, params={"leaf_id": "msg_bv_a2"}).status_code == 200
+        assert client.get(path, params={"leaf_id": "msg_bv_a1"}).status_code == 200  # 抓取消息本身也在路径上
+        assert client.get(path).status_code == 403
+        assert client.get(path, params={"leaf_id": "msg_tf_a2"}).status_code == 403
+    # 反过来：在分支里看主线之后才抓的网页（msg_tf_a2 在 fork 点之后）不可见
+    assert client.get("/api/evidence/evd_pytorch").status_code == 200
+    assert client.get("/api/evidence/evd_pytorch", params={"leaf_id": "msg_bv_a2"}).status_code == 403
+    assert client.get("/api/web_snapshots/ws_pytorch_sdpa", params={"leaf_id": "msg_bv_a2"}).status_code == 403
+    # fork 点之前的主线网页（msg_tf_a1 抓的）在分支里可见
+    assert client.get("/api/evidence/evd_jalammar_scale", params={"leaf_id": "msg_bv_a2"}).status_code == 200
+
+
+def test_leaf_id_other_conversation_and_validation(world, client, db):
+    # leaf_id 属于另一个对话：历史对话证据按它自己对话的 active_leaf_id 判断，不受影响
+    ev = client.get("/api/evidence/evd_hw3_sigmoid", params={"leaf_id": "msg_tf_a2"})
+    assert ev.status_code == 200 and len(ev.json()["context_messages"]) == 3
+    # 同一对话的 leaf_id 可以改变历史消息证据的可见性与上下文
+    db.execute(
+        "INSERT INTO messages (id, conversation_id, parent_id, role, content, created_at) VALUES ('msg_hw3_a2b', 'cnv_backprop_hw3', 'msg_hw3_u2', 'assistant', '另一个回答', ?)",
+        (now_iso(),),
+    )
+    db.commit()
+    assert client.get("/api/evidence/evd_hw3_sigmoid", params={"leaf_id": "msg_hw3_a2b"}).status_code == 403
+    ctx = client.get("/api/evidence/evd_hw3_sigmoid", params={"leaf_id": "msg_hw3_a2"}).json()["context_messages"]
+    assert [m["id"] for m in ctx] == ["msg_hw3_u2", "msg_hw3_a2"]  # 叶子就是被引消息，后一条不在路径上
+    # 用户材料不受 leaf_id 影响
+    assert client.get("/api/evidence/evd_att_p4_fn4", params={"leaf_id": "msg_bv_a2"}).status_code == 200
+    # 不存在的 leaf_id → 400；不存在的证据仍优先 404
+    for path in ("/api/evidence/evd_att_p4_fn4", "/api/web_snapshots/ws_jalammar_illustrated"):
+        r = client.get(path, params={"leaf_id": "msg_missing"})
+        assert r.status_code == 400 and r.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert client.get("/api/evidence/evd_missing", params={"leaf_id": "msg_missing"}).status_code == 404
+
+
+def test_steps_label_from_column(world, client, db):
+    tree = client.get("/api/conversations/cnv_transformer/tree").json()
+    a1 = next(m for m in tree["messages"] if m["id"] == "msg_tf_a1")
+    assert a1["steps"][0]["label"] == "检索项目材料：2 份材料命中"
+    # label 为空时退回 tool_name；args_json 里的 label 不再被读取
+    db.execute("UPDATE tool_calls SET label = NULL, args_json = ? WHERE id = 'stp_tf1_1'", (json.dumps({"label": "旧约定"}),))
+    db.commit()
+    tree = client.get("/api/conversations/cnv_transformer/tree").json()
+    a1 = next(m for m in tree["messages"] if m["id"] == "msg_tf_a1")
+    assert a1["steps"][0]["label"] == "search_materials"
+
+
+def test_migrate_v1_database_adds_label(env):
+    import sqlite3
+
+    from app.config import get_config
+    from app.db.conn import connect, init_db
+
+    path = get_config().db_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    old = sqlite3.connect(path)
+    old.execute(
+        "CREATE TABLE tool_calls (id TEXT PRIMARY KEY, message_id TEXT NOT NULL, step_index INTEGER NOT NULL, tool_name TEXT NOT NULL, "
+        "args_json TEXT, result_json TEXT, status TEXT, duration_ms INTEGER)"
+    )
+    old.execute("PRAGMA user_version = 1")
+    old.commit()
+    old.close()
+    conn = connect()
+    init_db(conn)
+    assert "label" in {r[1] for r in conn.execute("PRAGMA table_info(tool_calls)")}
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+    conn.close()
+
+
 # ---------- 材料 ----------
 
 def test_documents_errors(world, client):
@@ -190,9 +264,10 @@ def test_schema_tables_and_wal(db):
     }
     assert expected <= tables
     assert db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
-    assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert db.execute("PRAGMA user_version").fetchone()[0] == 2
     cols = {r[1] for r in db.execute("PRAGMA table_info(messages)")}
     assert "client_msg_id" in cols
+    assert "label" in {r[1] for r in db.execute("PRAGMA table_info(tool_calls)")}
     assert "captured_in_message_id" in {r[1] for r in db.execute("PRAGMA table_info(evidence)")}
     assert "source_conversation_id" in {r[1] for r in db.execute("PRAGMA table_info(memory_items)")}
     db.execute("INSERT INTO projects (id, name, created_at) VALUES ('p', 'p', 'now')")
@@ -227,7 +302,7 @@ def test_scripts_init_and_ingest(env, tmp_path):
     r = _run(["scripts/init_db.py", "--db", str(db_path)], e)
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout)
-    assert out["schema_version"] == 1 and out["journal_mode"] == "wal"
+    assert out["schema_version"] == 2 and out["journal_mode"] == "wal"
     src = tmp_path / "mats"
     src.mkdir()
     (src / "a.md").write_text("# A\n\n内容\n", encoding="utf-8")

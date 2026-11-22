@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS tool_calls (
   message_id   TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
   step_index   INTEGER NOT NULL,
   tool_name    TEXT NOT NULL,
+  label        TEXT,  -- v0.4：步骤行文案（Message.steps[].label）
   args_json    TEXT,
   result_json  TEXT,
   status       TEXT,
