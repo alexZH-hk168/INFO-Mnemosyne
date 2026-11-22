@@ -10,7 +10,7 @@
 | conversations | id, project_id, title, root_message_id, active_leaf_id（重新生成后当前显示的叶子）, created_at, updated_at |
 | messages | id, conversation_id, parent_id, branch_id（主线为 NULL）, role（user \| assistant \| tool \| merge_note）, content, model, usage_json, created_at；另加 client_msg_id（唯一索引，用于去重） |
 | branches | id, conversation_id, fork_message_id, anchor_start INT, anchor_end INT（相对 fork 消息去标记纯文本的字符偏移，左闭右开、按码点计数）, anchor_quote, title, status（open \| merged \| archived）, merged_into_message_id, created_at |
-| tool_calls | id, message_id, step_index INT, tool_name, args_json, result_json, status, duration_ms INT |
+| tool_calls | id, message_id, step_index INT, tool_name, label（v0.4，步骤行文案，即 `Message.steps[].label`；为空时接口退回 tool_name）, args_json, result_json, status, duration_ms INT |
 | citations | id, message_id, evidence_id, label, sentence_start INT, sentence_end INT, verdict（supported \| partial \| removed）, overlap REAL |
 
 `messages.client_msg_id` 与 SSE 续流用的事件缓冲（`message_events(message_id, seq, event, data_json)`）是为契约补充的字段/表，立项稿未列，F0 确认后补进图 3。`citations.sentence_start/end` 与 branches 的锚点同一坐标（左闭右开、按码点）。契约 v0.2 给 documents 加了 `group`、`cells`、`snapshot_id`，同样待补进图 3。

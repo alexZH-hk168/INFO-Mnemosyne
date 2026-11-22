@@ -50,14 +50,16 @@
 | GET | `/api/documents/{did}` | — | `Document` |
 | GET | `/api/documents/{did}/raw` | — | 原文件；PPTX 返回转换后的 PDF；code/md 返回 `text/plain` |
 | POST | `/api/documents/{did}/reparse` | — | `{ job_id }` |
-| GET | `/api/evidence/{eid}` | — | `Evidence`（见 [evidence-locator.md](./evidence-locator.md)）＋ `cited_by: {message_id, label}[]`；`source_type=message` 时另带 `context_messages: Message[]`：被引消息本身及其前后各 1 条，最多 3 条，按路径可见性过滤（v0.2） |
-| GET | `/api/web_snapshots/{sid}` | — | `{id, url, title, fetched_at, text, sha256, http_status}` |
+| GET | `/api/evidence/{eid}` | query `leaf_id?`（v0.4） | `Evidence`（见 [evidence-locator.md](./evidence-locator.md)）＋ `cited_by: {message_id, label}[]`；`source_type=message` 时另带 `context_messages: Message[]`：被引消息本身及其前后各 1 条，最多 3 条，按路径可见性过滤（v0.2） |
+| GET | `/api/web_snapshots/{sid}` | query `leaf_id?`（v0.4） | `{id, url, title, fetched_at, text, sha256, http_status}` |
 
 `Document = {id, project_id, kind: "pdf"|"pptx"|"code"|"ipynb"|"md"|"web", group: "paper"|"slides"|"code"|"notes"|"web", title, pages?, lines?, cells?, snapshot_id?, parse_status: "queued"|"parsing"|"ready"|"failed", progress: 0-100, parse_error?, cited_count, created_at}`
 
 - `group`（v0.2）：文件栏分组。默认映射 pptx→slides；code、ipynb→code；md→notes；web→web；pdf 默认 paper，后端解析时若多数页为横向（宽 > 高）判为 slides。
 - `cells`（v0.2）：仅 ipynb，单元格数。`pages` 用于 pdf/pptx，`lines` 用于 code/md。
 - `snapshot_id`（v0.2）：仅 kind=web。每个网页快照在文件栏以一条 `kind=web, group=web` 的 Document 呈现：`Document.id` 独立（`doc_` 前缀），`snapshot_id` 指向 `web_snapshots.id`，`cited_count` 为被引次数。
+
+`leaf_id`（v0.4，可选）：证据与网页快照的可见性按“叶子到根”的路径判断（[data-model.md](./data-model.md) “分支可见性”）。分支面板里打开证据时传该分支当前的叶子消息 id；不传时用所在对话的 `active_leaf_id`。规则：被判断的消息（网页/插件证据的抓取消息、历史对话证据的被引消息）与 `leaf_id` 同属一个对话时按 `leaf_id` 的路径判断，否则按那个对话自己的 `active_leaf_id` 判断；用户上传材料始终可见。`leaf_id` 不是已有消息 → `VALIDATION_ERROR`（资源不存在时仍先返回 `NOT_FOUND`）。`context_messages` 的前后消息也按同一条路径过滤。
 
 ## 市场、插件与 Skill
 

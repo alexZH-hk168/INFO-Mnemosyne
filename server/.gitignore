@@ -1,0 +1,4 @@
+.venv/
+data/
+# arXiv 论文的许可不允许再分发，用 scripts/fetch_test_data.py 下载
+tests/data/*.pdf
