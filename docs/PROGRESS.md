@@ -79,7 +79,7 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 
 ## 动作日志
 
-- 2026-11-23 · [F6] 市场、插件/Skill 详情、安装弹窗、设置与记忆（第一部分，14 份规格） · 部分完成（U28 契约缺字段使 UI-09 未完全复现；无概念图界面待 U7 确认；新增未决 U28–U33） · 分支 feat/F6-market · npm run check 通过 · 单测 299/299（F6 55 条）· e2e F6 19/19（`npx playwright test -c tests/playwright.f6.config.ts --workers=2`），全量回归 58/58（`MN_PORT=5176 npx playwright test --workers=2`）· 截图 web/tests/screenshots/ 下 2-插件与Skill-市场页.png 等 23 张 · 共享文件只追加：tokens.css（F6 token）、mocks/browser.ts（注册 marketWorldHandlers 与开关）、新增 mocks/market-world.ts；store/api/契约/state.md 未改 · 改动 F1 文件见 U32
+- 2026-11-23 · [F6] 市场、插件/Skill 详情、安装弹窗、设置与记忆（第一部分，14 份规格） · 部分完成（U28 契约缺字段使 UI-09 未完全复现；无概念图界面待 U7 确认；新增未决 U28–U33） · 分支 feat/F6-market · npm run check 通过 · 单测 299/299（F6 55 条）· e2e F6 19/19（`npx playwright test -c tests/playwright.f6.config.ts --workers=2`），全量回归 58/58（`MN_PORT=5176 npx playwright test --workers=2`）· 截图 web/tests/screenshots/ 下新增 23 张（2-插件与Skill-市场页.png 等）、更新 1 张（1-项目栏-插件与Skill入口.png） · 共享文件只追加：tokens.css（F6 token）、mocks/browser.ts（注册 marketWorldHandlers 与开关）、新增 mocks/market-world.ts；store/api/契约/state.md 未改 · 改动 F1 文件见 U32
 - 2026-11-23 · [F6] 市场、插件/Skill 详情、安装弹窗、设置与记忆（第一部分） · 开始 · 分支 feat/F6-market（worktree `INFO5000项目/worktrees/F6-market`，dev 端口 5176）
 
 - 2026-11-22 14:40 · [集成] F1+F2 集成修复 · 完成 · 分支 integ/F1F2 · 主页按中间区宽度自适应（先收紧卡片间距到 150、再缩放；1440 默认四栏中间区 480 时缩放 0.637）；F2 e2e 适配四栏；F1 Tab 测试改为先点外壳空白处重置导航起点；落地 U19–U27 编排决定 · npm run check 通过 · 单测 244/244 · e2e 39/39（workers=2）· 截图 web/tests/screenshots/1-新建对话-主页.png 等 F2 8 张 + 1-新建对话-主页-右栏收起.png、1-新建对话-主页-对照UI-01.png
