@@ -1,0 +1,21 @@
+{
+  "endpoint": "POST /api/skills/import",
+  "kind": "ok",
+  "description": "从 GitHub 导入 peer-review",
+  "status": 200,
+  "body": {
+    "id": "peer-review",
+    "name": "peer-review",
+    "description": "检查论文的方法、证据和结论",
+    "dir_path": "~/.mnemosyne/skills/peer-review",
+    "source_url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/peer-review",
+    "license": "MIT",
+    "enabled": true
+  },
+  "request": {
+    "body": {
+      "source": "github",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/peer-review"
+    }
+  }
+}

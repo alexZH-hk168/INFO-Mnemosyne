@@ -1,0 +1,23 @@
+{
+  "endpoint": "GET /api/documents/{did}",
+  "kind": "ok",
+  "description": "解析中的论文（62%）",
+  "status": 200,
+  "body": {
+    "id": "doc_longmemeval",
+    "project_id": "prj_dlintro",
+    "kind": "pdf",
+    "group": "paper",
+    "title": "LongMemEval.pdf",
+    "pages": 31,
+    "parse_status": "parsing",
+    "progress": 62,
+    "cited_count": 0,
+    "created_at": "2026-11-22T06:40:00Z"
+  },
+  "request": {
+    "params": {
+      "did": "doc_longmemeval"
+    }
+  }
+}

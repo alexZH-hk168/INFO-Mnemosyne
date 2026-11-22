@@ -1,0 +1,267 @@
+{
+  "endpoint": "POST /api/conversations/{cid}/messages",
+  "kind": "sse",
+  "description": "续流回合：服务端推完第 5 个事件后断线；前端用 GET /api/messages/msg_rs_a1/events?after_seq=5 取回其余事件（见 get-messages-mid-events.ok.json）",
+  "status": 200,
+  "content_type": "text/event-stream",
+  "events": [
+    {
+      "event": "message.start",
+      "data": {
+        "message_id": "msg_rs_a1",
+        "client_msg_id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+        "user_message_id": "msg_rs_u1",
+        "seq": 1
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1_1",
+        "kind": "search_materials",
+        "label": "检索项目材料：2 份材料命中",
+        "status": "running",
+        "seq": 2
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1_1",
+        "kind": "search_materials",
+        "label": "检索项目材料：2 份材料命中",
+        "status": "done",
+        "duration_ms": 1240,
+        "seq": 3
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_att_p4_fn4",
+        "label": "E1",
+        "source_type": "material",
+        "source_id": "doc_attention",
+        "title": "Attention Is All You Need",
+        "locator": {
+          "page": 4,
+          "sentence_ids": [
+            "s4_fn4_1",
+            "s4_fn4_2"
+          ],
+          "bbox": [
+            107.6,
+            640.3,
+            504.2,
+            684.9
+          ]
+        },
+        "quote": "To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Σ q_i k_i, has mean 0 and variance d_k.",
+        "sha256": "1e89e1f28722f2767b49bb175399bf7dc0ab9e18b33edb458ee5ad0efa8c0363",
+        "seq": 4
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_l05_s18",
+        "label": "E2",
+        "source_type": "material",
+        "source_id": "doc_l05_attention",
+        "title": "L05 注意力机制",
+        "locator": {
+          "slide": 18,
+          "shape_id": 4,
+          "char_range": [
+            0,
+            38
+          ]
+        },
+        "quote": "softmax 饱和：输入差距过大时输出接近 one-hot，梯度几乎为 0",
+        "sha256": "281a0c616e8fad52b81c6984153c8b6c07f23edd6293f48c2fcef609112895e7",
+        "seq": 5
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1_2",
+        "kind": "recall_memory",
+        "label": "参考历史对话：反向传播 · 作业 3",
+        "status": "running",
+        "seq": 6
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1_2",
+        "kind": "recall_memory",
+        "label": "参考历史对话：反向传播 · 作业 3",
+        "status": "done",
+        "duration_ms": 380,
+        "seq": 7
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1_3",
+        "kind": "fetch_url",
+        "label": "抓取网页：jalammar.github.io",
+        "status": "running",
+        "seq": 8
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1_3",
+        "kind": "fetch_url",
+        "label": "抓取网页：jalammar.github.io",
+        "status": "done",
+        "duration_ms": 2310,
+        "seq": 9
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_jalammar_scale",
+        "label": "E3",
+        "source_type": "web",
+        "source_id": "ws_jalammar_illustrated",
+        "title": "The Illustrated Transformer",
+        "locator": {
+          "snapshot_id": "ws_jalammar_illustrated",
+          "char_range": [
+            210,
+            388
+          ]
+        },
+        "quote": "The third and fourth steps are to divide the scores by 8 (the square root of the dimension of the key vectors used in the paper – 64). This leads to having more stable gradients.",
+        "sha256": "5c526d76ffe7ca970bc45f53389a7c44102b75e3f9bd03a9b9e92e4e705634bb",
+        "seq": 10
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "一句话：除以 √𝑑ₖ 是为了让点积的数值尺度不随维度变大，",
+        "seq": 11
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "避免 softmax 进入梯度极小的区域。\n\n",
+        "seq": 12
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "论文的推理是：假设 q 和 k 的每个分量独立、均值 0、方差 1，",
+        "seq": 13
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "那么点积 q·k = Σ qᵢkᵢ 的均值是 0，方差是 dₖ[[E1]]。",
+        "seq": 14
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "dₖ = 64 时标准差就是 8，softmax 的输入差距被拉得很大，输出接近 one-hot。\n\n",
+        "seq": 15
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "这和你作业 3 卡住的地方是同一件事：sigmoid 输入很大时导数趋近 0；",
+        "seq": 16
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "第 5 讲用的也是这个例子，softmax 饱和时梯度同样几乎为 0[[E2]]。\n\n",
+        "seq": 17
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "除以 √dₖ 后点积方差回到 1，softmax 的输入落在梯度较大的区间，训练更稳定[[E3]]。",
+        "seq": 18
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_rs1_1",
+        "eid": "evd_att_p4_fn4",
+        "label": "E1",
+        "sentence_start": 52,
+        "sentence_end": 118,
+        "verdict": "supported",
+        "seq": 19
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_rs1_2",
+        "eid": "evd_l05_s18",
+        "label": "E2",
+        "sentence_start": 169,
+        "sentence_end": 243,
+        "verdict": "partial",
+        "seq": 20
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_rs1_3",
+        "eid": "evd_jalammar_scale",
+        "label": "E3",
+        "sentence_start": 245,
+        "sentence_end": 289,
+        "verdict": "removed",
+        "seq": 21
+      }
+    },
+    {
+      "event": "message.end",
+      "data": {
+        "message_id": "msg_rs_a1",
+        "usage": {
+          "prompt_tokens": 6412,
+          "completion_tokens": 318
+        },
+        "latency_ms": 9120,
+        "cancelled": false,
+        "seq": 22
+      }
+    }
+  ],
+  "request": {
+    "params": {
+      "cid": "cnv_resume_demo"
+    },
+    "body": {
+      "client_msg_id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "content": "结合第 5 讲课件，讲讲注意力为什么要除以 √dₖ。最好和我上次作业卡住的地方联系起来。",
+      "web_search": true,
+      "scope": {
+        "mode": "all"
+      }
+    }
+  },
+  "disconnect_after_seq": 5
+}

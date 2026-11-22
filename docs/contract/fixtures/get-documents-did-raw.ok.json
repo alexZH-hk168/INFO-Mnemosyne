@@ -1,0 +1,13 @@
+{
+  "endpoint": "GET /api/documents/{did}/raw",
+  "kind": "ok",
+  "description": "代码文件原文（text/plain）。PDF/PPTX 返回二进制，F0 不放二进制样例",
+  "request": {
+    "params": {
+      "did": "doc_transformer_py"
+    }
+  },
+  "status": 200,
+  "content_type": "text/plain",
+  "body": "import math\nimport torch\n\n\ndef scaled_dot_product_attention(q, k, v, mask=None):\n    d_k = q.size(-1)\n    scores = q @ k.transpose(-2, -1) / math.sqrt(d_k)\n    if mask is not None:\n        scores = scores.masked_fill(mask == 0, float(\"-inf\"))\n    weights = torch.softmax(scores, dim=-1)\n    return weights @ v, weights\n"
+}

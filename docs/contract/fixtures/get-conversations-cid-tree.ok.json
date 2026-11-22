@@ -1,0 +1,252 @@
+{
+  "endpoint": "GET /api/conversations/{cid}/tree",
+  "kind": "ok",
+  "description": "“Transformer 注意力精读”：主线 2 轮 + 2 个分支（UI-05/06）",
+  "status": 200,
+  "body": {
+    "conversation": {
+      "id": "cnv_transformer",
+      "project_id": "prj_dlintro",
+      "title": "Transformer 注意力精读",
+      "root_message_id": "msg_tf_u1",
+      "active_leaf_id": "msg_tf_a2",
+      "created_at": "2026-11-22T06:20:00Z",
+      "updated_at": "2026-11-22T06:40:00Z"
+    },
+    "messages": [
+      {
+        "id": "msg_tf_u1",
+        "conversation_id": "cnv_transformer",
+        "role": "user",
+        "content": "结合第 5 讲课件，讲讲注意力为什么要除以 √dₖ。最好和我上次作业卡住的地方联系起来。",
+        "created_at": "2026-11-22T06:20:00Z"
+      },
+      {
+        "id": "msg_tf_a1",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_tf_u1",
+        "role": "assistant",
+        "content": "一句话：除以 √𝑑ₖ 是为了让点积的数值尺度不随维度变大，避免 softmax 进入梯度极小的区域。\n\n论文的推理是：假设 q 和 k 的每个分量独立、均值 0、方差 1，那么点积 q·k = Σ qᵢkᵢ 的均值是 0，方差是 dₖ[[E1]]。dₖ = 64 时标准差就是 8，softmax 的输入差距被拉得很大，输出接近 one-hot。\n\n这和你作业 3 卡住的地方是同一件事：sigmoid 输入很大时导数趋近 0；第 5 讲用的也是这个例子，softmax 饱和时梯度同样几乎为 0[[E2]]。\n\n除以 √dₖ 后点积方差回到 1，softmax 的输入落在梯度较大的区间，训练更稳定[[E3]]。",
+        "model": "chat-model",
+        "usage": {
+          "prompt_tokens": 6412,
+          "completion_tokens": 318
+        },
+        "created_at": "2026-11-22T06:20:09Z",
+        "steps": [
+          {
+            "step_id": "stp_tf1_1",
+            "kind": "search_materials",
+            "label": "检索项目材料：2 份材料命中",
+            "status": "done",
+            "duration_ms": 1240
+          },
+          {
+            "step_id": "stp_tf1_2",
+            "kind": "recall_memory",
+            "label": "参考历史对话：反向传播 · 作业 3",
+            "status": "done",
+            "duration_ms": 380
+          },
+          {
+            "step_id": "stp_tf1_3",
+            "kind": "fetch_url",
+            "label": "抓取网页：jalammar.github.io",
+            "status": "done",
+            "duration_ms": 2310
+          }
+        ],
+        "citations": [
+          {
+            "citation_id": "cit_tf1_1",
+            "eid": "evd_att_p4_fn4",
+            "label": "E1",
+            "sentence_start": 52,
+            "sentence_end": 118,
+            "verdict": "supported"
+          },
+          {
+            "citation_id": "cit_tf1_2",
+            "eid": "evd_l05_s18",
+            "label": "E2",
+            "sentence_start": 169,
+            "sentence_end": 243,
+            "verdict": "partial"
+          },
+          {
+            "citation_id": "cit_tf1_3",
+            "eid": "evd_jalammar_scale",
+            "label": "E3",
+            "sentence_start": 245,
+            "sentence_end": 289,
+            "verdict": "removed"
+          }
+        ]
+      },
+      {
+        "id": "msg_tf_u2",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_tf_a1",
+        "role": "user",
+        "content": "那多头注意力里，每个头的 dₖ 是多少？",
+        "created_at": "2026-11-22T06:38:00Z"
+      },
+      {
+        "id": "msg_tf_a2",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_tf_u2",
+        "role": "assistant",
+        "content": "论文用了 h = 8 个头，每个头 dₖ = dᵥ = d_model/h = 64[[E1]]。所以上面“标准差是 8”的例子正好对应原文设置。",
+        "model": "chat-model",
+        "usage": {
+          "prompt_tokens": 7020,
+          "completion_tokens": 64
+        },
+        "created_at": "2026-11-22T06:38:05Z",
+        "steps": [
+          {
+            "step_id": "stp_tf2_1",
+            "kind": "search_materials",
+            "label": "检索项目材料：1 份材料命中",
+            "status": "done",
+            "duration_ms": 910
+          }
+        ],
+        "citations": [
+          {
+            "citation_id": "cit_tf2_1",
+            "eid": "evd_att_p5_heads",
+            "label": "E1",
+            "sentence_start": 0,
+            "sentence_end": 43,
+            "verdict": "supported"
+          }
+        ]
+      },
+      {
+        "id": "msg_bv_u1",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_tf_a1",
+        "branch_id": "br_variance",
+        "role": "user",
+        "content": "为什么方差正好是 dₖ？独立同分布那一步我没看懂。",
+        "created_at": "2026-11-22T06:25:10Z"
+      },
+      {
+        "id": "msg_bv_a1",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_bv_u1",
+        "branch_id": "br_variance",
+        "role": "assistant",
+        "content": "拆成两步看。第一步看单独一项 qᵢkᵢ：两个独立、均值 0、方差 1 的变量相乘，E[qᵢkᵢ] = E[qᵢ]·E[kᵢ] = 0，Var(qᵢkᵢ) = E[qᵢ²]·E[kᵢ²] = 1。第二步：dₖ 项互相独立，方差直接相加，所以总方差是 dₖ，标准差是 √dₖ。除以 √dₖ，方差就回到 1[[E1]]。",
+        "model": "chat-model",
+        "usage": {
+          "prompt_tokens": 3104,
+          "completion_tokens": 142
+        },
+        "created_at": "2026-11-22T06:25:16Z",
+        "steps": [
+          {
+            "step_id": "stp_bv1_1",
+            "kind": "open_source",
+            "label": "打开原文：Attention Is All You Need 第 4 页",
+            "status": "done",
+            "duration_ms": 420
+          }
+        ],
+        "citations": [
+          {
+            "citation_id": "cit_bv1_1",
+            "eid": "evd_att_p4_fn4",
+            "label": "E1",
+            "sentence_start": 136,
+            "sentence_end": 151,
+            "verdict": "supported"
+          }
+        ]
+      },
+      {
+        "id": "msg_bv_u2",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_bv_a1",
+        "branch_id": "br_variance",
+        "role": "user",
+        "content": "如果分量的方差不是 1 呢？",
+        "created_at": "2026-11-22T06:27:00Z"
+      },
+      {
+        "id": "msg_bv_a2",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_bv_u2",
+        "branch_id": "br_variance",
+        "role": "assistant",
+        "content": "按同样的推导，方差会变成 dₖ·σ_q²·σ_k²，仍然随 dₖ 线性增长，所以缩放依然有用。这一条是推断：论文没有讨论方差不为 1 的情形。",
+        "model": "chat-model",
+        "usage": {
+          "prompt_tokens": 3388,
+          "completion_tokens": 71
+        },
+        "created_at": "2026-11-22T06:27:04Z",
+        "steps": [],
+        "citations": []
+      },
+      {
+        "id": "msg_bo_u1",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_tf_a1",
+        "branch_id": "br_onehot",
+        "role": "user",
+        "content": "“输出接近 one-hot”是什么意思？",
+        "created_at": "2026-11-22T06:31:10Z"
+      },
+      {
+        "id": "msg_bo_a1",
+        "conversation_id": "cnv_transformer",
+        "parent_id": "msg_bo_u1",
+        "branch_id": "br_onehot",
+        "role": "assistant",
+        "content": "就是 softmax 的输出几乎把全部概率放在一个位置上，其余位置接近 0，看起来像只有一个 1 的独热向量。",
+        "model": "chat-model",
+        "usage": {
+          "prompt_tokens": 2950,
+          "completion_tokens": 48
+        },
+        "created_at": "2026-11-22T06:31:13Z",
+        "steps": [],
+        "citations": []
+      }
+    ],
+    "branches": [
+      {
+        "id": "br_variance",
+        "conversation_id": "cnv_transformer",
+        "fork_message_id": "msg_tf_a1",
+        "anchor_start": 88,
+        "anchor_end": 117,
+        "anchor_quote": "点积 q·k = Σ qᵢkᵢ 的均值是 0，方差是 dₖ",
+        "title": "方差为什么是 dₖ",
+        "status": "open",
+        "created_at": "2026-11-22T06:25:00Z",
+        "context_turns": 1
+      },
+      {
+        "id": "br_onehot",
+        "conversation_id": "cnv_transformer",
+        "fork_message_id": "msg_tf_a1",
+        "anchor_start": 154,
+        "anchor_end": 166,
+        "anchor_quote": "输出接近 one-hot",
+        "title": "one-hot 是什么意思",
+        "status": "open",
+        "created_at": "2026-11-22T06:31:00Z",
+        "context_turns": 1
+      }
+    ],
+    "active_leaf_id": "msg_tf_a2"
+  },
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    }
+  }
+}

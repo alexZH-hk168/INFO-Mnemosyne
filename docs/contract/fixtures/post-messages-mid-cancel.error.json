@@ -1,0 +1,18 @@
+{
+  "endpoint": "POST /api/messages/{mid}/cancel",
+  "kind": "error",
+  "description": "消息不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "消息不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "mid": "msg_missing"
+    }
+  }
+}

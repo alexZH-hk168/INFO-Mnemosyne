@@ -1,0 +1,38 @@
+{
+  "endpoint": "GET /api/plugins/{id}",
+  "kind": "ok",
+  "description": "未安装的 Tavily：字段取自市场 manifest 与上游工具清单，status=not_installed（工具描述为样例，接入时以实测为准）",
+  "status": 200,
+  "body": {
+    "id": "tavily",
+    "name": "Tavily MCP",
+    "version": "1.0.0",
+    "status": "not_installed",
+    "permissions": [
+      "network"
+    ],
+    "config_schema": {
+      "TAVILY_API_KEY": {
+        "required": true,
+        "secret": true,
+        "label": "Tavily API Key"
+      }
+    },
+    "verified": false,
+    "tools": [
+      {
+        "name": "tavily-search",
+        "description": "实时网页检索"
+      },
+      {
+        "name": "tavily-extract",
+        "description": "抽取指定网页的正文"
+      }
+    ]
+  },
+  "request": {
+    "params": {
+      "id": "tavily"
+    }
+  }
+}

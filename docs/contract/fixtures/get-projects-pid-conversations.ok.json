@@ -1,0 +1,37 @@
+{
+  "endpoint": "GET /api/projects/{pid}/conversations",
+  "kind": "ok",
+  "description": "“深度学习导论”的对话列表第一页（limit=3，还有更多）",
+  "status": 200,
+  "body": {
+    "conversations": [
+      {
+        "id": "cnv_transformer",
+        "title": "Transformer 注意力精读",
+        "updated_at": "2026-11-22T06:40:00Z",
+        "branch_count": 2
+      },
+      {
+        "id": "cnv_backprop_hw3",
+        "title": "反向传播 · 作业 3",
+        "updated_at": "2026-11-21T13:05:00Z",
+        "branch_count": 0
+      },
+      {
+        "id": "cnv_week6_cards",
+        "title": "第 6 周复习卡片",
+        "updated_at": "2026-11-19T10:00:00Z",
+        "branch_count": 0
+      }
+    ],
+    "next_cursor": "cur_3"
+  },
+  "request": {
+    "params": {
+      "pid": "prj_dlintro"
+    },
+    "query": {
+      "limit": "3"
+    }
+  }
+}

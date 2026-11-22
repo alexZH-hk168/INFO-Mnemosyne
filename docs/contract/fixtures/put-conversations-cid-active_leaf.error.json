@@ -1,0 +1,21 @@
+{
+  "endpoint": "PUT /api/conversations/{cid}/active_leaf",
+  "kind": "error",
+  "description": "目标不是可切换的兄弟回答",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "message_id 不是当前回答的兄弟节点",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    },
+    "body": {
+      "message_id": "msg_bv_a1"
+    }
+  }
+}

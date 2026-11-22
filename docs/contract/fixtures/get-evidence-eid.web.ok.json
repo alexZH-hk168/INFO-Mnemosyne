@@ -1,0 +1,32 @@
+{
+  "endpoint": "GET /api/evidence/{eid}",
+  "kind": "ok",
+  "description": "jalammar.github.io 网页快照",
+  "status": 200,
+  "body": {
+    "id": "evd_jalammar_scale",
+    "source_type": "web",
+    "source_id": "ws_jalammar_illustrated",
+    "title": "The Illustrated Transformer",
+    "locator": {
+      "snapshot_id": "ws_jalammar_illustrated",
+      "char_range": [
+        210,
+        388
+      ]
+    },
+    "quote": "The third and fourth steps are to divide the scores by 8 (the square root of the dimension of the key vectors used in the paper – 64). This leads to having more stable gradients.",
+    "sha256": "5c526d76ffe7ca970bc45f53389a7c44102b75e3f9bd03a9b9e92e4e705634bb",
+    "cited_by": [
+      {
+        "message_id": "msg_tf_a1",
+        "label": "E3"
+      }
+    ]
+  },
+  "request": {
+    "params": {
+      "eid": "evd_jalammar_scale"
+    }
+  }
+}

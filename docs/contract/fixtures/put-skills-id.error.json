@@ -1,0 +1,21 @@
+{
+  "endpoint": "PUT /api/skills/{id}",
+  "kind": "error",
+  "description": "Skill 不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Skill 不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "id": "missing-skill"
+    },
+    "body": {
+      "enabled": true
+    }
+  }
+}

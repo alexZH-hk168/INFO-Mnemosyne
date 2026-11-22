@@ -1,0 +1,24 @@
+{
+  "endpoint": "POST /api/plugins/{id}",
+  "kind": "error",
+  "description": "启动后 tools/list 失败",
+  "status": 502,
+  "body": {
+    "error": {
+      "code": "PLUGIN_SELF_CHECK_FAILED",
+      "message": "插件启动失败：tools/list 在 30 s 内没有返回",
+      "retriable": true,
+      "details": {
+        "log_tail": "[docling-mcp] starting server (stdio)\n[docling-mcp] loading models…\n[mnemosyne] tools/list timed out after 30000 ms"
+      }
+    }
+  },
+  "request": {
+    "params": {
+      "id": "docling"
+    },
+    "body": {
+      "config": {}
+    }
+  }
+}

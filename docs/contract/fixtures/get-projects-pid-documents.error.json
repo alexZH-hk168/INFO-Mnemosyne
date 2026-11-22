@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/projects/{pid}/documents",
+  "kind": "error",
+  "description": "项目不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "项目不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "pid": "prj_missing"
+    }
+  }
+}

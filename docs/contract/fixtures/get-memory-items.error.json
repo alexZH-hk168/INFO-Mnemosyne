@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/memory/items",
+  "kind": "error",
+  "description": "scope 取值不合法",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "scope 只能是 global、project 或 branch",
+      "retriable": false
+    }
+  },
+  "request": {
+    "query": {
+      "scope": "team"
+    }
+  }
+}

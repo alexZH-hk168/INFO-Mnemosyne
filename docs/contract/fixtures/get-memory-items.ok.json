@@ -1,0 +1,53 @@
+{
+  "endpoint": "GET /api/memory/items",
+  "kind": "ok",
+  "description": "设置 → 记忆：当前有效条目",
+  "status": 200,
+  "body": {
+    "items": [
+      {
+        "id": "mem_hw3_sigmoid",
+        "scope": "project",
+        "scope_id": "prj_dlintro",
+        "topic": "反向传播",
+        "content": "作业 3 卡在 sigmoid 饱和：输入很大时导数趋近 0，梯度传不回去。",
+        "source_message_ids": [
+          "msg_hw3_a2"
+        ],
+        "status": "active",
+        "valid_from": "2026-11-21T13:05:00Z",
+        "confidence": 0.86
+      },
+      {
+        "id": "mem_pref_conclusion",
+        "scope": "global",
+        "topic": "回答偏好",
+        "content": "希望先给一句话结论，再展开推导。",
+        "source_message_ids": [
+          "msg_tf_u1"
+        ],
+        "status": "active",
+        "valid_from": "2026-11-22T06:20:00Z",
+        "confidence": 0.7
+      },
+      {
+        "id": "mem_br_variance",
+        "scope": "branch",
+        "scope_id": "br_variance",
+        "topic": "注意力缩放",
+        "content": "已理解点积方差等于 dₖ 的两步推导：单项方差为 1，独立项方差相加。",
+        "source_message_ids": [
+          "msg_bv_a1"
+        ],
+        "status": "active",
+        "valid_from": "2026-11-22T06:25:16Z",
+        "confidence": 0.8
+      }
+    ]
+  },
+  "request": {
+    "query": {
+      "status": "active"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "endpoint": "GET /api/projects",
+  "kind": "error",
+  "description": "数据库读取失败",
+  "status": 500,
+  "body": {
+    "error": {
+      "code": "INTERNAL",
+      "message": "读取项目列表失败，请稍后重试",
+      "retriable": true
+    }
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "endpoint": "POST /api/messages/{mid}/regenerate",
+  "kind": "sse",
+  "description": "重新生成主线第 1 条回答，新回答 msg_tf_a1b 是 msg_tf_a1 的兄弟节点",
+  "status": 200,
+  "content_type": "text/event-stream",
+  "events": [
+    {
+      "event": "message.start",
+      "data": {
+        "message_id": "msg_tf_a1b",
+        "client_msg_id": "3f6c1a2e-8b4d-4f0a-9c57-1d2e3f4a5b60",
+        "user_message_id": "msg_tf_u1",
+        "seq": 1
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1b_1",
+        "kind": "search_materials",
+        "label": "检索项目材料",
+        "status": "running",
+        "seq": 2
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_tf1b_1",
+        "kind": "search_materials",
+        "label": "检索项目材料：1 份材料命中",
+        "status": "done",
+        "duration_ms": 1020,
+        "seq": 3
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_att_p4_fn4",
+        "label": "E1",
+        "source_type": "material",
+        "source_id": "doc_attention",
+        "title": "Attention Is All You Need",
+        "locator": {
+          "page": 4,
+          "sentence_ids": [
+            "s4_fn4_1",
+            "s4_fn4_2"
+          ],
+          "bbox": [
+            107.6,
+            640.3,
+            504.2,
+            684.9
+          ]
+        },
+        "quote": "To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Σ q_i k_i, has mean 0 and variance d_k.",
+        "sha256": "1e89e1f28722f2767b49bb175399bf7dc0ab9e18b33edb458ee5ad0efa8c0363",
+        "seq": 4
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "除以 √dₖ 是为了把点积的方差拉回 1：",
+        "seq": 5
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "论文假设各分量独立、均值 0、方差 1，点积方差因此是 dₖ[[E1]]。",
+        "seq": 6
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_tf1b_1",
+        "eid": "evd_att_p4_fn4",
+        "label": "E1",
+        "sentence_start": 0,
+        "sentence_end": 52,
+        "verdict": "supported",
+        "seq": 7
+      }
+    },
+    {
+      "event": "message.end",
+      "data": {
+        "message_id": "msg_tf_a1b",
+        "usage": {
+          "prompt_tokens": 6380,
+          "completion_tokens": 52
+        },
+        "latency_ms": 4210,
+        "cancelled": false,
+        "seq": 8
+      }
+    }
+  ],
+  "request": {
+    "params": {
+      "mid": "msg_tf_a1"
+    }
+  }
+}

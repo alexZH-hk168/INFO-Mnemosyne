@@ -8,15 +8,15 @@
 
 | event | data 字段 | 说明 |
 |---|---|---|
-| `message.start` | `seq, message_id, client_msg_id, user_message_id, parent_id, branch_id` | 用户消息已入库，助手消息已建立 |
+| `message.start` | `seq, message_id, client_msg_id, user_message_id, parent_id, branch_id` | 用户消息已入库，助手消息已建立。`regenerate` 时没有新用户消息：`user_message_id` 为原用户消息，`client_msg_id` 为原用户消息的 client_msg_id（v0.2） |
 | `step` | `seq, step_id, kind, label, status, duration_ms?` | `kind ∈ search_materials \| search_web \| fetch_url \| recall_memory \| open_source \| plugin_tool \| load_skill`；`status ∈ running \| done \| error`；同一 `step_id` 会先 running 后 done/error |
-| `evidence` | `seq, eid, label, source_type, title, locator, quote` | 加入候选证据池，`label` 形如 `E3`；`source_type ∈ material \| web \| message \| plugin` |
+| `evidence` | `seq, eid, label, source_type, source_id, title, locator, quote, sha256?` | 加入候选证据池，`label` 形如 `E3`；`source_type ∈ material \| web \| message \| plugin`。`eid` 就是 `Evidence.id`；`source_id` 与 `sha256` 同 `Evidence`（v0.2），前端用 `source_id` 打开预览标签 |
 | `delta` | `seq, text` | 正文增量，含原始 `[[E3]]` 标记；前端先渲染成虚线的“待确认”胶囊 |
 | `citation` | `seq, citation_id, eid, label, sentence_start, sentence_end, verdict` | `verdict ∈ supported \| partial \| removed`。supported → 胶囊转实心；partial → 句子加“推断”；removed → 胶囊消失 |
 | `message.end` | `seq, message_id, usage: {prompt_tokens, completion_tokens}, latency_ms, cancelled: bool` | 已写库。前端只有收到它才把回答视为已保存 |
 | `error` | `seq, code, message, retriable` | 回合失败；之后不再有 `message.end` |
 
-`sentence_start/end` 是相对**去掉 `[[E#]]` 标记后的正文**的字符偏移，与分支锚点使用同一坐标。
+`sentence_start/end` 是相对**去掉 `[[E#]]` 标记后的正文**的字符偏移，与分支锚点使用同一坐标：左闭右开、按 Unicode 码点计数（v0.2，见 [README 第 7 条](./README.md#规则)）。前端 JS 字符串按 UTF-16 索引，由 F3 的工具函数换算。
 
 ## 顺序
 

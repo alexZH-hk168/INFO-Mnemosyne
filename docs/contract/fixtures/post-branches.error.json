@@ -1,0 +1,24 @@
+{
+  "endpoint": "POST /api/branches",
+  "kind": "error",
+  "description": "锚点越界",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "anchor 超出回答正文范围",
+      "retriable": false
+    }
+  },
+  "request": {
+    "body": {
+      "conversation_id": "cnv_transformer",
+      "fork_message_id": "msg_tf_a1",
+      "anchor": {
+        "start": 900,
+        "end": 920,
+        "quote": "不存在的片段"
+      }
+    }
+  }
+}

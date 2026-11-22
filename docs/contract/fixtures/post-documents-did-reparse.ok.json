@@ -1,0 +1,14 @@
+{
+  "endpoint": "POST /api/documents/{did}/reparse",
+  "kind": "ok",
+  "description": "重新解析",
+  "status": 200,
+  "body": {
+    "job_id": "job_reparse_longmem"
+  },
+  "request": {
+    "params": {
+      "did": "doc_longmemeval"
+    }
+  }
+}

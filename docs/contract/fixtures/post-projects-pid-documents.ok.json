@@ -1,0 +1,32 @@
+{
+  "endpoint": "POST /api/projects/{pid}/documents",
+  "kind": "ok",
+  "description": "上传 1 个课件，进入解析队列",
+  "status": 200,
+  "body": {
+    "documents": [
+      {
+        "id": "doc_l06_posenc",
+        "project_id": "prj_dlintro",
+        "kind": "pptx",
+        "group": "slides",
+        "title": "L06 位置编码.pptx",
+        "parse_status": "queued",
+        "progress": 0,
+        "cited_count": 0,
+        "created_at": "2026-11-22T06:40:00Z"
+      }
+    ],
+    "job_ids": [
+      "job_parse_l06"
+    ]
+  },
+  "request": {
+    "params": {
+      "pid": "prj_dlintro"
+    },
+    "files": [
+      "L06 位置编码.pptx"
+    ]
+  }
+}

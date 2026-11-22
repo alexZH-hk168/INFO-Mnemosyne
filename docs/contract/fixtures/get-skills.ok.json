@@ -1,0 +1,28 @@
+{
+  "endpoint": "GET /api/skills",
+  "kind": "ok",
+  "description": "已导入 2 个 Skill",
+  "status": 200,
+  "body": {
+    "skills": [
+      {
+        "id": "pdf",
+        "name": "pdf",
+        "description": "提取论文 PDF 的文字与表格",
+        "dir_path": "~/.mnemosyne/skills/pdf",
+        "source_url": "https://github.com/anthropics/skills/tree/main/skills/pdf",
+        "license": "Apache-2.0",
+        "enabled": true
+      },
+      {
+        "id": "literature-review",
+        "name": "literature-review",
+        "description": "检索筛选论文并整理综述证据",
+        "dir_path": "~/.mnemosyne/skills/literature-review",
+        "source_url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/literature-review",
+        "license": "MIT",
+        "enabled": false
+      }
+    ]
+  }
+}

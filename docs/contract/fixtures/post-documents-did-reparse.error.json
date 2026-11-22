@@ -1,0 +1,18 @@
+{
+  "endpoint": "POST /api/documents/{did}/reparse",
+  "kind": "error",
+  "description": "加密 PDF 无法解析",
+  "status": 422,
+  "body": {
+    "error": {
+      "code": "PARSE_FAILED",
+      "message": "PDF 已加密，无法提取文字",
+      "retriable": true
+    }
+  },
+  "request": {
+    "params": {
+      "did": "doc_longmemeval"
+    }
+  }
+}

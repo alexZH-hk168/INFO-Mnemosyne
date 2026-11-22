@@ -1,0 +1,11 @@
+{
+  "endpoint": "GET /api/memory/summary",
+  "kind": "ok",
+  "description": "学习画像摘要",
+  "status": 200,
+  "body": {
+    "content": "正在学习深度学习导论，近期重点是注意力机制与反向传播；偏好先给一句话结论再展开推导。",
+    "version": 3,
+    "updated_at": "2026-11-22T06:40:00Z"
+  }
+}

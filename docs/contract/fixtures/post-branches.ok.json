@@ -1,0 +1,29 @@
+{
+  "endpoint": "POST /api/branches",
+  "kind": "ok",
+  "description": "就“softmax 饱和时梯度同样几乎为 0”开分支",
+  "status": 200,
+  "body": {
+    "id": "br_saturation",
+    "conversation_id": "cnv_transformer",
+    "fork_message_id": "msg_tf_a1",
+    "anchor_start": 222,
+    "anchor_end": 242,
+    "anchor_quote": "softmax 饱和时梯度同样几乎为 0",
+    "title": "softmax 饱和时梯度同样几乎为 0",
+    "status": "open",
+    "created_at": "2026-11-22T06:40:00Z",
+    "context_turns": 1
+  },
+  "request": {
+    "body": {
+      "conversation_id": "cnv_transformer",
+      "fork_message_id": "msg_tf_a1",
+      "anchor": {
+        "start": 222,
+        "end": 242,
+        "quote": "softmax 饱和时梯度同样几乎为 0"
+      }
+    }
+  }
+}

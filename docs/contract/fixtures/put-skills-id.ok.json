@@ -1,0 +1,23 @@
+{
+  "endpoint": "PUT /api/skills/{id}",
+  "kind": "ok",
+  "description": "停用 pdf Skill",
+  "status": 200,
+  "body": {
+    "id": "pdf",
+    "name": "pdf",
+    "description": "提取论文 PDF 的文字与表格",
+    "dir_path": "~/.mnemosyne/skills/pdf",
+    "source_url": "https://github.com/anthropics/skills/tree/main/skills/pdf",
+    "license": "Apache-2.0",
+    "enabled": false
+  },
+  "request": {
+    "params": {
+      "id": "pdf"
+    },
+    "body": {
+      "enabled": false
+    }
+  }
+}

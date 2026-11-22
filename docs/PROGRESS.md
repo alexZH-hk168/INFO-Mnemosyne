@@ -1,12 +1,12 @@
 # 进度看板
 
-最后更新：2026-11-22。仓库只在云电脑本地，未推送远端。规格与契约为草案 v0.1，等用户确认。
+最后更新：2026-11-22。仓库只在云电脑本地，未推送远端。规格为草案；契约为 v0.2 草案（编排 Agent 决定，待用户追认）。
 
 ## 里程碑
 
 | 里程碑 | 内容 | 依赖 | 状态 | 认领（分支 · 日期） |
 |---|---|---|---|---|
-| F0 | 契约 fixtures、`web/` 脚手架、tokens、MSW、类型、store 骨架 | 契约 v1.0 确认 | 未开始 | |
+| F0 | 契约 fixtures、`web/` 脚手架、tokens、MSW、类型、store 骨架 | 契约 v1.0 确认（用户已同意按 v0.1 草案开工） | 完成（待编排 Agent 验收与合并） | feat/F0-scaffold · 2026-11-22 |
 | F1 | 外壳、拖拽与收起、项目栏、文件栏 | F0 | 未开始 | |
 | F2 | 主页、卡片与动效、卡片弹窗 | F0 | 未开始 | |
 | F3 | 输入框、对话流、SSE 客户端、证据胶囊、步骤行、来源列表 | F0、F1 | 未开始 | |
@@ -25,7 +25,7 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 
 | 文件 | 当前持有分支 | 自 |
 |---|---|---|
-| — | — | — |
+| `docs/contract/*`（含 fixtures）、`docs/ux/state.md`、`web/src/api/types.ts`、`web/src/store/*`、`web/src/styles/tokens.css` | feat/F0-scaffold（合并进 main 后释放） | 2026-11-22 |
 
 ## 已定决定
 
@@ -38,6 +38,14 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-21 | 右栏只预览不编辑 | 用户 |
 | 2026-11-22 | README、agent 用 UX 规格（每个按钮/窗口/模块一份）、开发提示词 | 用户 |
 | 2026-11-22 | 暂不推送 GitHub，仓库只保存在云电脑本地 | 用户 |
+| 2026-11-22 | 契约 v0.2（原未决 U11）：`Document` 加 `group: paper\|slides\|code\|notes\|web`，文件栏与 `GET /documents` 按 group 分组，顺序 paper、slides、code、notes、web；横版 PDF 判为 slides | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | 契约 v0.2（原 U12）：SSE `evidence` 事件加 `source_id`、`sha256?`，`eid` 即 `Evidence.id`；`streaming.evidence` 存 `Evidence[]` | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | state.md（原 U13）：补 `useUI.openModal/closeModal/pushToast/dismissToast`、`Toast.action={label,onClick}`、`useChat.setProject/setConversation/setActiveBranch`、`useLayout.setView/setMarketRoute` | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | state.md（原 U14）：`mn.layout.v1` 只持久化 `sizes`、`collapsed` | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | 契约 v0.2（原 U15）：rest-api 补 `PluginDetail.verified`；未安装插件返回 `PluginDetail`、`status=not_installed`；错误体加 `details?`（自检失败放 `details.log_tail`）；插件 id 用 manifest id、Skill id 用 name，不加前缀 | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | 契约 v0.2（原 U16）：所有字符偏移左闭右开、按 Unicode 码点计数，前端负责与 UTF-16 换算（F3 实现）；代码行号 `lines` 为从 1 开始的闭区间 | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | 契约 v0.2（原 U17）：regenerate 的 `message.start` 用原用户消息的 `user_message_id` 与 `client_msg_id`；`context_messages` 含被引消息本身及前后各 1 条（最多 3 条） | 编排 Agent 决定，待用户追认 |
+| 2026-11-22 | 契约 v0.2（原 U18）：`Document` 加 `cells?`（ipynb）、`snapshot_id?`（kind=web）；每个网页快照在文件栏以一条 `kind=web, group=web` 的 Document 呈现 | 编排 Agent 决定，待用户追认 |
 
 ## 未决（需要用户拍板）
 
@@ -56,5 +64,9 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 
 ## 动作日志
 
+- 2026-11-22 21:06 · [F0] 契约 fixtures 与前端脚手架 · 完成 · 分支 feat/F0-scaffold · npm run check 通过（84 份 fixture、38/38 接口）· 单测 150/150 · e2e 3/3 · 截图 web/tests/screenshots/F0-占位页-tokens.png
+- 2026-11-22 21:06 · [F0] 契约 · 契约变更 v0.2 · 编排 Agent 决定，待用户追认：rest-api.md、sse-events.md、types.ts、data-model.md、evidence-locator.md、contract/README.md、ux/state.md 按 U11–U18 修改；规格源 specs_a.py（文件栏按 group 分组、网页来源行用 `snapshot_id`）已重新生成；fixtures 重新生成
+- 2026-11-22 21:00 · [F0] 契约 fixtures 与前端脚手架 · 阻塞（交付物已全部完成并本地提交；契约/状态约定 U11–U18 待用户确认，确认后改 `web/src/mocks/fixtures-source.ts` 重新生成即可） · 分支 feat/F0-scaffold · npm run check 通过（83 份 fixture、38/38 接口）· 单测 144/144 · e2e 3/3 · 截图 web/tests/screenshots/F0-占位页-tokens.png
+- 2026-11-22 · [F0] 契约 fixtures 与前端脚手架 · 开始 · 分支 feat/F0-scaffold（worktree `INFO5000项目/worktrees/F0-scaffold`）
 - 2026-11-22 17:20 · 文档 · 重写 AGENTS.md（读文件顺序、目录与修改权限、冲突优先级、红线 R1–R8、停下询问的情况）；提示词改为指向云电脑本地仓库；规定暂不推送
 - 2026-11-22 · 文档 · 初始化 README、AGENTS.md、开发规范、契约 v0.1 草案、88 份 UX 规格、开发提示词 · 未写代码

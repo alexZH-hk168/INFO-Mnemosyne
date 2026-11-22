@@ -1,0 +1,20 @@
+{
+  "endpoint": "GET /api/web_snapshots/{sid}",
+  "kind": "ok",
+  "description": "The Illustrated Transformer 快照（文本为样例摘录）",
+  "status": 200,
+  "body": {
+    "id": "ws_jalammar_illustrated",
+    "url": "https://jalammar.github.io/illustrated-transformer/",
+    "title": "The Illustrated Transformer – Jay Alammar",
+    "fetched_at": "2026-11-22T06:21:04Z",
+    "text": "Self-Attention in Detail\nThe first step in calculating self-attention is to create three vectors from each of the encoder’s input vectors. The second step in calculating self-attention is to calculate a score. The third and fourth steps are to divide the scores by 8 (the square root of the dimension of the key vectors used in the paper – 64). This leads to having more stable gradients. There could be other possible values here, but this is the default, then pass the result through a softmax operation.\n",
+    "sha256": "1a45a9cebe9a75e324f0cf7ef9e8fcaed2f62c9f5d1d545f2ba42f70af085380",
+    "http_status": 200
+  },
+  "request": {
+    "params": {
+      "sid": "ws_jalammar_illustrated"
+    }
+  }
+}

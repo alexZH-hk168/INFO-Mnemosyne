@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/plugins/{id}",
+  "kind": "error",
+  "description": "插件不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "插件不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "id": "missing-plugin"
+    }
+  }
+}

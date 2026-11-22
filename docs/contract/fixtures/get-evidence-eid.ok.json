@@ -1,0 +1,42 @@
+{
+  "endpoint": "GET /api/evidence/{eid}",
+  "kind": "ok",
+  "description": "论文第 4 页脚注 4（UI-06 证据 1）",
+  "status": 200,
+  "body": {
+    "id": "evd_att_p4_fn4",
+    "source_type": "material",
+    "source_id": "doc_attention",
+    "title": "Attention Is All You Need",
+    "locator": {
+      "page": 4,
+      "sentence_ids": [
+        "s4_fn4_1",
+        "s4_fn4_2"
+      ],
+      "bbox": [
+        107.6,
+        640.3,
+        504.2,
+        684.9
+      ]
+    },
+    "quote": "To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Σ q_i k_i, has mean 0 and variance d_k.",
+    "sha256": "1e89e1f28722f2767b49bb175399bf7dc0ab9e18b33edb458ee5ad0efa8c0363",
+    "cited_by": [
+      {
+        "message_id": "msg_tf_a1",
+        "label": "E1"
+      },
+      {
+        "message_id": "msg_bv_a1",
+        "label": "E1"
+      }
+    ]
+  },
+  "request": {
+    "params": {
+      "eid": "evd_att_p4_fn4"
+    }
+  }
+}

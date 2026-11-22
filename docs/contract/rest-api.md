@@ -1,6 +1,6 @@
 # REST 接口
 
-前缀 `/api`。除上传外请求体为 JSON。响应结构中带 `?` 的字段可为空。立项稿只定义了路径与部分请求体，响应结构为本草案补充（v0.1）。
+前缀 `/api`。除上传外请求体为 JSON。响应结构中带 `?` 的字段可为空。立项稿只定义了路径与部分请求体，响应结构为本草案补充（v0.1）；v0.2 的改动见各节“v0.2”标注与 [README](./README.md#版本记录)。
 
 ## 项目与对话
 
@@ -39,21 +39,25 @@
 
 `Branch = {id, conversation_id, fork_message_id, anchor_start, anchor_end, anchor_quote, title, status: "open"|"merged"|"archived", merged_into_message_id?, created_at, context_turns}`。`context_turns`＝分支能看到的主线轮数，供“上下文：主线前 N 轮 + 本分支”提示使用。
 
-`anchor.start/end` 是相对 fork 消息 `content` **去掉 `[[E#]]` 标记后的纯文本**的字符偏移。
+`anchor.start/end` 是相对 fork 消息 `content` **去掉 `[[E#]]` 标记后的纯文本**的字符偏移，左闭右开、按 Unicode 码点计数（见 [README 第 7 条](./README.md#规则)）。
 
 ## 材料与证据
 
 | 方法 | 路径 | 请求 | 响应 |
 |---|---|---|---|
-| GET | `/api/projects/{pid}/documents` | — | `{ groups: { kind, documents: Document[] }[] }`，分组顺序 pdf、pptx、code+ipynb、md、web |
+| GET | `/api/projects/{pid}/documents` | — | `{ groups: { group, documents: Document[] }[] }`，按 `Document.group` 分组，顺序 paper、slides、code、notes、web；空组不返回（v0.2） |
 | POST | `/api/projects/{pid}/documents` | multipart `file`（可多个） | `{ documents: Document[], job_ids: string[] }` |
 | GET | `/api/documents/{did}` | — | `Document` |
 | GET | `/api/documents/{did}/raw` | — | 原文件；PPTX 返回转换后的 PDF；code/md 返回 `text/plain` |
 | POST | `/api/documents/{did}/reparse` | — | `{ job_id }` |
-| GET | `/api/evidence/{eid}` | — | `Evidence`（见 [evidence-locator.md](./evidence-locator.md)）＋ `cited_by: {message_id, label}[]`；`source_type=message` 时另带 `context_messages: Message[]`（被引消息前后各 1 条，按路径可见性过滤） |
+| GET | `/api/evidence/{eid}` | — | `Evidence`（见 [evidence-locator.md](./evidence-locator.md)）＋ `cited_by: {message_id, label}[]`；`source_type=message` 时另带 `context_messages: Message[]`：被引消息本身及其前后各 1 条，最多 3 条，按路径可见性过滤（v0.2） |
 | GET | `/api/web_snapshots/{sid}` | — | `{id, url, title, fetched_at, text, sha256, http_status}` |
 
-`Document = {id, project_id, kind: "pdf"|"pptx"|"code"|"ipynb"|"md"|"web", title, pages?, lines?, parse_status: "queued"|"parsing"|"ready"|"failed", progress: 0-100, parse_error?, cited_count, created_at}`
+`Document = {id, project_id, kind: "pdf"|"pptx"|"code"|"ipynb"|"md"|"web", group: "paper"|"slides"|"code"|"notes"|"web", title, pages?, lines?, cells?, snapshot_id?, parse_status: "queued"|"parsing"|"ready"|"failed", progress: 0-100, parse_error?, cited_count, created_at}`
+
+- `group`（v0.2）：文件栏分组。默认映射 pptx→slides；code、ipynb→code；md→notes；web→web；pdf 默认 paper，后端解析时若多数页为横向（宽 > 高）判为 slides。
+- `cells`（v0.2）：仅 ipynb，单元格数。`pages` 用于 pdf/pptx，`lines` 用于 code/md。
+- `snapshot_id`（v0.2）：仅 kind=web。每个网页快照在文件栏以一条 `kind=web, group=web` 的 Document 呈现：`Document.id` 独立（`doc_` 前缀），`snapshot_id` 指向 `web_snapshots.id`，`cited_count` 为被引次数。
 
 ## 市场、插件与 Skill
 
@@ -62,8 +66,8 @@
 | GET | `/api/market/plugins` | — | `{ items: MarketItem[] }` |
 | GET | `/api/market/skills` | — | `{ items: MarketItem[] }` |
 | GET | `/api/plugins` | — | `{ plugins: InstalledPlugin[] }` |
-| GET | `/api/plugins/{id}` | — | `InstalledPlugin & { tools: {name, description}[] }`；未安装时返回市场 manifest 与上游工具清单 |
-| POST | `/api/plugins/{id}` | `{ config: Record<string,string> }` | `InstalledPlugin`；内部完成启动与 `tools/list` 自检，失败返回 `PLUGIN_SELF_CHECK_FAILED` 并附 `log_tail` |
+| GET | `/api/plugins/{id}` | — | `PluginDetail = InstalledPlugin & { tools: {name, description}[], verified: bool }`；`verified`＝是否属于 v1 完整验收的插件。未安装时同样返回 `PluginDetail`，字段取自市场 manifest 与上游工具清单，`status: "not_installed"`（v0.2） |
+| POST | `/api/plugins/{id}` | `{ config: Record<string,string> }` | `InstalledPlugin`；内部完成启动与 `tools/list` 自检，失败返回 `PLUGIN_SELF_CHECK_FAILED`，日志尾部放在错误体 `error.details.log_tail`（v0.2） |
 | DELETE | `/api/plugins/{id}` | — | `{ ok: true }` |
 | GET | `/api/conversations/{cid}/plugins` | — | `{ plugins: {plugin_id, enabled, status, reason?}[] }` |
 | PUT | `/api/conversations/{cid}/plugins` | `{ enabled_plugin_ids: string[] }` | 同上 |
@@ -74,9 +78,11 @@
 
 `MarketItem = {id, type: "plugin"|"skill", name, owner, official, stars, stars_date, license, category, desc_zh, repo_url, installed}`
 
-`InstalledPlugin = {id, name, version, status: "installed"|"error"|"disabled", permissions: string[], config_schema, last_check_at}`
+`InstalledPlugin = {id, name, version, status: "installed"|"error"|"disabled"|"not_installed", permissions: string[], config_schema, last_check_at?}`；`not_installed` 只出现在 `GET /api/plugins/{id}` 的未安装应答中（v0.2）。
 
 `Skill = {id, name, description, dir_path, source_url?, license?, enabled}`
+
+插件与 Skill 的 id 不加类型前缀（v0.2）：插件 id 即 manifest 的 `id`（如 `arxiv`，工具命名空间 `arxiv__search_papers`），Skill id 即 `SKILL.md` 的 `name`（如 `pdf`）。市场条目 `MarketItem.id` 与安装后的 id 相同。
 
 ## 设置与记忆
 
@@ -94,6 +100,8 @@
 立项稿 §6.3 只写了 `/api/settings` 并提到“记忆条目的查看与删除也在这里”；`/api/memory/*` 是本草案为“设置 → 记忆”补的拆分，待确认。
 
 ## 错误码
+
+错误体：`{ "error": { "code", "message", "retriable", "details"?: Record<string, unknown> } }`。`details` 可选（v0.2），放与错误相关的结构化信息，如 `PLUGIN_SELF_CHECK_FAILED` 的 `details.log_tail`（插件进程最后若干行输出，字符串）。
 
 | code | HTTP | 含义 | retriable |
 |---|---|---|---|

@@ -1,0 +1,21 @@
+{
+  "endpoint": "PUT /api/memory/items/{id}",
+  "kind": "error",
+  "description": "条目不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "记忆条目不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "id": "mem_missing"
+    },
+    "body": {
+      "content": "x"
+    }
+  }
+}

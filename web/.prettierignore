@@ -1,0 +1,10 @@
+dist
+node_modules
+package-lock.json
+public/mockServiceWorker.js
+src/assets
+src/mocks/market-data.ts
+tests/screenshots
+test-results
+playwright-report
+src/api/types.ts

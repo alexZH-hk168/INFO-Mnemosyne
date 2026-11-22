@@ -1,0 +1,14 @@
+{
+  "endpoint": "DELETE /api/memory/items/{id}",
+  "kind": "ok",
+  "description": "删除一条记忆（进入屏蔽列表）",
+  "status": 200,
+  "body": {
+    "ok": true
+  },
+  "request": {
+    "params": {
+      "id": "mem_pref_conclusion"
+    }
+  }
+}

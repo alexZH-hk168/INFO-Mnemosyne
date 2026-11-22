@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/conversations/{cid}/plugins",
+  "kind": "error",
+  "description": "对话不存在",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "对话不存在",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "cid": "cnv_missing"
+    }
+  }
+}
