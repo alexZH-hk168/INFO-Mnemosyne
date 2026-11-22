@@ -52,7 +52,7 @@
 - 主分支 `main` 只接受合并。每个里程碑一个分支：`feat/F3-chat-stream`、`feat/B2-agent-loop`。
 - 多个 Agent 并行时，每人一个 `git worktree`；前端 dev server 端口按里程碑错开（F1 5171、F2 5172 …），避免撞号。
 - 共享文件（`docs/contract/*`、`web/src/api/types.ts`、`web/src/store/*`、`tokens.css`）同一时间只允许一个分支修改，修改前在看板“共享文件锁”一栏登记。
-- 推送：仓库 `alexZH-hk168/INFO-Mnemosyne`。不在仓库或聊天里写令牌。用户本机有 GitHub 凭据时由用户推送或授权代推；推送前 `git fetch` 并 rebase，禁止 force push。
+- 推送：**当前不推送**（用户 2026-11-22 决定）。仓库只保存在云电脑 `/home/user/workspace/INFO5000项目/INFO-Mnemosyne`，在本地分支提交、本地合并到 `main`。远端 `alexZH-hk168/INFO-Mnemosyne` 等用户指示后再同步；届时推送前 `git fetch` 并 rebase，禁止 force push。不在仓库或聊天里写任何令牌。
 
 ## 5. 动作日志格式
 
