@@ -29,6 +29,13 @@ describe('api client', () => {
     });
   });
 
+  it('错误体的 details 透传到 ApiRequestError（契约 v0.2，插件自检失败带 log_tail）', async () => {
+    setMockScenario('POST /api/plugins/{id}', 'error');
+    const err = await api.post(`${BASE}/api/plugins/docling`, { config: {} }).catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: 'PLUGIN_SELF_CHECK_FAILED', status: 502, retriable: true });
+    expect((err as ApiRequestError).details?.log_tail).toContain('tools/list timed out');
+  });
+
   it('非 JSON 文本响应按文本返回', async () => {
     const text = await api.get<string>(`${BASE}/api/documents/doc_transformer_py/raw`);
     expect(text).toBe((fixtures['get-documents-did-raw.ok.json'] as RestFixture).body);

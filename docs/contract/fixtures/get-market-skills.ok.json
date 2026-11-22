@@ -6,7 +6,7 @@
   "body": {
     "items": [
       {
-        "id": "skl_pdf",
+        "id": "pdf",
         "type": "skill",
         "name": "pdf",
         "owner": "anthropics",
@@ -20,7 +20,7 @@
         "installed": true
       },
       {
-        "id": "skl_docx",
+        "id": "docx",
         "type": "skill",
         "name": "docx",
         "owner": "anthropics",
@@ -34,7 +34,7 @@
         "installed": false
       },
       {
-        "id": "skl_pptx",
+        "id": "pptx",
         "type": "skill",
         "name": "pptx",
         "owner": "anthropics",
@@ -48,7 +48,7 @@
         "installed": false
       },
       {
-        "id": "skl_xlsx",
+        "id": "xlsx",
         "type": "skill",
         "name": "xlsx",
         "owner": "anthropics",
@@ -62,7 +62,7 @@
         "installed": false
       },
       {
-        "id": "skl_skill-creator",
+        "id": "skill-creator",
         "type": "skill",
         "name": "skill-creator",
         "owner": "anthropics",
@@ -76,7 +76,7 @@
         "installed": false
       },
       {
-        "id": "skl_literature-review",
+        "id": "literature-review",
         "type": "skill",
         "name": "literature-review",
         "owner": "K-Dense-AI",
@@ -90,7 +90,7 @@
         "installed": true
       },
       {
-        "id": "skl_scientific-writing",
+        "id": "scientific-writing",
         "type": "skill",
         "name": "scientific-writing",
         "owner": "K-Dense-AI",
@@ -104,7 +104,7 @@
         "installed": false
       },
       {
-        "id": "skl_peer-review",
+        "id": "peer-review",
         "type": "skill",
         "name": "peer-review",
         "owner": "K-Dense-AI",
@@ -118,7 +118,7 @@
         "installed": false
       },
       {
-        "id": "skl_research-lookup",
+        "id": "research-lookup",
         "type": "skill",
         "name": "research-lookup",
         "owner": "K-Dense-AI",
@@ -132,7 +132,7 @@
         "installed": false
       },
       {
-        "id": "skl_citation-management",
+        "id": "citation-management",
         "type": "skill",
         "name": "citation-management",
         "owner": "K-Dense-AI",
@@ -146,7 +146,7 @@
         "installed": false
       },
       {
-        "id": "skl_writing-plans",
+        "id": "writing-plans",
         "type": "skill",
         "name": "writing-plans",
         "owner": "obra",
@@ -160,7 +160,7 @@
         "installed": false
       },
       {
-        "id": "skl_brainstorming",
+        "id": "brainstorming",
         "type": "skill",
         "name": "brainstorming",
         "owner": "obra",

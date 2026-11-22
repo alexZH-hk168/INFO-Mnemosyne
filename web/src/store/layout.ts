@@ -32,7 +32,9 @@ export interface LayoutState {
   closeTab: (id: string) => void;
   activateTab: (id: string) => void;
   view: View;
+  setView: (view: View) => void;
   marketRoute: MarketRoute;
+  setMarketRoute: (route: MarketRoute) => void;
 }
 
 /** 默认宽度：项目栏 252、文件栏 236、对话栏弹性（记录下限 480）、右栏 560 */
@@ -114,13 +116,15 @@ export const useLayout = create<LayoutState>()(
         }),
       activateTab: (id) => set((s) => (s.rightTabs.some((t) => t.id === id) ? { activeTab: id } : {})),
       view: 'home',
+      setView: (view) => set({ view }),
       marketRoute: { tab: 'plugins' },
+      setMarketRoute: (route) => set({ marketRoute: route }),
     }),
     {
       name: 'mn.layout.v1',
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      // 只持久化栏宽与收起状态；右栏标签、中间区视图随路由与数据恢复（见 PROGRESS 未决 U14）
+      // 只持久化栏宽与收起状态（state.md）；右栏标签、view、marketRoute 随路由与数据恢复
       partialize: (s) => ({ sizes: s.sizes, collapsed: s.collapsed }),
     },
   ),

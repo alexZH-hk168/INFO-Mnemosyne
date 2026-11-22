@@ -77,7 +77,17 @@ describe('useLayout', () => {
     expect(useLayout.getState()).toMatchObject({ rightTabs: [], activeTab: null });
   });
 
-  it('持久化到 localStorage 键 mn.layout.v1（栏宽与收起状态）', () => {
+  it('setView / setMarketRoute', () => {
+    useLayout.getState().setView('market');
+    useLayout.getState().setMarketRoute({ tab: 'skills', detail: { type: 'skill', id: 'pdf' } });
+    expect(useLayout.getState()).toMatchObject({
+      view: 'market',
+      marketRoute: { tab: 'skills', detail: { type: 'skill', id: 'pdf' } },
+    });
+  });
+
+  it('持久化到 localStorage 键 mn.layout.v1（只存栏宽与收起状态）', () => {
+    useLayout.getState().setView('market');
     useLayout.getState().setSize(0, 300);
     useLayout.getState().toggle(1);
     const saved = JSON.parse(localStorage.getItem('mn.layout.v1') ?? '{}');

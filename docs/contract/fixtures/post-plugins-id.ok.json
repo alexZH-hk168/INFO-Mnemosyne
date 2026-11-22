@@ -4,7 +4,7 @@
   "description": "安装 Fetch 插件并通过自检",
   "status": 200,
   "body": {
-    "id": "plg_fetch",
+    "id": "fetch",
     "name": "Fetch MCP Server",
     "version": "1.0.0",
     "status": "installed",
@@ -16,7 +16,7 @@
   },
   "request": {
     "params": {
-      "id": "plg_fetch"
+      "id": "fetch"
     },
     "body": {
       "config": {}

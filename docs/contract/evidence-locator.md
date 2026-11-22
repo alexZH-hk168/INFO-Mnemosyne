@@ -15,7 +15,9 @@
 }
 ```
 
-`label` 只在本轮有效；持久引用用 `id`。
+`label` 只在本轮有效；持久引用用 `id`。SSE `evidence` 事件里的 `eid` 就是这里的 `id`。
+
+偏移约定（v0.2）：下表的 `char_range` 一律左闭右开、按 Unicode 码点计数；`lines` 是从 1 开始的闭区间行号。详见 [README 第 7 条](./README.md#规则)。
 
 ## locator 约定
 

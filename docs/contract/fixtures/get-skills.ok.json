@@ -6,7 +6,7 @@
   "body": {
     "skills": [
       {
-        "id": "skl_pdf",
+        "id": "pdf",
         "name": "pdf",
         "description": "提取论文 PDF 的文字与表格",
         "dir_path": "~/.mnemosyne/skills/pdf",
@@ -15,7 +15,7 @@
         "enabled": true
       },
       {
-        "id": "skl_literature-review",
+        "id": "literature-review",
         "name": "literature-review",
         "description": "检索筛选论文并整理综述证据",
         "dir_path": "~/.mnemosyne/skills/literature-review",

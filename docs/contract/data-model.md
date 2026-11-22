@@ -9,17 +9,17 @@
 | projects | id, name, created_at |
 | conversations | id, project_id, title, root_message_id, active_leaf_id（重新生成后当前显示的叶子）, created_at, updated_at |
 | messages | id, conversation_id, parent_id, branch_id（主线为 NULL）, role（user \| assistant \| tool \| merge_note）, content, model, usage_json, created_at；另加 client_msg_id（唯一索引，用于去重） |
-| branches | id, conversation_id, fork_message_id, anchor_start INT, anchor_end INT（相对 fork 消息去标记纯文本的字符偏移）, anchor_quote, title, status（open \| merged \| archived）, merged_into_message_id, created_at |
+| branches | id, conversation_id, fork_message_id, anchor_start INT, anchor_end INT（相对 fork 消息去标记纯文本的字符偏移，左闭右开、按码点计数）, anchor_quote, title, status（open \| merged \| archived）, merged_into_message_id, created_at |
 | tool_calls | id, message_id, step_index INT, tool_name, args_json, result_json, status, duration_ms INT |
 | citations | id, message_id, evidence_id, label, sentence_start INT, sentence_end INT, verdict（supported \| partial \| removed）, overlap REAL |
 
-`messages.client_msg_id` 与 SSE 续流用的事件缓冲（`message_events(message_id, seq, event, data_json)`）是为契约补充的字段/表，立项稿未列，F0 确认后补进图 3。
+`messages.client_msg_id` 与 SSE 续流用的事件缓冲（`message_events(message_id, seq, event, data_json)`）是为契约补充的字段/表，立项稿未列，F0 确认后补进图 3。`citations.sentence_start/end` 与 branches 的锚点同一坐标（左闭右开、按码点）。契约 v0.2 给 documents 加了 `group`、`cells`、`snapshot_id`，同样待补进图 3。
 
 ## 材料与证据
 
 | 表 | 字段 |
 |---|---|
-| documents | id, project_id, kind（pdf \| pptx \| code \| ipynb \| md \| web）, title, path, sha256, pages INT, parse_status（queued \| parsing \| ready \| failed）, parse_error, created_at |
+| documents | id, project_id, kind（pdf \| pptx \| code \| ipynb \| md \| web）, group（paper \| slides \| code \| notes \| web，解析时写入；横版 PDF 判为 slides）, title, path, sha256, pages INT, cells INT（仅 ipynb）, snapshot_id（仅 kind=web，指向 web_snapshots.id）, parse_status（queued \| parsing \| ready \| failed）, parse_error, created_at |
 | segments | id, document_id, kind（sentence \| line \| cell \| shape）, text, locator_json, order_idx INT |
 | chunks | id, document_id, text, segment_ids_json, token_count INT；附表 chunks_fts（FTS5）与 chunks_vec（sqlite-vec） |
 | evidence | id, source_type（material \| web \| message \| plugin）, source_id, locator_json, quote, sha256, created_at；另加 captured_in_message_id（网页/插件证据在哪条消息里被抓取，用于分支可见性） |
@@ -40,8 +40,8 @@
 
 | 表 | 字段 |
 |---|---|
-| plugins | id, name, version, manifest_json, config_json（API Key 加密存储）, status（installed \| error \| disabled）, last_check_at |
-| skills | id, name, description, dir_path, source_url, license, enabled INT |
+| plugins | id（即 manifest 的 `id`，不加前缀）, name, version, manifest_json, config_json（API Key 加密存储）, status（installed \| error \| disabled）, last_check_at |
+| skills | id（即 SKILL.md 的 `name`，不加前缀）, name, description, dir_path, source_url, license, enabled INT |
 | conversation_plugins | conversation_id, plugin_id, enabled INT |
 | jobs | id, kind（parse_document \| index_web \| extract_memory \| rewrite_digest \| rewrite_profile）, payload_json, status（queued \| running \| done \| failed）, attempts INT, error, created_at, finished_at |
 

@@ -6,7 +6,7 @@
   "body": {
     "items": [
       {
-        "id": "plg_arxiv",
+        "id": "arxiv",
         "type": "plugin",
         "name": "ArXiv MCP Server",
         "owner": "blazickjp",
@@ -20,7 +20,7 @@
         "installed": true
       },
       {
-        "id": "plg_paper-search",
+        "id": "paper-search",
         "type": "plugin",
         "name": "Paper Search MCP",
         "owner": "openags",
@@ -34,7 +34,7 @@
         "installed": false
       },
       {
-        "id": "plg_tavily",
+        "id": "tavily",
         "type": "plugin",
         "name": "Tavily MCP",
         "owner": "tavily-ai",
@@ -48,7 +48,7 @@
         "installed": false
       },
       {
-        "id": "plg_exa",
+        "id": "exa",
         "type": "plugin",
         "name": "Exa MCP Server",
         "owner": "exa-labs",
@@ -62,7 +62,7 @@
         "installed": false
       },
       {
-        "id": "plg_brave-search",
+        "id": "brave-search",
         "type": "plugin",
         "name": "Brave Search MCP Server",
         "owner": "brave",
@@ -76,7 +76,7 @@
         "installed": false
       },
       {
-        "id": "plg_fetch",
+        "id": "fetch",
         "type": "plugin",
         "name": "Fetch MCP Server",
         "owner": "modelcontextprotocol",
@@ -90,7 +90,7 @@
         "installed": true
       },
       {
-        "id": "plg_zotero",
+        "id": "zotero",
         "type": "plugin",
         "name": "Zotero MCP Plugin",
         "owner": "cookjohn",
@@ -104,7 +104,7 @@
         "installed": false
       },
       {
-        "id": "plg_markitdown",
+        "id": "markitdown",
         "type": "plugin",
         "name": "MarkItDown MCP",
         "owner": "microsoft",
@@ -118,7 +118,7 @@
         "installed": true
       },
       {
-        "id": "plg_docling",
+        "id": "docling",
         "type": "plugin",
         "name": "Docling MCP",
         "owner": "docling-project",
@@ -132,7 +132,7 @@
         "installed": false
       },
       {
-        "id": "plg_obsidian",
+        "id": "obsidian",
         "type": "plugin",
         "name": "Obsidian MCP",
         "owner": "MarkusPfundstein",
@@ -146,7 +146,7 @@
         "installed": false
       },
       {
-        "id": "plg_notion",
+        "id": "notion",
         "type": "plugin",
         "name": "Notion MCP Server",
         "owner": "makenotion",
@@ -160,7 +160,7 @@
         "installed": false
       },
       {
-        "id": "plg_anki",
+        "id": "anki",
         "type": "plugin",
         "name": "Anki MCP Server",
         "owner": "ankimcp",
@@ -174,7 +174,7 @@
         "installed": false
       },
       {
-        "id": "plg_jupyter",
+        "id": "jupyter",
         "type": "plugin",
         "name": "Jupyter MCP Server",
         "owner": "datalayer",
@@ -188,7 +188,7 @@
         "installed": false
       },
       {
-        "id": "plg_github",
+        "id": "github",
         "type": "plugin",
         "name": "GitHub MCP Server",
         "owner": "github",
@@ -202,7 +202,7 @@
         "installed": false
       },
       {
-        "id": "plg_youtube-transcript",
+        "id": "youtube-transcript",
         "type": "plugin",
         "name": "YouTube Transcript MCP",
         "owner": "kimtaeyoon83",
@@ -216,7 +216,7 @@
         "installed": false
       },
       {
-        "id": "plg_wikipedia",
+        "id": "wikipedia",
         "type": "plugin",
         "name": "Wikipedia MCP",
         "owner": "Rudra-ravi",
@@ -230,7 +230,7 @@
         "installed": false
       },
       {
-        "id": "plg_wolfram",
+        "id": "wolfram",
         "type": "plugin",
         "name": "Wolfram AgentTools",
         "owner": "WolframResearch",
@@ -244,7 +244,7 @@
         "installed": false
       },
       {
-        "id": "plg_context7",
+        "id": "context7",
         "type": "plugin",
         "name": "Context7",
         "owner": "upstash",

@@ -6,7 +6,7 @@
   "body": {
     "error": {
       "code": "VALIDATION_ERROR",
-      "message": "插件 plg_tavily 未安装",
+      "message": "插件 tavily 未安装",
       "retriable": false
     }
   },
@@ -16,7 +16,7 @@
     },
     "body": {
       "enabled_plugin_ids": [
-        "plg_tavily"
+        "tavily"
       ]
     }
   }

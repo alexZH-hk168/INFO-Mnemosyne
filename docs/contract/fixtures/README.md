@@ -15,7 +15,7 @@ npm run check:fixtures    # 用 types.ts 校验结构与语义（已并入 npm r
 | 文件 | 内容 |
 |---|---|
 | `<接口>.ok.json` / `<接口>.error.json` | 每个 REST 接口一份成功、一份错误样例。`<接口>` = 方法 + 去掉 `/api/` 的路径，`/` 换成 `-`，占位符去掉花括号，如 `GET /api/projects/{pid}/conversations` → `get-projects-pid-conversations` |
-| `<接口>.<变体>.ok.json` | 同一接口的其他成功样例，如 `get-evidence-eid.message.ok.json`（历史对话证据） |
+| `<接口>.<变体>.ok.json` | 同一接口的其他成功样例，如 `get-evidence-eid.message.ok.json`（历史对话证据）、`get-plugins-id.not-installed.ok.json`（未安装插件，`status=not_installed`） |
 | `sse-turn-full.json` | `POST /api/conversations/{cid}/messages` 的完整回合：3 个步骤、3 条证据、8 段正文、3 条引用（supported / partial / removed）、`message.end` |
 | `sse-turn-cancel.json` | 取消回合：引用以 `partial` 发出，`message.end(cancelled=true)` |
 | `sse-turn-resume.json` | 第 5 个事件后断线（`disconnect_after_seq: 5`）；续流部分见 `get-messages-mid-events.ok.json` |
@@ -38,6 +38,10 @@ npm run check:fixtures    # 用 types.ts 校验结构与语义（已并入 npm r
 
 类型定义见 `web/src/mocks/fixture-types.ts`。外层字段只是“样例怎么存”，不属于接口契约。
 
-## 偏移量约定（样例采用，待契约确认，见 PROGRESS U16）
+## 偏移量约定（契约 v0.2）
 
-`sentence_start/end`、`anchor_start/end`、`char_range` 都按去掉 `[[E#]]` 后的纯文本计算，左闭右开 `[start, end)`，`text.slice(start, end)` 即对应片段。样例里没有 BMP 以外的字符，所以 UTF-16 与码点计数结果相同。
+`sentence_start/end`、`anchor_start/end`、`char_range` 都按去掉 `[[E#]]` 后的纯文本计算，**左闭右开 `[start, end)`、按 Unicode 码点计数**（contract/README.md 第 7 条）。Python 里 `text[start:end]` 即对应片段；JS 里要先 `Array.from(text)` 再切片，或用 F3 的换算函数。
+
+主线第 1 条回答（`sse-turn-full.json`、`get-conversations-cid-tree.ok.json` 的 `msg_tf_a1`）的第一句故意用了数学斜体 `𝑑`（U+1D451，BMP 以外），之后所有偏移的码点计数比 UTF-16 计数小 1。`npm run check:fixtures` 会按码点切片核对引用句子与分支锚点，按 UTF-16 算就会报错。
+
+代码、Markdown、Notebook 的 `lines: [start, end]` 是从 1 开始的闭区间，含义不同。

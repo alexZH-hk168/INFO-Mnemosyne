@@ -1,11 +1,13 @@
-// Mnemosyne 接口类型草案 v0.1（2026-11-22）
+// Mnemosyne 接口类型草案 v0.2（2026-11-22）
 // 来源：docs/contract/*.md。F0 里程碑把本文件拷到 web/src/api/types.ts，之后两处保持一致。
 // 字段保持 snake_case，与后端 JSON 一致。
+// 字符偏移（sentence_start/end、anchor_start/end、char_range）一律左闭右开、按 Unicode 码点计数；
+// lines 是从 1 开始的闭区间行号（contract/README.md 第 7 条）。
 
 export type ID = string;
 export type ISODate = string;
 
-export interface ApiError { error: { code: ErrorCode; message: string; retriable: boolean } }
+export interface ApiError { error: { code: ErrorCode; message: string; retriable: boolean; details?: Record<string, unknown> } }
 export type ErrorCode =
   | 'VALIDATION_ERROR' | 'NOT_FOUND' | 'NOT_VISIBLE_ON_PATH' | 'PARSE_FAILED'
   | 'MODEL_UNAVAILABLE' | 'PLUGIN_SELF_CHECK_FAILED' | 'PLUGIN_TIMEOUT' | 'SKILL_INVALID' | 'INTERNAL';
@@ -42,9 +44,12 @@ export interface CreateBranchBody { conversation_id: ID; fork_message_id: ID; an
 
 // ---------- 材料与证据 ----------
 export type DocKind = 'pdf' | 'pptx' | 'code' | 'ipynb' | 'md' | 'web';
+export type DocGroup = 'paper' | 'slides' | 'code' | 'notes' | 'web';
 export type ParseStatus = 'queued' | 'parsing' | 'ready' | 'failed';
 export interface Document {
-  id: ID; project_id: ID; kind: DocKind; title: string; pages?: number; lines?: number;
+  id: ID; project_id: ID; kind: DocKind; group: DocGroup; title: string; pages?: number; lines?: number;
+  cells?: number;        // 仅 ipynb
+  snapshot_id?: ID;      // 仅 kind=web，指向 WebSnapshot.id
   parse_status: ParseStatus; progress: number; parse_error?: string; cited_count: number; created_at: ISODate;
 }
 export type SourceType = 'material' | 'web' | 'message' | 'plugin';
@@ -58,7 +63,7 @@ export type Locator =
 export interface Evidence {
   id: ID; label?: string; source_type: SourceType; source_id: ID; title: string;
   locator: Locator; quote: string; sha256?: string; cited_by?: { message_id: ID; label: string }[];
-  context_messages?: Message[];  // 仅 source_type=message
+  context_messages?: Message[];  // 仅 source_type=message：被引消息本身及前后各 1 条，最多 3 条
 }
 export interface WebSnapshot { id: ID; url: string; title: string; fetched_at: ISODate; text: string; sha256: string; http_status: number }
 
@@ -70,7 +75,7 @@ export interface Citation { citation_id: ID; eid: ID; label: string; sentence_st
 export type SseEvent =
   | { event: 'message.start'; data: { seq: number; message_id: ID; client_msg_id: string; user_message_id: ID; parent_id?: ID; branch_id?: ID } }
   | { event: 'step'; data: Step & { seq: number } }
-  | { event: 'evidence'; data: { seq: number; eid: ID; label: string; source_type: SourceType; title: string; locator: Locator; quote: string } }
+  | { event: 'evidence'; data: { seq: number; eid: ID; label: string; source_type: SourceType; source_id: ID; title: string; locator: Locator; quote: string; sha256?: string } }
   | { event: 'delta'; data: { seq: number; text: string } }
   | { event: 'citation'; data: Citation & { seq: number } }
   | { event: 'message.end'; data: { seq: number; message_id: ID; usage: Usage; latency_ms: number; cancelled: boolean } }
@@ -82,7 +87,7 @@ export interface MarketItem {
   stars: number; stars_date: string; license: string; category: string; desc_zh: string; repo_url: string; installed: boolean;
 }
 export interface InstalledPlugin {
-  id: ID; name: string; version: string; status: 'installed' | 'error' | 'disabled';
+  id: ID; name: string; version: string; status: 'installed' | 'error' | 'disabled' | 'not_installed';
   permissions: ('network' | 'fs_read' | 'fs_write' | 'exec')[];
   config_schema: Record<string, { required: boolean; secret: boolean; label: string }>; last_check_at?: ISODate;
 }

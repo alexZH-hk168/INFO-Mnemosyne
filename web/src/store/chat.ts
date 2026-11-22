@@ -3,11 +3,24 @@ import { create } from 'zustand';
 import { api } from '../api/client';
 import type { OkResult } from '../api/endpoints';
 import { sendMessageStream } from '../api/sse';
-import type { Citation, ID, Scope, SendMessageBody, SseEvent, Step } from '../api/types';
+import type { Citation, Evidence, ID, Scope, SendMessageBody, SseEvent, Step } from '../api/types';
 
-/** SSE `evidence` 事件里的证据（不含 seq）。
- *  state.md 写的是 `Evidence[]`，但事件缺 `id`/`source_id`，见 PROGRESS 未决 U12；这里先按事件实际字段存。 */
-export type StreamEvidence = Omit<Extract<SseEvent, { event: 'evidence' }>['data'], 'seq'>;
+type EvidenceEventData = Extract<SseEvent, { event: 'evidence' }>['data'];
+
+/** SSE `evidence` 事件 → `Evidence`：`eid` 即 `Evidence.id`，其余同名字段照拷（契约 v0.2） */
+export function evidenceFromEvent(d: EvidenceEventData): Evidence {
+  const ev: Evidence = {
+    id: d.eid,
+    label: d.label,
+    source_type: d.source_type,
+    source_id: d.source_id,
+    title: d.title,
+    locator: d.locator,
+    quote: d.quote,
+  };
+  if (d.sha256 !== undefined) ev.sha256 = d.sha256;
+  return ev;
+}
 
 export type StreamStatus = 'streaming' | 'verifying' | 'saved' | 'cancelled' | 'error';
 
@@ -16,7 +29,7 @@ export interface Streaming {
   client_msg_id: string;
   last_seq: number;
   steps: Step[];
-  evidence: StreamEvidence[];
+  evidence: Evidence[];
   text: string;
   citations: Citation[];
   status: StreamStatus;
@@ -46,6 +59,10 @@ export interface ChatState {
   conversationId: ID | null;
   /** null 表示主线 */
   activeBranchId: ID | null;
+  setProject: (id: ID) => void;
+  /** 同时把 activeBranchId 置回 null（回到主线） */
+  setConversation: (id: ID | null) => void;
+  setActiveBranch: (id: ID | null) => void;
   streaming: Streaming | null;
   composer: Record<ComposerKey, ComposerDraft>;
   send: (target: SendTarget) => void;
@@ -68,6 +85,9 @@ export const useChat = create<ChatState>()((set, get) => ({
   projectId: null,
   conversationId: null,
   activeBranchId: null,
+  setProject: (id) => set({ projectId: id }),
+  setConversation: (id) => set({ conversationId: id, activeBranchId: null }),
+  setActiveBranch: (id) => set({ activeBranchId: id }),
   streaming: null,
   composer: { [MAIN]: emptyDraft() },
 
@@ -121,8 +141,8 @@ export const useChat = create<ChatState>()((set, get) => ({
           break;
         }
         case 'evidence': {
-          const { seq: _seq, ...ev } = e.data;
-          if (!next.evidence.some((x) => x.eid === ev.eid)) next.evidence = [...next.evidence, ev];
+          const ev = evidenceFromEvent(e.data);
+          if (!next.evidence.some((x) => x.id === ev.id)) next.evidence = [...next.evidence, ev];
           break;
         }
         case 'delta':

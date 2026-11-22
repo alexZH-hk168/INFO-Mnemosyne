@@ -86,7 +86,14 @@ for (const k of defByKey.keys()) if (!mdEndpoints.has(k)) fail('endpoints.ts', `
 if (codeTable.size < 9) fail('rest-api.md', `错误码表只解析到 ${codeTable.size} 行`);
 
 // ---------------------------------------------------------------- 3. 逐个 fixture
-const PREFIXES = ['prj_', 'cnv_', 'msg_', 'br_', 'doc_', 'evd_', 'cit_', 'ws_', 'mem_', 'job_', 'plg_', 'skl_'];
+// 契约 v0.2：插件 id = manifest id、Skill id = SKILL.md name，不加前缀；其余 ID 按 contract/README.md 第 3 条
+const PREFIXES = ['prj_', 'cnv_', 'msg_', 'br_', 'doc_', 'evd_', 'cit_', 'ws_', 'mem_', 'job_'];
+const MANIFEST_ID = /^[a-z0-9][a-z0-9-]*$/;
+const isManifestId = (v: string) => MANIFEST_ID.test(v) && !PREFIXES.some((p) => v.startsWith(p));
+/** 插件或 Skill 对象（MarketItem / InstalledPlugin / PluginDetail / Skill）：它们的 id 不加前缀 */
+function isPluginOrSkill(o: Record<string, unknown>): boolean {
+  return 'permissions' in o || 'dir_path' in o || ('repo_url' in o && (o.type === 'plugin' || o.type === 'skill'));
+}
 const KEY_PREFIX: Record<string, string[]> = {
   project_id: ['prj_'],
   conversation_id: ['cnv_'],
@@ -101,9 +108,9 @@ const KEY_PREFIX: Record<string, string[]> = {
   eid: ['evd_'],
   citation_id: ['cit_'],
   snapshot_id: ['ws_'],
-  plugin_id: ['plg_'],
+  plugin_id: [],
   job_id: ['job_'],
-  source_id: ['doc_', 'ws_', 'msg_', 'plg_'],
+  source_id: ['doc_', 'ws_', 'msg_'],
   id: PREFIXES,
 };
 const ISO_Z = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -117,9 +124,19 @@ function walk(where: string, value: unknown, path = ''): void {
   for (const [k, v] of Object.entries(value)) {
     const p = `${path}.${k}`;
     if (typeof v === 'string') {
-      const allowed = KEY_PREFIX[k];
-      if (allowed && !allowed.some((pre) => v.startsWith(pre)))
-        fail(where, `${p}="${v}" 前缀应为 ${allowed.join(' / ')}`);
+      const obj = value as Record<string, unknown>;
+      const manifestOk =
+        (k === 'id' && isPluginOrSkill(obj)) ||
+        k === 'plugin_id' ||
+        (k === 'source_id' && obj.source_type === 'plugin');
+      if (manifestOk) {
+        if (!isManifestId(v))
+          fail(where, `${p}="${v}" 应为不带前缀的 manifest id / Skill name（小写字母、数字、连字符）`);
+      } else {
+        const allowed = KEY_PREFIX[k];
+        if (allowed && !allowed.some((pre) => v.startsWith(pre)))
+          fail(where, `${p}="${v}" 前缀应为 ${allowed.join(' / ')}`);
+      }
       if ((k.endsWith('_at') || k === 'valid_from' || k === 'valid_to') && !ISO_Z.test(v))
         fail(where, `${p}="${v}" 不是带 Z 的 ISO 8601`);
     }
@@ -127,16 +144,29 @@ function walk(where: string, value: unknown, path = ''): void {
       Array.isArray(v) &&
       (k === 'job_ids' || k === 'source_message_ids' || k === 'enabled_plugin_ids' || k === 'document_ids')
     ) {
-      const pre = { job_ids: 'job_', source_message_ids: 'msg_', enabled_plugin_ids: 'plg_', document_ids: 'doc_' }[k];
-      v.forEach(
-        (x, i) => typeof x === 'string' && !x.startsWith(pre) && fail(where, `${p}[${i}]="${x}" 前缀应为 ${pre}`),
-      );
+      v.forEach((x, i) => {
+        if (typeof x !== 'string') return;
+        if (k === 'enabled_plugin_ids') {
+          if (!isManifestId(x)) fail(where, `${p}[${i}]="${x}" 应为不带前缀的插件 id`);
+          return;
+        }
+        const pre = { job_ids: 'job_', source_message_ids: 'msg_', document_ids: 'doc_' }[k];
+        if (pre && !x.startsWith(pre)) fail(where, `${p}[${i}]="${x}" 前缀应为 ${pre}`);
+      });
     }
     walk(where, v, p);
   }
 }
 
 const stripMarkers = (s: string) => s.replace(/\[\[E\d+\]\]/g, '');
+// 契约 v0.2：偏移左闭右开、按 Unicode 码点计数
+const cpLen = (s: string) => Array.from(s).length;
+const cpSlice = (s: string, a: number, b: number) => Array.from(s).slice(a, b).join('');
+/** 引用句子切片应是一整句：非空、不以空白开头、以句号结尾或到正文末尾 */
+function looksLikeSentence(plain: string, a: number, b: number): boolean {
+  const piece = cpSlice(plain, a, b);
+  return piece.length > 0 && !/^\s/.test(piece) && (piece.endsWith('。') || b === cpLen(plain));
+}
 
 function checkSse(where: string, fx: SseFixture, replayAfter?: number) {
   fx.events.forEach((e, i) => check(`${where} events[${i}]`, 'SseEvent', e));
@@ -181,10 +211,15 @@ function checkSse(where: string, fx: SseFixture, replayAfter?: number) {
     const c = e.data;
     if (labels.get(c.label) !== c.eid)
       fail(where, `citation ${c.citation_id} 的 label ${c.label} 与 eid ${c.eid} 对不上`);
-    if (!(0 <= c.sentence_start && c.sentence_start < c.sentence_end && c.sentence_end <= plain.length))
+    if (!(0 <= c.sentence_start && c.sentence_start < c.sentence_end && c.sentence_end <= cpLen(plain)))
       fail(
         where,
-        `citation ${c.citation_id} 偏移 [${c.sentence_start}, ${c.sentence_end}) 超出正文（${plain.length} 字）`,
+        `citation ${c.citation_id} 偏移 [${c.sentence_start}, ${c.sentence_end}) 超出正文（${cpLen(plain)} 个码点）`,
+      );
+    else if (!looksLikeSentence(plain, c.sentence_start, c.sentence_end))
+      fail(
+        where,
+        `citation ${c.citation_id} 按码点切出的不是完整句子：「${cpSlice(plain, c.sentence_start, c.sentence_end)}」`,
       );
   }
   const end = ev.find((e) => e.event === 'message.end');
@@ -237,7 +272,17 @@ for (const file of fixtureFiles) {
     fail(file, `接口要求请求体 ${def.request}，样例缺 request.body`);
   if (def.request && fx.request?.body !== undefined && fx.kind !== 'error')
     check(`${file} request.body`, def.request, fx.request.body);
-  walk(file, fx);
+  // 路径参数 {id}：插件、Skill 接口是不带前缀的 manifest id / name；记忆接口是 mem_
+  const pid = fx.request?.params?.id;
+  if (pid !== undefined) {
+    const manifest = /^\/api\/(plugins|skills)\/\{id\}/.test(def.path);
+    if (manifest ? !isManifestId(pid) : !pid.startsWith('mem_'))
+      fail(file, `request.params.id="${pid}" 不符合该接口的 id 规则`);
+  }
+  walk(file, {
+    ...fx,
+    request: fx.request ? { ...fx.request, params: { ...fx.request.params, id: undefined } } : undefined,
+  });
 
   const cov = coverage.get(fx.endpoint);
   if (fx.kind === 'error') {
@@ -333,7 +378,7 @@ if (tree) {
       fail('get-conversations-cid-tree.ok.json', `分支 ${b.id} 的 fork 消息不在 messages 里`);
       continue;
     }
-    const slice = stripMarkers(fork.content).slice(b.anchor_start, b.anchor_end);
+    const slice = cpSlice(stripMarkers(fork.content), b.anchor_start, b.anchor_end);
     if (slice !== b.anchor_quote)
       fail(
         'get-conversations-cid-tree.ok.json',
@@ -341,9 +386,13 @@ if (tree) {
       );
   }
   for (const m of tree.messages) {
-    const len = stripMarkers(m.content).length;
-    for (const c of m.citations ?? [])
+    const plainMsg = stripMarkers(m.content);
+    const len = cpLen(plainMsg);
+    for (const c of m.citations ?? []) {
       if (c.sentence_end > len) fail('get-conversations-cid-tree.ok.json', `${m.id} 的 ${c.citation_id} 偏移超出正文`);
+      else if (!looksLikeSentence(plainMsg, c.sentence_start, c.sentence_end))
+        fail('get-conversations-cid-tree.ok.json', `${m.id} 的 ${c.citation_id} 按码点切出的不是完整句子`);
+    }
   }
 }
 
@@ -358,16 +407,77 @@ for (const [file, fx] of loaded) {
   };
   if ('snapshot_id' in ev.locator && snap && ev.locator.snapshot_id === snap.id) {
     const [s, e] = ev.locator.char_range as [number, number];
-    if (snap.text.slice(s, e) !== ev.quote) fail(file, 'web 证据 quote 与快照 text 的 char_range 切片不一致');
+    if (cpSlice(snap.text, s, e) !== ev.quote) fail(file, 'web 证据 quote 与快照 text 的 char_range 切片不一致');
   }
   if ('message_id' in ev.locator) {
     const msg = ev.context_messages?.find((m) => m.id === ev.locator.message_id);
     if (!msg) fail(file, 'message 证据的 context_messages 里没有被引消息');
     else {
       const [s, e] = ev.locator.char_range as [number, number];
-      if (stripMarkers(msg.content).slice(s, e) !== ev.quote)
+      if (cpSlice(stripMarkers(msg.content), s, e) !== ev.quote)
         fail(file, 'message 证据 quote 与被引消息 char_range 切片不一致');
     }
+  }
+}
+
+// 4.4 文档分组（契约 v0.2）：按 group 分组、顺序固定；kind→group 默认映射；cells / snapshot_id 只在对应 kind 出现
+const GROUP_ORDER = ['paper', 'slides', 'code', 'notes', 'web'];
+const KIND_GROUPS: Record<string, string[]> = {
+  pdf: ['paper', 'slides'],
+  pptx: ['slides'],
+  code: ['code'],
+  ipynb: ['code'],
+  md: ['notes'],
+  web: ['web'],
+};
+type DocT = { id: string; kind: string; group: string; cells?: number; snapshot_id?: string };
+function checkDoc(file: string, d: DocT) {
+  if (!KIND_GROUPS[d.kind]?.includes(d.group)) fail(file, `${d.id}: kind=${d.kind} 不能归入 group=${d.group}`);
+  if (d.cells !== undefined && d.kind !== 'ipynb') fail(file, `${d.id}: cells 只用于 ipynb`);
+  if (d.kind === 'web' && !d.snapshot_id) fail(file, `${d.id}: kind=web 必须带 snapshot_id`);
+  if (d.kind !== 'web' && d.snapshot_id) fail(file, `${d.id}: snapshot_id 只用于 kind=web`);
+}
+for (const [file, fx] of loaded) {
+  if (fx.kind !== 'ok') continue;
+  const b = fx.body as Record<string, unknown>;
+  if (fx.endpoint === 'GET /api/projects/{pid}/documents') {
+    const groups = (b.groups ?? []) as { group: string; documents: DocT[] }[];
+    const order = groups.map((g) => g.group);
+    const expected = GROUP_ORDER.filter((g) => order.includes(g));
+    if (JSON.stringify(order) !== JSON.stringify(expected))
+      fail(file, `分组顺序应为 ${expected.join('、')}，实际 ${order.join('、')}`);
+    for (const g of groups) {
+      if (g.documents.length === 0) fail(file, `空组 ${g.group} 不应返回`);
+      for (const d of g.documents) {
+        if (d.group !== g.group) fail(file, `${d.id} 的 group=${d.group}，却放在 ${g.group} 组`);
+        checkDoc(file, d);
+      }
+    }
+  } else if (fx.endpoint === 'GET /api/documents/{did}') checkDoc(file, b as unknown as DocT);
+  else if (fx.endpoint === 'POST /api/projects/{pid}/documents')
+    for (const d of (b.documents ?? []) as DocT[]) checkDoc(file, d);
+}
+
+// 4.5 SSE evidence 事件与证据详情一致（source_id、sha256、locator、quote）
+const evidenceDetail = new Map<string, Record<string, unknown>>();
+for (const [file, fx] of loaded)
+  if (fx.kind === 'ok' && fx.endpoint === 'GET /api/evidence/{eid}') {
+    const b = fx.body as Record<string, unknown>;
+    evidenceDetail.set(String(b.id), { ...b, __file: file });
+  }
+for (const [file, fx] of loaded) {
+  if (fx.kind !== 'sse') continue;
+  for (const e of fx.events) {
+    if (e.event !== 'evidence') continue;
+    const d = evidenceDetail.get(e.data.eid);
+    if (!d) continue;
+    for (const k of ['source_type', 'source_id', 'title', 'quote', 'sha256'] as const) {
+      const ev = (e.data as Record<string, unknown>)[k];
+      if (ev !== undefined && JSON.stringify(ev) !== JSON.stringify(d[k]))
+        fail(file, `evidence ${e.data.eid} 的 ${k} 与 ${String(d.__file)} 不一致`);
+    }
+    if (JSON.stringify(e.data.locator) !== JSON.stringify(d.locator))
+      fail(file, `evidence ${e.data.eid} 的 locator 与 ${String(d.__file)} 不一致`);
   }
 }
 

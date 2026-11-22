@@ -4,7 +4,7 @@
   "description": "停用 pdf Skill",
   "status": 200,
   "body": {
-    "id": "skl_pdf",
+    "id": "pdf",
     "name": "pdf",
     "description": "提取论文 PDF 的文字与表格",
     "dir_path": "~/.mnemosyne/skills/pdf",
@@ -14,7 +14,7 @@
   },
   "request": {
     "params": {
-      "id": "skl_pdf"
+      "id": "pdf"
     },
     "body": {
       "enabled": false

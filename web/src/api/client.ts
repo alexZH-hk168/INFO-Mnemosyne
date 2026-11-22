@@ -6,13 +6,16 @@ export class ApiRequestError extends Error {
   readonly code: ErrorCode;
   readonly status: number;
   readonly retriable: boolean;
+  /** 错误体里可选的 `details`（契约 v0.2），如 PLUGIN_SELF_CHECK_FAILED 的 `log_tail` */
+  readonly details?: Record<string, unknown>;
 
-  constructor(code: ErrorCode, message: string, status: number, retriable: boolean) {
+  constructor(code: ErrorCode, message: string, status: number, retriable: boolean, details?: Record<string, unknown>) {
     super(message);
     this.name = 'ApiRequestError';
     this.code = code;
     this.status = status;
     this.retriable = retriable;
+    if (details) this.details = details;
   }
 }
 
@@ -33,7 +36,13 @@ export async function parseErrorResponse(res: Response): Promise<ApiRequestError
   try {
     const body: unknown = JSON.parse(text);
     if (isApiError(body)) {
-      return new ApiRequestError(body.error.code, body.error.message, res.status, Boolean(body.error.retriable));
+      return new ApiRequestError(
+        body.error.code,
+        body.error.message,
+        res.status,
+        Boolean(body.error.retriable),
+        body.error.details,
+      );
     }
   } catch {
     // 非 JSON，落到下面

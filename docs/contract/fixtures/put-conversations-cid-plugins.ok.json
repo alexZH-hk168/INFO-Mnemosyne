@@ -6,17 +6,17 @@
   "body": {
     "plugins": [
       {
-        "plugin_id": "plg_arxiv",
+        "plugin_id": "arxiv",
         "enabled": true,
         "status": "installed"
       },
       {
-        "plugin_id": "plg_fetch",
+        "plugin_id": "fetch",
         "enabled": true,
         "status": "installed"
       },
       {
-        "plugin_id": "plg_markitdown",
+        "plugin_id": "markitdown",
         "enabled": false,
         "status": "installed"
       }
@@ -28,8 +28,8 @@
     },
     "body": {
       "enabled_plugin_ids": [
-        "plg_arxiv",
-        "plg_fetch"
+        "arxiv",
+        "fetch"
       ]
     }
   }

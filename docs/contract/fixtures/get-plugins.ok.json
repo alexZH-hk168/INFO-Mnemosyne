@@ -6,7 +6,7 @@
   "body": {
     "plugins": [
       {
-        "id": "plg_arxiv",
+        "id": "arxiv",
         "name": "ArXiv MCP Server",
         "version": "1.0.0",
         "status": "installed",
@@ -18,7 +18,7 @@
         "last_check_at": "2026-11-22T06:00:00Z"
       },
       {
-        "id": "plg_fetch",
+        "id": "fetch",
         "name": "Fetch MCP Server",
         "version": "1.0.0",
         "status": "installed",
@@ -29,7 +29,7 @@
         "last_check_at": "2026-11-22T06:00:02Z"
       },
       {
-        "id": "plg_markitdown",
+        "id": "markitdown",
         "name": "MarkItDown MCP",
         "version": "1.0.0",
         "status": "installed",

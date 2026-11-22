@@ -53,6 +53,7 @@
         "eid": "evd_jalammar_scale",
         "label": "E3",
         "source_type": "web",
+        "source_id": "ws_jalammar_illustrated",
         "title": "The Illustrated Transformer",
         "locator": {
           "snapshot_id": "ws_jalammar_illustrated",
@@ -62,13 +63,14 @@
           ]
         },
         "quote": "The third and fourth steps are to divide the scores by 8 (the square root of the dimension of the key vectors used in the paper – 64). This leads to having more stable gradients.",
+        "sha256": "5c526d76ffe7ca970bc45f53389a7c44102b75e3f9bd03a9b9e92e4e705634bb",
         "seq": 10
       }
     },
     {
       "event": "delta",
       "data": {
-        "text": "一句话：除以 √dₖ 是为了让点积的数值尺度不随维度变大，",
+        "text": "一句话：除以 √𝑑ₖ 是为了让点积的数值尺度不随维度变大，",
         "seq": 11
       }
     },

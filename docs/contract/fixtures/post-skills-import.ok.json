@@ -4,7 +4,7 @@
   "description": "从 GitHub 导入 peer-review",
   "status": 200,
   "body": {
-    "id": "skl_peer-review",
+    "id": "peer-review",
     "name": "peer-review",
     "description": "检查论文的方法、证据和结论",
     "dir_path": "~/.mnemosyne/skills/peer-review",

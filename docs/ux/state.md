@@ -4,7 +4,7 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 
 ## Zustand stores（`web/src/store/`）
 
-### `useLayout`（`layout.ts`，持久化到 localStorage 键 `mn.layout.v1`）
+### `useLayout`（`layout.ts`，持久化到 localStorage 键 `mn.layout.v1`，只存 `sizes` 与 `collapsed`；右栏标签、`view`、`marketRoute` 随路由和数据恢复）
 
 | 字段 / action | 类型 | 说明 |
 |---|---|---|
@@ -17,7 +17,9 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 | `activeTab` | `string \| null` | |
 | `openTab(tab)` / `closeTab(id)` / `activateTab(id)` | | 同一 `kind+ref_id` 已存在则激活不重复开；打开时右栏若收起则自动展开 |
 | `view` | `'home' \| 'conversation' \| 'market'` | 中间区域显示什么 |
+| `setView(view)` | | 切换中间区 |
 | `marketRoute` | `{tab: 'plugins'\|'skills'\|'installed', detail?: {type, id}}` | |
+| `setMarketRoute(route)` | | 整体替换 `marketRoute` |
 
 默认宽度与限制：项目栏 252（200–360），文件栏 236（200–340），对话栏弹性（≥ 480），右栏 560（400 – 视口 55%）。收起后为 44 px 竖条。
 
@@ -26,7 +28,10 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 | 字段 / action | 说明 |
 |---|---|
 | `projectId`, `conversationId`, `activeBranchId` | 当前上下文；`activeBranchId=null` 表示主线 |
-| `streaming` | `{message_id, client_msg_id, last_seq, steps: Step[], evidence: Evidence[], text, citations: Citation[], status: 'streaming'\|'verifying'\|'saved'\|'cancelled'\|'error'} \| null` |
+| `setProject(id)` | 设当前项目（只改 `projectId`） |
+| `setConversation(id \| null)` | 设当前对话；同时把 `activeBranchId` 置回 `null`（回到主线）。路由 `/c/:cid/b/:bid` 先调它再调 `setActiveBranch` |
+| `setActiveBranch(id \| null)` | 切换当前分支；`null` 为主线 |
+| `streaming` | `{message_id, client_msg_id, last_seq, steps: Step[], evidence: Evidence[], text, citations: Citation[], status: 'streaming'\|'verifying'\|'saved'\|'cancelled'\|'error'} \| null`；`evidence` 由 SSE `evidence` 事件转换而来（`eid` → `id`，其余同名字段照拷） |
 | `composer` | `{text, web_search, scope: Scope, forced_skill?: string, attachments: ID[]}`；主线与每个分支各有一份草稿，按 `branchId ?? 'main'` 存 |
 | `send(target)` | 生成 `client_msg_id`，调 `POST /messages`，交给 SSE 客户端 |
 | `cancel()` | `POST /messages/{mid}/cancel` |
@@ -43,7 +48,15 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 
 ### `useUI`（`ui.ts`）
 
-`modal: {kind: 'card-intro'\|'new-project'\|'install'\|'settings', props} | null`、`toasts[]`、`popover: 'plugins'\|'slash'\|'mention'\|'scope'\|null`、`selection: {message_id, start, end, quote, rect} | null`。
+| 字段 / action | 说明 |
+|---|---|
+| `modal` | `{kind: 'card-intro'\|'new-project'\|'install'\|'settings', props?} \| null` |
+| `openModal(kind, props?)` / `closeModal()` | 同一时间只有一个弹窗，再次 `openModal` 会替换 |
+| `toasts` | `Toast[]`，`Toast = {id, kind: 'info'\|'success'\|'error', text, action?: {label, onClick}}` |
+| `pushToast({kind, text, action?})` | 追加一条提示并返回生成的 `id`；自动消失的时长由 1-外壳-全局提示规定 |
+| `dismissToast(id)` | 移除一条提示 |
+| `popover` | `'plugins'\|'slash'\|'mention'\|'scope'\|null` |
+| `selection` | `{message_id, start, end, quote, rect} \| null`；`start/end` 与分支锚点同坐标（左闭右开、按码点） |
 
 ## TanStack Query keys（`web/src/api/queries.ts`）
 

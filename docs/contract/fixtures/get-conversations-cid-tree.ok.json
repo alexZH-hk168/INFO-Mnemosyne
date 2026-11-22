@@ -26,7 +26,7 @@
         "conversation_id": "cnv_transformer",
         "parent_id": "msg_tf_u1",
         "role": "assistant",
-        "content": "一句话：除以 √dₖ 是为了让点积的数值尺度不随维度变大，避免 softmax 进入梯度极小的区域。\n\n论文的推理是：假设 q 和 k 的每个分量独立、均值 0、方差 1，那么点积 q·k = Σ qᵢkᵢ 的均值是 0，方差是 dₖ[[E1]]。dₖ = 64 时标准差就是 8，softmax 的输入差距被拉得很大，输出接近 one-hot。\n\n这和你作业 3 卡住的地方是同一件事：sigmoid 输入很大时导数趋近 0；第 5 讲用的也是这个例子，softmax 饱和时梯度同样几乎为 0[[E2]]。\n\n除以 √dₖ 后点积方差回到 1，softmax 的输入落在梯度较大的区间，训练更稳定[[E3]]。",
+        "content": "一句话：除以 √𝑑ₖ 是为了让点积的数值尺度不随维度变大，避免 softmax 进入梯度极小的区域。\n\n论文的推理是：假设 q 和 k 的每个分量独立、均值 0、方差 1，那么点积 q·k = Σ qᵢkᵢ 的均值是 0，方差是 dₖ[[E1]]。dₖ = 64 时标准差就是 8，softmax 的输入差距被拉得很大，输出接近 one-hot。\n\n这和你作业 3 卡住的地方是同一件事：sigmoid 输入很大时导数趋近 0；第 5 讲用的也是这个例子，softmax 饱和时梯度同样几乎为 0[[E2]]。\n\n除以 √dₖ 后点积方差回到 1，softmax 的输入落在梯度较大的区间，训练更稳定[[E3]]。",
         "model": "chat-model",
         "usage": {
           "prompt_tokens": 6412,

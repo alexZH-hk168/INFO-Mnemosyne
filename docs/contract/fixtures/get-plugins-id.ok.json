@@ -4,7 +4,7 @@
   "description": "ArXiv 插件详情（v1 完整验收的两个插件之一）",
   "status": 200,
   "body": {
-    "id": "plg_arxiv",
+    "id": "arxiv",
     "name": "ArXiv MCP Server",
     "version": "1.0.0",
     "status": "installed",
@@ -36,7 +36,7 @@
   },
   "request": {
     "params": {
-      "id": "plg_arxiv"
+      "id": "arxiv"
     }
   }
 }

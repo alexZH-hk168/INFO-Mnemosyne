@@ -5,7 +5,7 @@ import type {
   Branch,
   ConversationPlugin,
   ConversationSummary,
-  DocKind,
+  DocGroup,
   Document,
   ID,
   ISODate,
@@ -52,8 +52,9 @@ export interface MergeResult {
 export type UpdateBranchBody = { status: 'archived' } | { title: string };
 
 // ---------- 材料与证据 ----------
+/** 契约 v0.2：按 `Document.group` 分组，顺序 paper、slides、code、notes、web */
 export interface DocumentGroup {
-  kind: DocKind;
+  group: DocGroup;
   documents: Document[];
 }
 export interface DocumentGroups {

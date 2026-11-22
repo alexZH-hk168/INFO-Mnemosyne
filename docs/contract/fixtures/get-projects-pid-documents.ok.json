@@ -1,17 +1,18 @@
 {
   "endpoint": "GET /api/projects/{pid}/documents",
   "kind": "ok",
-  "description": "文件栏：按 pdf、pptx、code+ipynb、md、web 分组（code 组同时含 ipynb）",
+  "description": "文件栏：按 group 分组，顺序 paper、slides、code、notes、web（横版 PDF“L04 反向传播”进 slides）",
   "status": 200,
   "body": {
     "groups": [
       {
-        "kind": "pdf",
+        "group": "paper",
         "documents": [
           {
             "id": "doc_attention",
             "project_id": "prj_dlintro",
             "kind": "pdf",
+            "group": "paper",
             "title": "Attention Is All You Need",
             "pages": 15,
             "parse_status": "ready",
@@ -23,33 +24,36 @@
             "id": "doc_longmemeval",
             "project_id": "prj_dlintro",
             "kind": "pdf",
+            "group": "paper",
             "title": "LongMemEval.pdf",
             "pages": 31,
             "parse_status": "parsing",
             "progress": 62,
             "cited_count": 0,
             "created_at": "2026-11-22T06:40:00Z"
-          },
+          }
+        ]
+      },
+      {
+        "group": "slides",
+        "documents": [
           {
             "id": "doc_l04_backprop",
             "project_id": "prj_dlintro",
             "kind": "pdf",
+            "group": "slides",
             "title": "L04 反向传播.pdf",
             "pages": 28,
             "parse_status": "ready",
             "progress": 100,
             "cited_count": 0,
             "created_at": "2026-11-18T07:00:00Z"
-          }
-        ]
-      },
-      {
-        "kind": "pptx",
-        "documents": [
+          },
           {
             "id": "doc_l05_attention",
             "project_id": "prj_dlintro",
             "kind": "pptx",
+            "group": "slides",
             "title": "L05 注意力机制.pptx",
             "pages": 32,
             "parse_status": "ready",
@@ -60,12 +64,13 @@
         ]
       },
       {
-        "kind": "code",
+        "group": "code",
         "documents": [
           {
             "id": "doc_transformer_py",
             "project_id": "prj_dlintro",
             "kind": "code",
+            "group": "code",
             "title": "transformer.py",
             "lines": 212,
             "parse_status": "ready",
@@ -77,7 +82,9 @@
             "id": "doc_train_ipynb",
             "project_id": "prj_dlintro",
             "kind": "ipynb",
+            "group": "code",
             "title": "train.ipynb",
+            "cells": 14,
             "parse_status": "ready",
             "progress": 100,
             "cited_count": 0,
@@ -86,12 +93,13 @@
         ]
       },
       {
-        "kind": "md",
+        "group": "notes",
         "documents": [
           {
             "id": "doc_attention_notes",
             "project_id": "prj_dlintro",
             "kind": "md",
+            "group": "notes",
             "title": "注意力笔记.md",
             "lines": 40,
             "parse_status": "ready",
@@ -102,13 +110,15 @@
         ]
       },
       {
-        "kind": "web",
+        "group": "web",
         "documents": [
           {
             "id": "doc_web_illustrated",
             "project_id": "prj_dlintro",
             "kind": "web",
+            "group": "web",
             "title": "The Illustrated Transformer",
+            "snapshot_id": "ws_jalammar_illustrated",
             "parse_status": "ready",
             "progress": 100,
             "cited_count": 1,
@@ -118,7 +128,9 @@
             "id": "doc_web_pytorch_sdpa",
             "project_id": "prj_dlintro",
             "kind": "web",
+            "group": "web",
             "title": "PyTorch · scaled_dot_product_attention",
+            "snapshot_id": "ws_pytorch_sdpa",
             "parse_status": "ready",
             "progress": 100,
             "cited_count": 1,

@@ -41,6 +41,7 @@
         "eid": "evd_att_p4_fn4",
         "label": "E1",
         "source_type": "material",
+        "source_id": "doc_attention",
         "title": "Attention Is All You Need",
         "locator": {
           "page": 4,
@@ -56,6 +57,7 @@
           ]
         },
         "quote": "To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Σ q_i k_i, has mean 0 and variance d_k.",
+        "sha256": "1e89e1f28722f2767b49bb175399bf7dc0ab9e18b33edb458ee5ad0efa8c0363",
         "seq": 4
       }
     },
@@ -65,6 +67,7 @@
         "eid": "evd_l05_s18",
         "label": "E2",
         "source_type": "material",
+        "source_id": "doc_l05_attention",
         "title": "L05 注意力机制",
         "locator": {
           "slide": 18,
@@ -75,6 +78,7 @@
           ]
         },
         "quote": "softmax 饱和：输入差距过大时输出接近 one-hot，梯度几乎为 0",
+        "sha256": "281a0c616e8fad52b81c6984153c8b6c07f23edd6293f48c2fcef609112895e7",
         "seq": 5
       }
     },
@@ -126,6 +130,7 @@
         "eid": "evd_jalammar_scale",
         "label": "E3",
         "source_type": "web",
+        "source_id": "ws_jalammar_illustrated",
         "title": "The Illustrated Transformer",
         "locator": {
           "snapshot_id": "ws_jalammar_illustrated",
@@ -135,13 +140,14 @@
           ]
         },
         "quote": "The third and fourth steps are to divide the scores by 8 (the square root of the dimension of the key vectors used in the paper – 64). This leads to having more stable gradients.",
+        "sha256": "5c526d76ffe7ca970bc45f53389a7c44102b75e3f9bd03a9b9e92e4e705634bb",
         "seq": 10
       }
     },
     {
       "event": "delta",
       "data": {
-        "text": "一句话：除以 √dₖ 是为了让点积的数值尺度不随维度变大，",
+        "text": "一句话：除以 √𝑑ₖ 是为了让点积的数值尺度不随维度变大，",
         "seq": 11
       }
     },

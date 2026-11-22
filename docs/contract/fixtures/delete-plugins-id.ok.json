@@ -8,7 +8,7 @@
   },
   "request": {
     "params": {
-      "id": "plg_markitdown"
+      "id": "markitdown"
     }
   }
 }

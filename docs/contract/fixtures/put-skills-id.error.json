@@ -12,7 +12,7 @@
   },
   "request": {
     "params": {
-      "id": "skl_missing"
+      "id": "missing-skill"
     },
     "body": {
       "enabled": true

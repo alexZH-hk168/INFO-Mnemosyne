@@ -1,10 +1,11 @@
 // 市场条目原始数据：由 03-调研/插件与Skill市场素材.json（GitHub 星数查询日 2026-11-21）机械转换，未增删条目、未改星数与许可证。
+// 插件 id 为 manifest id、Skill id 为 SKILL.md 的 name（契约 v0.2，不加前缀）。
 // installed 字段不在此处，由 fixtures-source.ts 按已安装列表补上。
 import type { MarketItem } from '../api/types';
 
 export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
   {
-    "id": "plg_arxiv",
+    "id": "arxiv",
     "type": "plugin",
     "name": "ArXiv MCP Server",
     "owner": "blazickjp",
@@ -17,7 +18,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/blazickjp/arxiv-mcp-server"
   },
   {
-    "id": "plg_paper-search",
+    "id": "paper-search",
     "type": "plugin",
     "name": "Paper Search MCP",
     "owner": "openags",
@@ -30,7 +31,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/openags/paper-search-mcp"
   },
   {
-    "id": "plg_tavily",
+    "id": "tavily",
     "type": "plugin",
     "name": "Tavily MCP",
     "owner": "tavily-ai",
@@ -43,7 +44,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/tavily-ai/tavily-mcp"
   },
   {
-    "id": "plg_exa",
+    "id": "exa",
     "type": "plugin",
     "name": "Exa MCP Server",
     "owner": "exa-labs",
@@ -56,7 +57,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/exa-labs/exa-mcp-server"
   },
   {
-    "id": "plg_brave-search",
+    "id": "brave-search",
     "type": "plugin",
     "name": "Brave Search MCP Server",
     "owner": "brave",
@@ -69,7 +70,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/brave/brave-search-mcp-server"
   },
   {
-    "id": "plg_fetch",
+    "id": "fetch",
     "type": "plugin",
     "name": "Fetch MCP Server",
     "owner": "modelcontextprotocol",
@@ -82,7 +83,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch"
   },
   {
-    "id": "plg_zotero",
+    "id": "zotero",
     "type": "plugin",
     "name": "Zotero MCP Plugin",
     "owner": "cookjohn",
@@ -95,7 +96,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/cookjohn/zotero-mcp"
   },
   {
-    "id": "plg_markitdown",
+    "id": "markitdown",
     "type": "plugin",
     "name": "MarkItDown MCP",
     "owner": "microsoft",
@@ -108,7 +109,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp"
   },
   {
-    "id": "plg_docling",
+    "id": "docling",
     "type": "plugin",
     "name": "Docling MCP",
     "owner": "docling-project",
@@ -121,7 +122,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/docling-project/docling-mcp"
   },
   {
-    "id": "plg_obsidian",
+    "id": "obsidian",
     "type": "plugin",
     "name": "Obsidian MCP",
     "owner": "MarkusPfundstein",
@@ -134,7 +135,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/MarkusPfundstein/mcp-obsidian"
   },
   {
-    "id": "plg_notion",
+    "id": "notion",
     "type": "plugin",
     "name": "Notion MCP Server",
     "owner": "makenotion",
@@ -147,7 +148,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/makenotion/notion-mcp-server"
   },
   {
-    "id": "plg_anki",
+    "id": "anki",
     "type": "plugin",
     "name": "Anki MCP Server",
     "owner": "ankimcp",
@@ -160,7 +161,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/ankimcp/anki-mcp-server"
   },
   {
-    "id": "plg_jupyter",
+    "id": "jupyter",
     "type": "plugin",
     "name": "Jupyter MCP Server",
     "owner": "datalayer",
@@ -173,7 +174,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/datalayer/jupyter-mcp-server"
   },
   {
-    "id": "plg_github",
+    "id": "github",
     "type": "plugin",
     "name": "GitHub MCP Server",
     "owner": "github",
@@ -186,7 +187,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/github/github-mcp-server"
   },
   {
-    "id": "plg_youtube-transcript",
+    "id": "youtube-transcript",
     "type": "plugin",
     "name": "YouTube Transcript MCP",
     "owner": "kimtaeyoon83",
@@ -199,7 +200,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/kimtaeyoon83/mcp-server-youtube-transcript"
   },
   {
-    "id": "plg_wikipedia",
+    "id": "wikipedia",
     "type": "plugin",
     "name": "Wikipedia MCP",
     "owner": "Rudra-ravi",
@@ -212,7 +213,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/Rudra-ravi/wikipedia-mcp"
   },
   {
-    "id": "plg_wolfram",
+    "id": "wolfram",
     "type": "plugin",
     "name": "Wolfram AgentTools",
     "owner": "WolframResearch",
@@ -225,7 +226,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/WolframResearch/AgentTools"
   },
   {
-    "id": "plg_context7",
+    "id": "context7",
     "type": "plugin",
     "name": "Context7",
     "owner": "upstash",
@@ -238,7 +239,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/upstash/context7"
   },
   {
-    "id": "skl_pdf",
+    "id": "pdf",
     "type": "skill",
     "name": "pdf",
     "owner": "anthropics",
@@ -251,7 +252,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/anthropics/skills/tree/main/skills/pdf"
   },
   {
-    "id": "skl_docx",
+    "id": "docx",
     "type": "skill",
     "name": "docx",
     "owner": "anthropics",
@@ -264,7 +265,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/anthropics/skills/tree/main/skills/docx"
   },
   {
-    "id": "skl_pptx",
+    "id": "pptx",
     "type": "skill",
     "name": "pptx",
     "owner": "anthropics",
@@ -277,7 +278,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/anthropics/skills/tree/main/skills/pptx"
   },
   {
-    "id": "skl_xlsx",
+    "id": "xlsx",
     "type": "skill",
     "name": "xlsx",
     "owner": "anthropics",
@@ -290,7 +291,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/anthropics/skills/tree/main/skills/xlsx"
   },
   {
-    "id": "skl_skill-creator",
+    "id": "skill-creator",
     "type": "skill",
     "name": "skill-creator",
     "owner": "anthropics",
@@ -303,7 +304,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/anthropics/skills/tree/main/skills/skill-creator"
   },
   {
-    "id": "skl_literature-review",
+    "id": "literature-review",
     "type": "skill",
     "name": "literature-review",
     "owner": "K-Dense-AI",
@@ -316,7 +317,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/literature-review"
   },
   {
-    "id": "skl_scientific-writing",
+    "id": "scientific-writing",
     "type": "skill",
     "name": "scientific-writing",
     "owner": "K-Dense-AI",
@@ -329,7 +330,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/scientific-writing"
   },
   {
-    "id": "skl_peer-review",
+    "id": "peer-review",
     "type": "skill",
     "name": "peer-review",
     "owner": "K-Dense-AI",
@@ -342,7 +343,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/peer-review"
   },
   {
-    "id": "skl_research-lookup",
+    "id": "research-lookup",
     "type": "skill",
     "name": "research-lookup",
     "owner": "K-Dense-AI",
@@ -355,7 +356,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/research-lookup"
   },
   {
-    "id": "skl_citation-management",
+    "id": "citation-management",
     "type": "skill",
     "name": "citation-management",
     "owner": "K-Dense-AI",
@@ -368,7 +369,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/K-Dense-AI/scientific-agent-skills/tree/main/skills/citation-management"
   },
   {
-    "id": "skl_writing-plans",
+    "id": "writing-plans",
     "type": "skill",
     "name": "writing-plans",
     "owner": "obra",
@@ -381,7 +382,7 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/obra/superpowers/tree/main/skills/writing-plans"
   },
   {
-    "id": "skl_brainstorming",
+    "id": "brainstorming",
     "type": "skill",
     "name": "brainstorming",
     "owner": "obra",

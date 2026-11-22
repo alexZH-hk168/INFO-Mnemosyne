@@ -66,13 +66,17 @@ export function stripMarkers(text: string): string {
   return text.replace(/\[\[E\d+\]\]/g, '');
 }
 
-/** 标记 `[[label]]` 所在句子在纯文本中的 [start, end)：从上一个句号之后（跳过空白）到本句句号之后 */
+// 契约 v0.2：偏移一律左闭右开、按 Unicode 码点计数。JS 字符串按 UTF-16 索引，这里全部换算成码点。
+const cps = (s: string) => Array.from(s);
+const cpLen = (s: string) => cps(s).length;
+
+/** 标记 `[[label]]` 所在句子在纯文本中的 [start, end)（码点）：从上一个句号之后（跳过空白）到本句句号之后 */
 function sentenceSpan(raw: string, label: string): [number, number] {
   const marker = `[[${label}]]`;
   const rawIdx = raw.indexOf(marker);
   if (rawIdx < 0) throw new Error(`正文里没有 ${marker}`);
-  const plain = stripMarkers(raw);
-  const pos = stripMarkers(raw.slice(0, rawIdx)).length;
+  const plain = cps(stripMarkers(raw));
+  const pos = cpLen(stripMarkers(raw.slice(0, rawIdx)));
   let start = plain.lastIndexOf('。', pos - 1) + 1;
   while (/\s/.test(plain[start] ?? '')) start += 1;
   const stop = plain.indexOf('。', pos);
@@ -80,18 +84,19 @@ function sentenceSpan(raw: string, label: string): [number, number] {
   return [start, end];
 }
 
-/** 子串在纯文本中的 [start, end) */
+/** 子串在纯文本中的 [start, end)（码点） */
 function rangeOf(text: string, quote: string): [number, number] {
   const plain = stripMarkers(text);
-  const start = plain.indexOf(quote);
-  if (start < 0) throw new Error(`找不到片段：${quote}`);
-  return [start, start + quote.length];
+  const utf16Start = plain.indexOf(quote);
+  if (utf16Start < 0) throw new Error(`找不到片段：${quote}`);
+  const start = cpLen(plain.slice(0, utf16Start));
+  return [start, start + cpLen(quote)];
 }
 
 const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 
-function apiError(code: ErrorCode, message: string, retriable: boolean): ApiError {
-  return { error: { code, message, retriable } };
+function apiError(code: ErrorCode, message: string, retriable: boolean, details?: Record<string, unknown>): ApiError {
+  return { error: details ? { code, message, retriable, details } : { code, message, retriable } };
 }
 
 const HTTP: Record<ErrorCode, number> = {
@@ -146,13 +151,14 @@ function err(
   request: FixtureRequest | undefined,
   code: ErrorCode,
   message: string,
+  details?: Record<string, unknown>,
 ) {
   const content: RestFixture = {
     endpoint,
     kind: 'error',
     description,
     status: HTTP[code],
-    body: apiError(code, message, RETRIABLE[code]),
+    body: apiError(code, message, RETRIABLE[code], details),
   };
   if (request) content.request = request;
   files.push({ file: `${slug(endpoint)}.error.json`, content });
@@ -243,6 +249,7 @@ const documents: Record<string, Document> = {
     id: DOC.attention,
     project_id: PID,
     kind: 'pdf',
+    group: 'paper',
     title: 'Attention Is All You Need',
     pages: 15,
     parse_status: 'ready',
@@ -254,6 +261,7 @@ const documents: Record<string, Document> = {
     id: DOC.longmem,
     project_id: PID,
     kind: 'pdf',
+    group: 'paper',
     title: 'LongMemEval.pdf',
     pages: 31,
     parse_status: 'parsing',
@@ -265,6 +273,7 @@ const documents: Record<string, Document> = {
     id: DOC.l04,
     project_id: PID,
     kind: 'pdf',
+    group: 'slides', // 横版 PDF 课件，后端判为 slides（契约 v0.2），与概念图 UI-05 一致
     title: 'L04 反向传播.pdf',
     pages: 28,
     parse_status: 'ready',
@@ -276,6 +285,7 @@ const documents: Record<string, Document> = {
     id: DOC.l05,
     project_id: PID,
     kind: 'pptx',
+    group: 'slides',
     title: 'L05 注意力机制.pptx',
     pages: 32,
     parse_status: 'ready',
@@ -287,6 +297,7 @@ const documents: Record<string, Document> = {
     id: DOC.tfpy,
     project_id: PID,
     kind: 'code',
+    group: 'code',
     title: 'transformer.py',
     lines: 212,
     parse_status: 'ready',
@@ -298,7 +309,9 @@ const documents: Record<string, Document> = {
     id: DOC.ipynb,
     project_id: PID,
     kind: 'ipynb',
+    group: 'code',
     title: 'train.ipynb',
+    cells: 14,
     parse_status: 'ready',
     progress: 100,
     cited_count: 0,
@@ -308,6 +321,7 @@ const documents: Record<string, Document> = {
     id: DOC.notes,
     project_id: PID,
     kind: 'md',
+    group: 'notes',
     title: '注意力笔记.md',
     lines: 40,
     parse_status: 'ready',
@@ -319,7 +333,9 @@ const documents: Record<string, Document> = {
     id: DOC.webIllustrated,
     project_id: PID,
     kind: 'web',
+    group: 'web',
     title: 'The Illustrated Transformer',
+    snapshot_id: 'ws_jalammar_illustrated',
     parse_status: 'ready',
     progress: 100,
     cited_count: 1,
@@ -329,7 +345,9 @@ const documents: Record<string, Document> = {
     id: DOC.webPytorch,
     project_id: PID,
     kind: 'web',
+    group: 'web',
     title: 'PyTorch · scaled_dot_product_attention',
+    snapshot_id: 'ws_pytorch_sdpa',
     parse_status: 'ready',
     progress: 100,
     cited_count: 1,
@@ -450,7 +468,7 @@ const EV: Record<'fn4' | 'l05' | 'web' | 'p5' | 'hw3', EvidenceSeed> = {
   },
 };
 // pptx 的 char_range 要与 quote 长度一致
-(EV.l05.locator as { char_range: [number, number] }).char_range = [0, EV.l05.quote.length];
+(EV.l05.locator as { char_range: [number, number] }).char_range = [0, cpLen(EV.l05.quote)];
 
 function evidenceEvent(seed: EvidenceSeed, label: string): EventNoSeq {
   return {
@@ -459,9 +477,11 @@ function evidenceEvent(seed: EvidenceSeed, label: string): EventNoSeq {
       eid: seed.id,
       label,
       source_type: seed.source_type,
+      source_id: seed.source_id,
       title: seed.title,
       locator: seed.locator,
       quote: seed.quote,
+      sha256: sha256(seed.quote),
     },
   };
 }
@@ -478,7 +498,8 @@ const CLIENT = {
 
 const q1 = '结合第 5 讲课件，讲讲注意力为什么要除以 √dₖ。最好和我上次作业卡住的地方联系起来。';
 const a1Deltas = [
-  '一句话：除以 √dₖ 是为了让点积的数值尺度不随维度变大，',
+  // 第一句用数学斜体 𝑑（U+1D451，BMP 以外）：之后所有偏移的码点计数与 UTF-16 计数相差 1，用来检验契约 v0.2 的偏移约定
+  '一句话：除以 √𝑑ₖ 是为了让点积的数值尺度不随维度变大，',
   '避免 softmax 进入梯度极小的区域。\n\n',
   '论文的推理是：假设 q 和 k 的每个分量独立、均值 0、方差 1，',
   '那么点积 q·k = Σ qᵢkᵢ 的均值是 0，方差是 dₖ[[E1]]。',
@@ -733,8 +754,8 @@ const tree: ConversationTree = {
 
 // ---------------------------------------------------------------- 插件与 Skill
 
-const INSTALLED_PLUGINS = ['plg_arxiv', 'plg_fetch', 'plg_markitdown'];
-const INSTALLED_SKILLS = ['skl_pdf', 'skl_literature-review'];
+const INSTALLED_PLUGINS = ['arxiv', 'fetch', 'markitdown'];
+const INSTALLED_SKILLS = ['pdf', 'literature-review'];
 const market = (type: MarketItem['type']): MarketList => ({
   items: MARKET_DATA.filter((m) => m.type === type).map((m) => ({
     ...m,
@@ -744,7 +765,7 @@ const market = (type: MarketItem['type']): MarketList => ({
 
 const plugins: InstalledPlugin[] = [
   {
-    id: 'plg_arxiv',
+    id: 'arxiv',
     name: 'ArXiv MCP Server',
     version: '1.0.0',
     status: 'installed',
@@ -753,7 +774,7 @@ const plugins: InstalledPlugin[] = [
     last_check_at: '2026-11-22T06:00:00Z',
   },
   {
-    id: 'plg_fetch',
+    id: 'fetch',
     name: 'Fetch MCP Server',
     version: '1.0.0',
     status: 'installed',
@@ -762,7 +783,7 @@ const plugins: InstalledPlugin[] = [
     last_check_at: '2026-11-22T06:00:02Z',
   },
   {
-    id: 'plg_markitdown',
+    id: 'markitdown',
     name: 'MarkItDown MCP',
     version: '1.0.0',
     status: 'installed',
@@ -796,7 +817,7 @@ const skillOf = (id: string, enabled: boolean): Skill => {
     enabled,
   };
 };
-const skills: Skill[] = [skillOf('skl_pdf', true), skillOf('skl_literature-review', false)];
+const skills: Skill[] = [skillOf('pdf', true), skillOf('literature-review', false)];
 const pdfSkillDetail: SkillDetail = {
   ...skills[0],
   skill_md: `---\nname: pdf\ndescription: ${skills[0].description}\nlicense: Apache-2.0\n---\n\n（fixture 占位：正文以安装时从仓库读取的 SKILL.md 为准）\n`,
@@ -1185,18 +1206,18 @@ err(
 );
 
 // ---- 材料与证据
-const docsByKind = (kinds: Document['kind'][]) => Object.values(documents).filter((d) => kinds.includes(d.kind));
+const docsByGroup = (group: Document['group']) => Object.values(documents).filter((d) => d.group === group);
 ok<DocumentGroups>(
   'GET /api/projects/{pid}/documents',
-  '文件栏：按 pdf、pptx、code+ipynb、md、web 分组（code 组同时含 ipynb）',
+  '文件栏：按 group 分组，顺序 paper、slides、code、notes、web（横版 PDF“L04 反向传播”进 slides）',
   { params: { pid: PID } },
   {
     groups: [
-      { kind: 'pdf', documents: docsByKind(['pdf']) },
-      { kind: 'pptx', documents: docsByKind(['pptx']) },
-      { kind: 'code', documents: docsByKind(['code', 'ipynb']) },
-      { kind: 'md', documents: docsByKind(['md']) },
-      { kind: 'web', documents: docsByKind(['web']) },
+      { group: 'paper', documents: docsByGroup('paper') },
+      { group: 'slides', documents: docsByGroup('slides') },
+      { group: 'code', documents: docsByGroup('code') },
+      { group: 'notes', documents: docsByGroup('notes') },
+      { group: 'web', documents: docsByGroup('web') },
     ],
   },
 );
@@ -1212,6 +1233,7 @@ ok<UploadResult>(
         id: 'doc_l06_posenc',
         project_id: PID,
         kind: 'pptx',
+        group: 'slides',
         title: 'L06 位置编码.pptx',
         parse_status: 'queued',
         progress: 0,
@@ -1368,27 +1390,50 @@ err('GET /api/plugins', '读取失败', undefined, 'INTERNAL', '读取已安装�
 ok<PluginDetail>(
   'GET /api/plugins/{id}',
   'ArXiv 插件详情（v1 完整验收的两个插件之一）',
-  { params: { id: 'plg_arxiv' } },
+  { params: { id: 'arxiv' } },
   arxivDetail,
 );
-err('GET /api/plugins/{id}', '插件不存在', { params: { id: 'plg_missing' } }, 'NOT_FOUND', '插件不存在');
+ok<PluginDetail>(
+  'GET /api/plugins/{id}',
+  '未安装的 Tavily：字段取自市场 manifest 与上游工具清单，status=not_installed（工具描述为样例，接入时以实测为准）',
+  { params: { id: 'tavily' } },
+  {
+    id: 'tavily',
+    name: 'Tavily MCP',
+    version: '1.0.0',
+    status: 'not_installed',
+    permissions: ['network'],
+    config_schema: { TAVILY_API_KEY: { required: true, secret: true, label: 'Tavily API Key' } },
+    verified: false,
+    tools: [
+      { name: 'tavily-search', description: '实时网页检索' },
+      { name: 'tavily-extract', description: '抽取指定网页的正文' },
+    ],
+  },
+  'not-installed',
+);
+err('GET /api/plugins/{id}', '插件不存在', { params: { id: 'missing-plugin' } }, 'NOT_FOUND', '插件不存在');
 
 ok<InstalledPlugin>(
   'POST /api/plugins/{id}',
   '安装 Fetch 插件并通过自检',
-  { params: { id: 'plg_fetch' }, body: { config: {} } satisfies InstallPluginBody },
+  { params: { id: 'fetch' }, body: { config: {} } satisfies InstallPluginBody },
   plugins[1],
 );
 err(
   'POST /api/plugins/{id}',
   '启动后 tools/list 失败',
-  { params: { id: 'plg_docling' }, body: { config: {} } satisfies InstallPluginBody },
+  { params: { id: 'docling' }, body: { config: {} } satisfies InstallPluginBody },
   'PLUGIN_SELF_CHECK_FAILED',
   '插件启动失败：tools/list 在 30 s 内没有返回',
+  {
+    log_tail:
+      '[docling-mcp] starting server (stdio)\n[docling-mcp] loading models…\n[mnemosyne] tools/list timed out after 30000 ms',
+  },
 );
 
-ok<OkResult>('DELETE /api/plugins/{id}', '卸载插件', { params: { id: 'plg_markitdown' } }, { ok: true });
-err('DELETE /api/plugins/{id}', '插件未安装', { params: { id: 'plg_missing' } }, 'NOT_FOUND', '插件未安装');
+ok<OkResult>('DELETE /api/plugins/{id}', '卸载插件', { params: { id: 'markitdown' } }, { ok: true });
+err('DELETE /api/plugins/{id}', '插件未安装', { params: { id: 'missing-plugin' } }, 'NOT_FOUND', '插件未安装');
 
 ok<ConversationPluginList>(
   'GET /api/conversations/{cid}/plugins',
@@ -1409,30 +1454,30 @@ ok<ConversationPluginList>(
   '关掉 PDF 解析插件',
   {
     params: { cid: CID },
-    body: { enabled_plugin_ids: ['plg_arxiv', 'plg_fetch'] } satisfies SetConversationPluginsBody,
+    body: { enabled_plugin_ids: ['arxiv', 'fetch'] } satisfies SetConversationPluginsBody,
   },
-  { plugins: plugins.map((p) => ({ plugin_id: p.id, enabled: p.id !== 'plg_markitdown', status: p.status })) },
+  { plugins: plugins.map((p) => ({ plugin_id: p.id, enabled: p.id !== 'markitdown', status: p.status })) },
 );
 err(
   'PUT /api/conversations/{cid}/plugins',
   '包含未安装的插件',
-  { params: { cid: CID }, body: { enabled_plugin_ids: ['plg_tavily'] } satisfies SetConversationPluginsBody },
+  { params: { cid: CID }, body: { enabled_plugin_ids: ['tavily'] } satisfies SetConversationPluginsBody },
   'VALIDATION_ERROR',
-  '插件 plg_tavily 未安装',
+  '插件 tavily 未安装',
 );
 
 ok<SkillList>('GET /api/skills', '已导入 2 个 Skill', undefined, { skills });
 err('GET /api/skills', '读取失败', undefined, 'INTERNAL', '读取 Skill 列表失败');
 
-ok<SkillDetail>('GET /api/skills/{id}', 'pdf Skill 详情', { params: { id: 'skl_pdf' } }, pdfSkillDetail);
-err('GET /api/skills/{id}', 'Skill 不存在', { params: { id: 'skl_missing' } }, 'NOT_FOUND', 'Skill 不存在');
+ok<SkillDetail>('GET /api/skills/{id}', 'pdf Skill 详情', { params: { id: 'pdf' } }, pdfSkillDetail);
+err('GET /api/skills/{id}', 'Skill 不存在', { params: { id: 'missing-skill' } }, 'NOT_FOUND', 'Skill 不存在');
 
-const peerReviewUrl = MARKET_DATA.find((m) => m.id === 'skl_peer-review')?.repo_url ?? '';
+const peerReviewUrl = MARKET_DATA.find((m) => m.id === 'peer-review')?.repo_url ?? '';
 ok<Skill>(
   'POST /api/skills/import',
   '从 GitHub 导入 peer-review',
   { body: { source: 'github', url: peerReviewUrl } satisfies ImportSkillBody },
-  skillOf('skl_peer-review', true),
+  skillOf('peer-review', true),
 );
 err(
   'POST /api/skills/import',
@@ -1445,13 +1490,13 @@ err(
 ok<Skill>(
   'PUT /api/skills/{id}',
   '停用 pdf Skill',
-  { params: { id: 'skl_pdf' }, body: { enabled: false } satisfies UpdateSkillBody },
+  { params: { id: 'pdf' }, body: { enabled: false } satisfies UpdateSkillBody },
   { ...skills[0], enabled: false },
 );
 err(
   'PUT /api/skills/{id}',
   'Skill 不存在',
-  { params: { id: 'skl_missing' }, body: { enabled: true } satisfies UpdateSkillBody },
+  { params: { id: 'missing-skill' }, body: { enabled: true } satisfies UpdateSkillBody },
   'NOT_FOUND',
   'Skill 不存在',
 );
