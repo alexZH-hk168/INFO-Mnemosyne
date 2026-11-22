@@ -142,7 +142,7 @@ test('全局快捷键：Alt+1 / Alt+2 切换左两栏；Ctrl 与 Meta 的 . 切�
     await expect(page.getByTestId('sidebar.panel')).toBeVisible();
     await expect(page.getByTestId('files.panel')).toBeVisible();
   }
-  await expect(page.getByTestId('center.conversation-placeholder')).toBeVisible();
+  await expect(page.getByTestId('chat.panel') /* F3：对话栏替换了占位 */).toBeVisible();
   await page.keyboard.press('Control+k');
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId('home.onboard')).toBeVisible();

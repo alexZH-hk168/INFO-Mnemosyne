@@ -1,0 +1,98 @@
+/* F3 对话栏样式：回答正文排版（Markdown）与流式光标。颜色只引用 tokens.css。 */
+
+.mn-answer {
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.mn-answer > * + * {
+  margin-top: 0.7em;
+}
+.mn-answer strong {
+  font-weight: 600;
+}
+.mn-answer ul,
+.mn-answer ol {
+  padding-left: 1.4em;
+}
+.mn-answer ul {
+  list-style: disc;
+}
+.mn-answer ol {
+  list-style: decimal;
+}
+.mn-answer li + li {
+  margin-top: 0.25em;
+}
+.mn-answer h1,
+.mn-answer h2,
+.mn-answer h3 {
+  font-weight: 600;
+  line-height: 1.5;
+}
+.mn-answer h1 {
+  font-size: 1.25em;
+}
+.mn-answer h2 {
+  font-size: 1.15em;
+}
+.mn-answer h3 {
+  font-size: 1.05em;
+}
+.mn-answer code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--panel);
+  border-radius: var(--radius-chip);
+  padding: 0.05em 0.3em;
+}
+.mn-answer pre {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card-sm);
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+.mn-answer pre code {
+  background: transparent;
+  padding: 0;
+}
+.mn-answer blockquote {
+  border-left: 3px solid var(--line);
+  padding-left: 0.9em;
+  color: var(--ink-2);
+}
+.mn-answer .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+.mn-answer table {
+  border-collapse: collapse;
+}
+.mn-answer th,
+.mn-answer td {
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+}
+
+/* 流式光标：紧跟在正文后面 */
+.mn-caret {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  border-radius: 2px;
+  background: var(--faint);
+  animation: mn-caret 1s steps(2, start) infinite;
+}
+.mn-answer[data-streaming] > p:last-of-type {
+  display: inline;
+}
+@keyframes mn-caret {
+  to {
+    visibility: hidden;
+  }
+}

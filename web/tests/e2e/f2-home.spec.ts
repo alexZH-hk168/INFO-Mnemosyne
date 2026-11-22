@@ -37,6 +37,14 @@ test.beforeEach(async ({ page }) => {
   await settle(page, 400);
 });
 
+/** F3：从输入框 Tab 到第一张卡（中间经过输入框的附件、插件、模型档位按钮） */
+async function tabToFirstCard(page: Page) {
+  for (let i = 0; i < 8; i++) {
+    await page.keyboard.press('Tab');
+    if ((await activeTestId(page))?.startsWith('home.card:')) return;
+  }
+}
+
 test('1-新建对话-主页：标题、主页输入框自动聚焦、三张卡；默认四栏、右栏收起、对照 UI-01 三种截图', async ({ page }) => {
   // “主页本身不发请求”在单元测试里验（外壳的项目栏、文件栏会请求 /api，端到端里分不清来源）
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('今天要学习什么？');
@@ -136,8 +144,10 @@ test('1-主页-能力卡片组：左右 ±8°、中间略低；悬停抬起 12 p
 
 test('1-能力卡片组-单张卡片：Tab 依次聚焦三张卡（焦点可见），封面循环动画在跑；截图', async ({ page }) => {
   await expect(page.getByTestId('composer.box').getByRole('textbox')).toBeFocused();
-  const order: (string | null)[] = [];
-  for (let i = 0; i < 3; i++) {
+  // F3：正式输入框在文本框之后还有附件、插件、模型档位三个可聚焦控件，先 Tab 过它们
+  await tabToFirstCard(page);
+  const order: (string | null)[] = [await activeTestId(page)];
+  for (let i = 0; i < 2; i++) {
     await page.keyboard.press('Tab');
     order.push(await activeTestId(page));
   }
@@ -193,7 +203,7 @@ test('单张卡片 → 点击三张都能打开对应介绍弹窗（共享元素
 });
 
 test('2-能力卡片-卡片介绍弹窗：键盘 Enter 打开，←/→ 循环切换，Esc 关闭，焦点回到原卡片', async ({ page }) => {
-  await page.keyboard.press('Tab');
+  await tabToFirstCard(page);
   await page.keyboard.press('Tab');
   expect(await activeTestId(page)).toBe('home.card:code');
   await page.keyboard.press('Enter');
@@ -207,6 +217,8 @@ test('2-能力卡片-卡片介绍弹窗：键盘 Enter 打开，←/→ 循环�
   }
   expect(seen).toEqual(['slides', 'paper', 'code', 'paper']);
   await settle(page, 400);
+  // 连按四次方向键后，负载高时切换动画可能还没结束（新旧卡片的标题同时在场）：等到只剩一个标题再比对
+  await expect(modal.getByRole('heading', { level: 2 })).toHaveCount(1);
   await expect(modal.getByRole('heading', { level: 2 })).toHaveText(CARDS[0].headline.join(''));
   // 焦点锁：Tab 只在 × / 试一试 / 知道了 之间循环
   const tabs: (string | null)[] = [];

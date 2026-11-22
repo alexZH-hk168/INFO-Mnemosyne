@@ -1,12 +1,21 @@
 // 单元测试：F2 主页与能力卡片（规格 03-主页 六份）。每份规格“状态”表的每个状态一条渲染测试。
 // jsdom 里没有布局与动画：用 matchMedia 模拟“减少动效”，让弹窗关闭立即完成；位移动画在端到端测试里验。
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MAIN, useChat, emptyDraft } from '../store/chat';
+import { NEW_MAIN, useChat, emptyDraft } from '../store/chat';
 import { useUI } from '../store/ui';
 import { CARDS, getCard, neighborCard } from './cards';
 import { fanFit, fanNeededWidth, fanPose, FAN_MID_DROP, FAN_ROTATE, FAN_SPREAD, FAN_SPREAD_MIN } from './fan';
 import { Onboard } from './Onboard';
+
+// F3：主页输入框换成正式的 Composer，它会读 settings / documents / skills / plugins，需要 QueryClient。
+// 单元测试里查询默认不启用（enabled: false），只验证主页本身的行为；输入框的数据与请求在 src/chat 的测试里验。
+function render(ui: ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, enabled: false } } });
+  return rtlRender(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 function mockMatchMedia(reduce: boolean) {
   window.matchMedia = ((query: string) => ({
@@ -24,7 +33,7 @@ function mockMatchMedia(reduce: boolean) {
 beforeEach(() => {
   mockMatchMedia(true);
   useUI.setState({ modal: null });
-  useChat.setState({ composer: { [MAIN]: emptyDraft() } });
+  useChat.setState({ composer: { [NEW_MAIN]: emptyDraft() } });
 });
 
 describe('1-新建对话-主页（home.onboard）', () => {
@@ -220,7 +229,7 @@ describe('2-卡片介绍弹窗-试一试按钮（home.card-try）', () => {
     expect(useUI.getState().modal).toBeNull();
     const ta = within(screen.getByTestId('composer.box')).getByRole('textbox') as HTMLTextAreaElement;
     expect(ta.value).toBe(getCard('code').sampleQuestion);
-    expect(useChat.getState().composer[MAIN].text).toBe(getCard('code').sampleQuestion);
+    expect(useChat.getState().composer[NEW_MAIN].text).toBe(getCard('code').sampleQuestion);
     expect(useChat.getState().streaming).toBeNull();
     await waitFor(() => expect(ta).toHaveFocus());
   });

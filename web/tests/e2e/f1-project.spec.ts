@@ -114,7 +114,7 @@ test('对话行：点击 URL 为 /c/:cid；点分支数在右栏打开最近一�
   await openApp(page);
   await page.getByTestId('sidebar.conversation-row:cnv_week6_cards').click();
   await expect(page).toHaveURL(/\/c\/cnv_week6_cards$/);
-  await expect(page.getByTestId('center.conversation-placeholder')).toBeVisible();
+  await expect(page.getByTestId('chat.panel') /* F3：对话栏替换了占位 */).toBeVisible();
   await page.getByTestId('sidebar.conversation-row.branches:cnv_transformer').click();
   await expect(page).toHaveURL(/\/c\/cnv_transformer$/);
   await expect(page.getByTestId('right.placeholder-tab:branch:br_onehot')).toHaveAttribute('data-active', 'true');
