@@ -32,7 +32,7 @@ test('新建对话按钮：URL 变为 /，中间区回到主页', async ({ page 
   await shot(page, '1-项目栏-新建对话按钮');
   await page.getByTestId('sidebar.new-chat').click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId('center.home-placeholder')).toBeVisible();
+  await expect(page.getByTestId('home.onboard')).toBeVisible();
   await expect(page.getByTestId('sidebar.conversation-row:cnv_transformer')).not.toHaveAttribute('aria-current');
 });
 
@@ -62,7 +62,7 @@ test('新建项目：弹窗聚焦输入框，回车创建，新项目在顶部�
   await expect(first).toContainText('强化学习');
   await expect(first).toHaveAttribute('aria-expanded', 'true');
   await expect(first).toHaveAttribute('aria-current', 'true');
-  await expect(page.getByTestId('center.home-placeholder')).toBeVisible();
+  await expect(page.getByTestId('home.onboard')).toBeVisible();
   // 规格 1-外壳-文件栏：新对话且无材料 → 默认收起；手动展开后只显示拖拽区
   await expect(page.getByTestId('shell.collapsed-rail:1')).toBeVisible();
   await page.getByTestId('shell.collapsed-rail.expand:1').click();

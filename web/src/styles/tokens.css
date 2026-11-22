@@ -64,4 +64,18 @@
   --danger: #c0573f;
   /* 弹窗遮罩 */
   --scrim: rgba(29, 28, 26, 0.28);
+
+  /* F2 追加：能力卡片封面插画（代码高亮、梯度箭头、算子标签）与卡片/弹窗阴影、遮罩（取自 UI-01～04） */
+  --code-kw: #8b3f9e;
+  --code-fn: #2f5f9e;
+  --code-str: #3c7a3c;
+  --code-badge: #3b6ea8;
+  --cover-grad: #c2523a;
+  --cover-op-bg: #ebe5f5;
+  --cover-op-ink: #6a51a3;
+  --scrim-frost: rgba(244, 243, 240, 0.55); /* 卡片介绍弹窗的毛玻璃遮罩；与 F1 的 --scrim 区分 */
+  --shadow-card: 0 1px 2px rgba(29, 28, 26, 0.05), 0 14px 34px -10px rgba(29, 28, 26, 0.16);
+  --shadow-card-hover: 0 2px 4px rgba(29, 28, 26, 0.06), 0 26px 52px -14px rgba(29, 28, 26, 0.26);
+  --shadow-pop: 0 6px 20px -4px rgba(29, 28, 26, 0.14);
+  --shadow-modal: 0 40px 90px -24px rgba(29, 28, 26, 0.32);
 }

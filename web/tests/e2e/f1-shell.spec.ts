@@ -144,7 +144,7 @@ test('全局快捷键：Ctrl 与 Meta 两套都生效；Ctrl+K 新建对话', as
   await expect(page.getByTestId('center.conversation-placeholder')).toBeVisible();
   await page.keyboard.press('Control+k');
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId('center.home-placeholder')).toBeVisible();
+  await expect(page.getByTestId('home.onboard')).toBeVisible();
   // Esc 关闭弹窗
   await page.getByTestId('sidebar.new-project').click();
   await expect(page.getByTestId('sidebar.new-project-dialog')).toBeVisible();

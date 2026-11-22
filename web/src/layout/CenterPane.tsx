@@ -1,7 +1,8 @@
 // 中间区：按 useLayout.view 切换（规格 1-启动-应用外壳「渲染中间区」）。
-// view=home 的主页由 F2 提供 web/src/home/Onboard.tsx，合并时由编排 Agent 接到 HomeSlot 这一处；
+// view=home 渲染 F2 的主页 Onboard（web/src/home）；
 // conversation（F3 对话栏）与 market（F6 市场页）同样先放占位。
 import { useLayout } from '../store/layout';
+import { Onboard } from '../home';
 
 function Placeholder({ testid, title, note }: { testid: string; title: string; note: string }) {
   return (
@@ -12,9 +13,9 @@ function Placeholder({ testid, title, note }: { testid: string; title: string; n
   );
 }
 
-/** 主页插槽：F2 合并时把这里换成 <Onboard />，其余代码不用动 */
+/** 主页插槽：F2 的 Onboard（编排合并时接入） */
 function HomeSlot() {
-  return <Placeholder testid="center.home-placeholder" title="主页" note="占位：F2 实现（web/src/home/Onboard.tsx）" />;
+  return <Onboard />;
 }
 
 export default function CenterPane() {

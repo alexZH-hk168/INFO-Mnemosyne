@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | F0 | 契约 fixtures、`web/` 脚手架、tokens、MSW、类型、store 骨架 | 契约 v1.0 确认（用户已同意按 v0.1 草案开工） | 完成（待编排 Agent 验收与合并） | feat/F0-scaffold · 2026-11-22 |
 | F1 | 外壳、拖拽与收起、项目栏、文件栏 | F0 | 完成（待编排 Agent 验收与合并；U19–U23 待确认） | feat/F1-shell（worktree `worktrees/F1-shell`，端口 5171）· 2026-11-23 |
-| F2 | 主页、卡片与动效、卡片弹窗 | F0 | 未开始 | |
+| F2 | 主页、卡片与动效、卡片弹窗 | F0 | 部分完成（待编排 Agent 验收；剩余：试一试上传示例材料等 U8，首次打开弹窗偶发长任务见 U27） | feat/F2-home · 2026-11-22 |
 | F3 | 输入框、对话流、SSE 客户端、证据胶囊、步骤行、来源列表 | F0、F1 | 未开始 | |
 | F4 | 右栏标签、PDF/PPT/代码/网页/历史对话预览、证据栏 | F3 | 未开始 | |
 | F5 | 划词工具条、分支面板、分支标记、合并卡片 | F3、F4 | 未开始 | |
@@ -66,12 +66,18 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U21 | 对话标题为空时规格要显示首条用户消息前 20 字，但 `ConversationSummary` 不含消息内容；现显示“新对话”。是否给列表接口加 `preview` 或由后端保证 title 非空 | F1、B1 | 2026-11-23 |
 | U22 | 1440 宽时四栏默认宽 252+236+560 放不下对话栏 480，现由右栏让位到 432（拖右栏最小 400）；左两栏只能再拉宽 32 px。是否接受，或把右栏默认宽改小 | F1、F4 | 2026-11-23 |
 | U23 | 新建对话后“输入框获得焦点”、文件行拖到输入框的接收，依赖 F2/F3 的输入框；F1 只负责切到主页与 `application/x-mn-document` 拖拽数据 | F2、F3 | 2026-11-23 |
+| U24 | 主页输入框占位文案冲突：规格 1-外壳-输入框「状态」写“问点什么，或拖入论文、课件、代码”，UI-01 写“提一个问题，或拖入论文、代码、课件；/ 调用插件，@ 引用文件与笔记”。F2 外壳按规格；定下后 F3 统一 | F2、F3 | 2026-11-22 |
+| U25 | `useChat` 没有改输入框草稿的 action（state.md 只列 `composer` 字段）。“试一试”暂用 `useChat.setState` 写 `composer.main.text`（`web/src/home/draft.ts`）。建议 F3 在 state.md 与 chat.ts 加 `setDraft(key, patch)`，再把 draft.ts 改为调用它 | F2、F3 | 2026-11-22 |
+| U26 | 卡片弹窗右上 × 与遮罩没有规格 ID，现用派生 testid `home.card-modal-close`、`home.card-modal-scrim`；“试一试”后焦点放到主页输入框（规格未写）。是否接受，或在 specs_*.py 补 ID | F2 | 2026-11-22 |
+| U27 | 长任务验收：预热后的悬停/弹窗/切换/关闭在 dev 与生产构建下均无 >50 ms 长任务；但页面加载后**第一次**打开弹窗，在云电脑 headless Chromium（软件渲染）生产构建 11 轮中 4 轮出现一条 55–75 ms 长任务。未在有 GPU 的真机 Chrome 性能面板复测。是否以真机复测为准，或要求做首开预热 | F2 | 2026-11-22 |
 
 ## 动作日志
 
+- 2026-11-23 · [编排] 合并 F1+F2 · 集成中 · 分支 integ/F1F2 · 冲突已解（tokens 合并，F2 遮罩改名 --scrim-frost；CenterPane 接入 Onboard；App/f0 测试取 F1 版本）· check 通过 · 单测 242/242 · e2e 31/38（f2-home 6 条、f1-shell 焦点 1 条在四栏外壳里失败，交 F2 修）
 - 2026-11-23 · [F1] 外壳、项目栏、文件栏 · 完成 · 分支 feat/F1-shell · npm run check 通过 · 单测 225/225（含 F0）· e2e 28/28（workers=2，含 F0 的 3 条）· 左两栏与 UI-05 概念图 HTML 逐元素对位最大偏差 2 px · 截图 web/tests/screenshots/ 下 22 份规格各 1 张 + `1-启动-应用外壳@1680x1050.png` · 共享文件只追加：tokens.css、tailwind.config.ts、mocks/handlers.ts（`getMockScenario`）；store/api/契约未改 · 未决 U19–U23
 - 2026-11-23 · [F1] 外壳、项目栏、文件栏 · 开始 · 分支 feat/F1-shell（worktree `INFO5000项目/worktrees/F1-shell`，dev 端口 5171）
-
+- 2026-11-22 14:05 · [F2] 主页与能力卡片（1-新建对话-主页、1-主页-能力卡片组、1-能力卡片组-单张卡片、2-能力卡片-卡片介绍弹窗、2-卡片介绍弹窗-试一试按钮、2-卡片介绍弹窗-知道了按钮） · 部分完成（试一试未上传示例材料，待 U8；首次打开弹窗偶发长任务，见 U27；新增未决 U24–U27） · 分支 feat/F2-home · npm run check 通过 · 单测 168/168（F2 17 条 + App 2 条）· e2e 13/13（F2 10 + F0 3，`npx playwright test -c tests/playwright.f2.config.ts --workers=2`）· 截图 web/tests/screenshots/1-新建对话-主页.png 等 8 张
+- 2026-11-22 · [F2] 主页与能力卡片 · 开始 · 分支 feat/F2-home（worktree `INFO5000项目/worktrees/F2-home`，dev 端口 5172）
 - 2026-11-22 21:06 · [F0] 契约 fixtures 与前端脚手架 · 完成 · 分支 feat/F0-scaffold · npm run check 通过（84 份 fixture、38/38 接口）· 单测 150/150 · e2e 3/3 · 截图 web/tests/screenshots/F0-占位页-tokens.png
 - 2026-11-22 21:06 · [F0] 契约 · 契约变更 v0.2 · 编排 Agent 决定，待用户追认：rest-api.md、sse-events.md、types.ts、data-model.md、evidence-locator.md、contract/README.md、ux/state.md 按 U11–U18 修改；规格源 specs_a.py（文件栏按 group 分组、网页来源行用 `snapshot_id`）已重新生成；fixtures 重新生成
 - 2026-11-22 21:00 · [F0] 契约 fixtures 与前端脚手架 · 阻塞（交付物已全部完成并本地提交；契约/状态约定 U11–U18 待用户确认，确认后改 `web/src/mocks/fixtures-source.ts` 重新生成即可） · 分支 feat/F0-scaffold · npm run check 通过（83 份 fixture、38/38 接口）· 单测 144/144 · e2e 3/3 · 截图 web/tests/screenshots/F0-占位页-tokens.png
