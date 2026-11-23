@@ -196,7 +196,7 @@ test('3-条目卡片-插件详情页：UI-09 复现；面包屑回列表', async
   await expect(page.getByTestId('market.plugin-tools')).toBeVisible();
   // 契约 v0.3：启动命令、权限说明、简介来自接口
   await expect(page.getByTestId('market.plugin-config.command')).toHaveText(
-    'uvx arxiv-mcp-server --storage-path ~/.mnemosyne/plugins/arxiv',
+    'uvx arxiv-mcp-server@0.8.2 --storage-path ~/.mnemosyne/plugins/arxiv',
   );
   await expect(page.getByTestId('market.plugin-detail.permissions')).toContainText(
     '联网：访问 arXiv 与 Semantic Scholar',
