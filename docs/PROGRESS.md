@@ -81,6 +81,7 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-23 | 编排决定，待用户追认：契约 v0.4 给 data-model `tool_calls` 补 `label TEXT` 列，`Message.steps[].label` 取该列（为空退回 tool_name），`args_json.label` 不再作约定；B2 写步骤时写该列（原 U46，B1 提出时编号 U42） |
 | 2026-11-23 | 编排决定，待用户追认：`ConversationSummary.branch_count` 不计 archived 分支；多文件上传整批原子，有不支持类型整批 400、一个都不落盘；第一版重复上传不去重；PDF 句子 bbox 不含句首脚注上标号（原 U47，B1 提出时编号 U43） |
 | 2026-11-23 | 编排决定，待用户追认（来自 B3b 的 U92）：市场 18 个插件里只有 arxiv、tavily、fetch、markitdown 有适配清单；其余 14 个后端安装返回 400 `VALIDATION_ERROR`。前端以 `PluginDetail.manifest` 是否存在判断，缺省时卡片与详情页安装按钮置灰并提示“暂未适配，第一版不能安装”；MSW 同步返回 400（新样例 `post-plugins-id.not-adapted.error.json`；自检失败样例的插件由 docling 改为 markitdown） | 编排 Agent（B3b 提出） |
+| 2026-11-23 | U96：fixture 与后端对齐——markitdown 权限 `network`+`fs_read`、arxiv 启动参数固定 `arxiv-mcp-server@0.8.2`（编排改 fixtures-source 并重新生成） | 编排决定，待用户追认 |
 
 ## 未决（需要用户拍板）
 
@@ -102,7 +103,6 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U73 | [B2] 联网：`search_web` 提供方由 `MN_WEB_SEARCH_PROVIDER` 选（默认无→工具不出现；`fake` 供测试；`tavily` 需 `MN_WEB_SEARCH_API_KEY`，付费，代码已写但未实测）。搜索结果本身不当证据，模型须再 `fetch_url` 抓网页才产生 web 证据。`fetch_url` 只在本轮联网开关打开时提供，拒绝 localhost/内网 IP。需要决定：用哪家搜索服务、预算 | B2 | 2026-11-23（B2） |
 
 | U93 | 插件简称 `short_name`：arxiv/fetch/markitdown 三个取自 UX 规格示例，其余 15 个为 B3b 拟定（`server/registry/sources/overlay.json`），待用户确认；字段放在 `MarketItem`、`InstalledPlugin`（含 `PluginDetail`）与会话插件列表项三处（契约 v0.5 草案 [B3b]） | F6b、契约 | 2026-11-23（B3b） |
-| U96 | F6b 合入后仍与后端真实行为不一致、需改 fixture 的两处（fixtures 由 `web/src/mocks/fixtures-source.ts` 经 `scripts/gen-fixtures.ts` 生成，integ-F6b worktree 没有 node_modules，未改）：① `get-plugins.ok.json` 的 markitdown `permissions` 仍是 `["fs_read"]`，后端清单是 `["network","fs_read"]`（U90 已按建议决定，fixture 未同步）；② `get-plugins-id.ok.json` 的 arxiv `manifest.args[0]` 是 `arxiv-mcp-server`，后端固定为 `arxiv-mcp-server@0.8.2`。后端契约测试暂时对这两处放行（`test_installed_and_conversation_plugins_match_fixture` 去掉 permissions 比较、`test_arxiv_detail_matches_fixture` 单独断言带版本的 args） | 编排、F6b fixtures | 2026-11-23（F6BFIX） |
 
 | U105 | 判分提示逐字移植自官方 `evaluate_qa.py`（MIT，保留版权与许可声明，已逐字比对一致），这与 AGENTS R1“不从其他项目拷代码”字面冲突；编排指示“核对许可证后可移植”，只移植了提示字符串与判定规则。请用户追认。便宜判分的敏感性检查用官方 model_zoo 里的 gpt-4o-mini | E2、R1 | 2026-11-23（E） |
 

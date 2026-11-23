@@ -429,7 +429,7 @@ describe('3-条目卡片-插件详情页 / 工具列表 / 配置卡 / 卸载', (
   it('契约 v0.3：启动命令、简介、用法、权限说明来自接口；不在 tools_allow 的工具标“未启用”', async () => {
     openMarket('/market/plugin/arxiv');
     expect(await screen.findByTestId('market.plugin-config.command')).toHaveTextContent(
-      'uvx arxiv-mcp-server --storage-path ~/.mnemosyne/plugins/arxiv',
+      'uvx arxiv-mcp-server@0.8.2 --storage-path ~/.mnemosyne/plugins/arxiv',
     );
     expect(screen.getByTestId('market.plugin-detail.lead')).toHaveTextContent('论文下载到本地后按章节读取');
     expect(screen.getByTestId('market.plugin-detail.usage')).toHaveTextContent('助手会调用 search_papers');

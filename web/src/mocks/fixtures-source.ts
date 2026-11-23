@@ -854,7 +854,7 @@ const plugins: InstalledPlugin[] = [
     short_name: PLUGIN_SHORT_NAMES['markitdown'], // F6b
     version: '1.0.0',
     status: 'installed',
-    permissions: ['fs_read'],
+    permissions: ['network', 'fs_read'],
     config_schema: {},
     last_check_at: '2026-11-22T06:00:05Z',
     config_set: [],
@@ -897,7 +897,7 @@ const arxivDetail: PluginDetail = {
   manifest: {
     transport: 'stdio',
     command: 'uvx',
-    args: ['arxiv-mcp-server', '--storage-path', '~/.mnemosyne/plugins/arxiv'],
+    args: ['arxiv-mcp-server@0.8.2', '--storage-path', '~/.mnemosyne/plugins/arxiv'],
     tools_allow: ARXIV_TOOLS.map((t) => t.name).filter((n) => !ARXIV_PRO_ONLY.includes(n)),
   },
   about_zh:

@@ -163,8 +163,7 @@ def test_market_equals_fixture(kind, client, world):
 def test_installed_and_conversation_plugins_match_fixture(client, world):
     fx = json.loads((FIXTURES / "get-plugins.ok.json").read_text(encoding="utf-8"))["body"]["plugins"]
     body = client.get("/api/plugins").json()["plugins"]
-    assert _drop(body, "permissions") == _drop(fx, "permissions")
-    # 权限取适配清单：markitdown 按上游 README 声明 network + fs_read（fixture 只写了 fs_read，见未决 U90）
+    assert body == fx  # U96 已同步：markitdown 权限 network + fs_read
     assert {p["id"]: p["permissions"] for p in body} == {"arxiv": ["network", "fs_write"], "fetch": ["network"], "markitdown": ["network", "fs_read"]}
     fx = json.loads((FIXTURES / "get-conversations-cid-plugins.ok.json").read_text(encoding="utf-8"))["body"]["plugins"]
     body = client.get("/api/conversations/cnv_transformer/plugins").json()["plugins"]
@@ -179,8 +178,7 @@ def test_arxiv_detail_matches_fixture(client, world):
               "verified", "tools", "about_zh", "usage_zh", "permission_notes"):
         assert body[k] == fx[k], k
     assert body["manifest"]["tools_allow"] == fx["manifest"]["tools_allow"]
-    # 启动参数固定了上游版本号（fixture 是 F6 的未固定写法）
-    assert body["manifest"]["args"] == ["arxiv-mcp-server@0.8.2", "--storage-path", "~/.mnemosyne/plugins/arxiv"]
+    assert body["manifest"]["args"] == fx["manifest"]["args"] == ["arxiv-mcp-server@0.8.2", "--storage-path", "~/.mnemosyne/plugins/arxiv"]
 
 
 def test_tavily_not_installed_detail_matches_fixture(client, world):

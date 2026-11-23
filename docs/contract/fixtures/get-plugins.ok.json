@@ -41,6 +41,7 @@
         "version": "1.0.0",
         "status": "installed",
         "permissions": [
+          "network",
           "fs_read"
         ],
         "config_schema": {},

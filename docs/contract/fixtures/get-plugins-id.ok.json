@@ -100,7 +100,7 @@
       "transport": "stdio",
       "command": "uvx",
       "args": [
-        "arxiv-mcp-server",
+        "arxiv-mcp-server@0.8.2",
         "--storage-path",
         "~/.mnemosyne/plugins/arxiv"
       ],
