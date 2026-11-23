@@ -439,7 +439,7 @@ describe('1-输入框-插件区入口（F6 挂载点）', () => {
   it('列出本对话启用的插件；点击打开会话插件弹层（popover=plugins），胶囊高亮', async () => {
     renderChat();
     const entry = screen.getByTestId('composer.plugin-entry');
-    await waitFor(() => expect(entry).toHaveTextContent('ArXiv MCP Server · Fetch MCP Server · MarkItDown MCP'));
+    await waitFor(() => expect(entry).toHaveTextContent('arXiv · 网页检索 · PDF 解析') /* F6b：改用简称（原 U36） */);
     fireEvent.click(entry);
     expect(useUI.getState().popover).toBe('plugins');
     expect(entry).toHaveAttribute('aria-expanded', 'true');

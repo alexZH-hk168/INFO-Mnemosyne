@@ -17,6 +17,7 @@
         "category": "学术检索",
         "desc_zh": "查找 arXiv 预印本并读论文",
         "repo_url": "https://github.com/blazickjp/arxiv-mcp-server",
+        "short_name": "arXiv",
         "installed": true,
         "verified": true
       },
@@ -32,6 +33,7 @@
         "category": "学术检索",
         "desc_zh": "跨 PubMed、学术搜索等来源查论文",
         "repo_url": "https://github.com/openags/paper-search-mcp",
+        "short_name": "论文检索",
         "installed": false,
         "verified": false
       },
@@ -47,6 +49,7 @@
         "category": "网页检索与抓取",
         "desc_zh": "搜索网页并提取正文做资料摘录",
         "repo_url": "https://github.com/tavily-ai/tavily-mcp",
+        "short_name": "Tavily 检索",
         "installed": false,
         "verified": false
       },
@@ -62,6 +65,7 @@
         "category": "网页检索与抓取",
         "desc_zh": "按语义搜索网页和学习资料",
         "repo_url": "https://github.com/exa-labs/exa-mcp-server",
+        "short_name": "Exa 检索",
         "installed": false,
         "verified": false
       },
@@ -77,6 +81,7 @@
         "category": "网页检索与抓取",
         "desc_zh": "查找网页、新闻和视频资料",
         "repo_url": "https://github.com/brave/brave-search-mcp-server",
+        "short_name": "Brave 检索",
         "installed": false,
         "verified": false
       },
@@ -92,6 +97,7 @@
         "category": "网页检索与抓取",
         "desc_zh": "把网页正文转成便于阅读的文本",
         "repo_url": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+        "short_name": "网页检索",
         "installed": true,
         "verified": true
       },
@@ -107,6 +113,7 @@
         "category": "文献管理",
         "desc_zh": "在 Zotero 文献库检索论文和笔记",
         "repo_url": "https://github.com/cookjohn/zotero-mcp",
+        "short_name": "Zotero",
         "installed": false,
         "verified": false
       },
@@ -122,6 +129,7 @@
         "category": "文档解析",
         "desc_zh": "把课程 PDF 和 Office 文档转为 Markdown",
         "repo_url": "https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp",
+        "short_name": "PDF 解析",
         "installed": true,
         "verified": false
       },
@@ -137,6 +145,7 @@
         "category": "文档解析",
         "desc_zh": "提取课件和论文的文字与表格",
         "repo_url": "https://github.com/docling-project/docling-mcp",
+        "short_name": "Docling 解析",
         "installed": false,
         "verified": false
       },
@@ -152,6 +161,7 @@
         "category": "笔记与知识库",
         "desc_zh": "查找和整理 Obsidian 笔记",
         "repo_url": "https://github.com/MarkusPfundstein/mcp-obsidian",
+        "short_name": "Obsidian",
         "installed": false,
         "verified": false
       },
@@ -167,6 +177,7 @@
         "category": "笔记与知识库",
         "desc_zh": "搜索和整理 Notion 学习笔记",
         "repo_url": "https://github.com/makenotion/notion-mcp-server",
+        "short_name": "Notion",
         "installed": false,
         "verified": false
       },
@@ -182,6 +193,7 @@
         "category": "记忆卡片",
         "desc_zh": "将知识点做成 Anki 复习卡",
         "repo_url": "https://github.com/ankimcp/anki-mcp-server",
+        "short_name": "Anki",
         "installed": false,
         "verified": false
       },
@@ -197,6 +209,7 @@
         "category": "代码与 Notebook",
         "desc_zh": "在 Jupyter 运行单元格并查看结果",
         "repo_url": "https://github.com/datalayer/jupyter-mcp-server",
+        "short_name": "Jupyter",
         "installed": false,
         "verified": false
       },
@@ -212,6 +225,7 @@
         "category": "代码与 Notebook",
         "desc_zh": "查找示例代码和项目资料",
         "repo_url": "https://github.com/github/github-mcp-server",
+        "short_name": "GitHub",
         "installed": false,
         "verified": false
       },
@@ -227,6 +241,7 @@
         "category": "视频课程",
         "desc_zh": "提取 YouTube 课程字幕做笔记",
         "repo_url": "https://github.com/kimtaeyoon83/mcp-server-youtube-transcript",
+        "short_name": "YouTube 字幕",
         "installed": false,
         "verified": false
       },
@@ -242,6 +257,7 @@
         "category": "百科",
         "desc_zh": "查阅维基百科梳理概念背景",
         "repo_url": "https://github.com/Rudra-ravi/wikipedia-mcp",
+        "short_name": "维基百科",
         "installed": false,
         "verified": false
       },
@@ -257,6 +273,7 @@
         "category": "数学计算",
         "desc_zh": "用 Wolfram 语言验算数学题",
         "repo_url": "https://github.com/WolframResearch/AgentTools",
+        "short_name": "Wolfram",
         "installed": false,
         "verified": false
       },
@@ -272,6 +289,7 @@
         "category": "技术文档",
         "desc_zh": "按版本查找库文档和代码示例",
         "repo_url": "https://github.com/upstash/context7",
+        "short_name": "技术文档",
         "installed": false,
         "verified": false
       }

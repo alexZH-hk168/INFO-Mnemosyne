@@ -6,6 +6,7 @@
   "body": {
     "id": "tavily",
     "name": "Tavily MCP",
+    "short_name": "Tavily 检索",
     "version": "1.0.0",
     "status": "not_installed",
     "permissions": [
@@ -19,6 +20,18 @@
       }
     },
     "verified": false,
+    "manifest": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "tavily-mcp@0.2.22"
+      ],
+      "tools_allow": [
+        "tavily-search",
+        "tavily-extract"
+      ]
+    },
     "tools": [
       {
         "name": "tavily-search",

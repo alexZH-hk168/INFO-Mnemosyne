@@ -33,3 +33,12 @@
 | v0.2 | 2026-11-22 | `Document` 加 `group`、`cells?`、`snapshot_id?`，文件列表按 `group` 分组；SSE `evidence` 加 `source_id`、`sha256?`；`PluginDetail.verified` 写入 rest-api，未安装插件 `status=not_installed`；错误体加 `details?`；插件/Skill id 不加前缀；偏移统一左闭右开、按码点；regenerate 的 `message.start` 字段；`context_messages` 含被引消息本身 | F0 提出 U11–U18，编排 Agent 决定，待用户追认 |
 | v0.3 | 2026-11-23 | 只追加可选字段，不改名不删：`PluginDetail` 加 `manifest?`（transport、command、args、tools_allow?）、`about_zh?`、`usage_zh?`、`permission_notes?`；`MarketItem` 加 `verified?`；`InstalledPlugin` 加 `config_set?`、`config?`（仅非密钥值）；`MemoryItem` 加 `source_conversation_id?`；`POST /api/plugins/{id}` 写明未提供的键沿用已存值、空字符串表示清除；fixture `get-plugins-id.ok.json` 的 ArXiv 工具改为上游 README 的 19 个 | F6 提出 U28–U31，编排 Agent 决定，待用户追认 |
 | v0.4 | 2026-11-23 | 只增可选字段：`GET /api/evidence/{eid}`、`GET /api/web_snapshots/{sid}` 加可选 query `leaf_id`，给了就按该叶到根的路径判可见性，不给沿用 `active_leaf_id`（规则见 rest-api.md）；data-model `tool_calls` 加 `label` 列，`Message.steps[].label` 取自该列，`args_json.label` 不再作约定。types.ts 无需改动（两处变更分别是 query 参数与数据库列） | B1 提出原 U44、U46（B1 提出时编号 U40、U42），编排 Agent 决定，待用户追认 |
+
+### v0.5（并行草案，编排统一）
+
+多个分支并行开发时各自追加的可选字段，按分支标注，合并时由编排统一。
+
+- [F6b] `MarketItem.short_name?`、`InstalledPlugin.short_name?`（及继承它的 `PluginDetail`）：插件简称，输入框插件胶囊用（如“arXiv”“网页检索”“PDF 解析”），缺省时界面用 `name`。只对插件给出。来源：编排决定（原 U36），B3b 后端加同名字段。fixtures 里 18 个插件均补了简称（见 `web/src/mocks/market-data.ts` 的 `PLUGIN_SHORT_NAMES`），与 B3b `server/registry/plugins.json` 逐条一致。
+- [F6b] 新增 fixture（不改接口）：`sse-turn-plugin.json`（带无 URL 插件证据的回合）、`get-evidence-eid.plugin.ok.json`（该插件证据的详情）（原 U43）。
+- [F6b] `Step.plugin_id?`（SSE `step` 事件与 `Message.steps[]`）：`kind=plugin_tool` 时发起调用的插件 id。会话插件弹层按它统计“本轮调用 N 次”；缺省时前端退回按 `label` 匹配（以 `插件id__` 开头，或含插件简称/全名）。来源：编排决定（原 U60），后端 B2/B3b 写步骤时带上。`sse-turn-plugin.json` 的插件步骤已带该字段。
+- [F6b] 新增错误样例（不改接口）：`post-plugins-id.not-adapted.error.json`：没有 Mnemosyne 适配清单的插件安装返回 400 `VALIDATION_ERROR`（来源：B3b 的 U92，编排决定）。前端以 `PluginDetail.manifest` 是否存在判断能否安装，缺省时安装按钮置灰并提示“暂未适配，第一版不能安装”。`get-plugins-id.not-installed.ok.json`（Tavily）补了 `manifest`（照 B3b registry）。原 `post-plugins-id.error.json`（自检失败）的插件由 docling 改为 markitdown：docling 现在走上面的 400。

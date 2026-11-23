@@ -77,6 +77,12 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-23 | 编排决定，待用户追认：契约升 v0.4（只增可选字段），`GET /api/evidence/{eid}` 与 `GET /api/web_snapshots/{sid}` 加可选 query `leaf_id`，给了就按该叶到根的路径判可见性，不给沿用 `active_leaf_id`；`leaf_id` 与被判断消息不同对话时按那个对话自己的 `active_leaf_id`；不存在的 `leaf_id` 返回 `VALIDATION_ERROR`。F5 分支面板打开证据时传它（原 U44，B1 提出时编号 U40，因与 F4 撞号改编） |
 | 2026-11-23 | 编排决定，待用户追认：契约 v0.4 给 data-model `tool_calls` 补 `label TEXT` 列，`Message.steps[].label` 取该列（为空退回 tool_name），`args_json.label` 不再作约定；B2 写步骤时写该列（原 U46，B1 提出时编号 U42） |
 | 2026-11-23 | 编排决定，待用户追认：`ConversationSummary.branch_count` 不计 archived 分支；多文件上传整批原子，有不支持类型整批 400、一个都不落盘；第一版重复上传不去重；PDF 句子 bbox 不含句首脚注上标号（原 U47，B1 提出时编号 U43） |
+| 2026-11-23 | 编排决定，待用户追认：契约 v0.5 并行草案 [F6b] 给 `Step` 加可选 `plugin_id?`；会话插件弹层有它就按它统计“本轮调用 N 次”，没有才退回按 label 匹配；后端 B2/B3b 写步骤时带上，编排集成时接（原 U60，F6b 提出） | 编排 Agent（F6b 提出） |
+| 2026-11-23 | 编排决定，待用户追认：接受概念图 UI-11 与实现的三处差异：Tavily 副标题类别用市场数据的“网页检索与抓取”；默认插件组合下胶囊为“arXiv · 网页检索 · PDF 解析”（顺序按会话插件接口）；Skill 色块字母按名称取（literature-review 为“Li”，图上“Lr”）（原 U61） | 编排 Agent（F6b 提出） |
+| 2026-11-23 | 编排决定，待用户追认：插件证据 fixture `evd_arxiv_abs` 的 `locator.fields` 键名（paper_id、title、authors、published、categories、abstract）是模拟形状，集成时用 B3b 的真实 ArXiv 插件返回核对（原 U62） | 编排 Agent（F6b 提出） |
+| 2026-11-23 | 编排决定，待用户追认：v1 市场页不加“返回”按钮，从对话进市场后靠浏览器后退回原对话（草稿保留）；`state.md` 不加 `prevView`（原 U63） | 编排 Agent（F6b 提出） |
+| 2026-11-23 | 编排决定，待用户追认：前端插件简称与 B3b `server/registry/plugins.json` 逐条一致（arxiv、fetch、markitdown 取自 UX 规格，其余 15 个 B3b 拟定、待用户确认） | 编排 Agent |
+| 2026-11-23 | 编排决定，待用户追认（来自 B3b 的 U92）：市场 18 个插件里只有 arxiv、tavily、fetch、markitdown 有适配清单；其余 14 个后端安装返回 400 `VALIDATION_ERROR`。前端以 `PluginDetail.manifest` 是否存在判断，缺省时卡片与详情页安装按钮置灰并提示“暂未适配，第一版不能安装”；MSW 同步返回 400（新样例 `post-plugins-id.not-adapted.error.json`；自检失败样例的插件由 docling 改为 markitdown） | 编排 Agent（B3b 提出） |
 
 ## 未决（需要用户拍板）
 
@@ -95,6 +101,8 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 
 ## 动作日志
 
+- 2026-11-23 · [F6b] 输入框插件区、/ Skill 列表、会话插件弹层（含开关、去市场）、插件结果卡片 · 完成 · 分支 feat/F6b-plugins · 单测 440/440（F6b 新增 plugins.test.tsx 24 条、market.test.tsx 2 条）· e2e 全量 102/102（`MN_PORT=5176 --workers=2`，本机 `web/f6b.local/` 配置只为放行主仓库 node_modules 字体，未提交）· 契约 v0.5 并行草案 [F6b]：`short_name?`（与 B3b registry 一致）、`Step.plugin_id?`、新 fixture `sse-turn-plugin.json`、`get-evidence-eid.plugin.ok.json`、`post-plugins-id.not-adapted.error.json`；`post-plugins-id.error.json` 的插件由 docling 改为 markitdown；未适配插件安装按钮置灰（B3b U92）· 新截图 4 张，另 47 张因插件胶囊改简称、市场卡片“暂未适配”提示、详情页显示启动命令而更新，38 张只有像素/日期噪声的已还原
+- 2026-11-23 · [F6b] 输入框插件区、/ Skill 列表、会话插件弹层、插件结果卡片 · 开始 · 分支 feat/F6b-plugins（worktree `INFO5000项目/worktrees/F6b-plugins`，dev 端口 5176）· 共享文件只追加：`docs/contract/*`（v0.5 并行草案 `short_name?`）、`web/src/api/types.ts`、`web/src/store/chat.ts`、`docs/ux/state.md`、`web/src/mocks/*`
 - 2026-11-23 · [B1] 合并 F4 后 fixtures 对齐 · 完成 · 分支 fix/B1-fixtures · 未改 fixtures 与 web/ · seed 改用 F4 的 Markdown/Notebook 原文样例，补 `evd_tfpy_l7` 证据与 `msg_code_u1/a1` 代码问答回合（只写 cit_code_1）；ipynb 原文改为 `text/plain`（契约 code/md 一律 text/plain，ipynb 属 code 组）；`active_leaf` 测试的预期叶子随之改为 msg_code_a1 · `pytest -q` 86 passed（bbox 用例已自动转正）· 发现 fixture 内部两处不一致（非契约违规）：文档列表里 doc_transformer_py `lines=212` 而原文样例 11 行；`evd_tfpy_l7.quote` 去掉了第 7 行行首缩进
 - 2026-11-23 · [B1] 编排反馈整改 · 完成 · 分支 feat/B1-ingest · 契约变更 v0.4（编排 Agent 决定，待用户追认）：rest-api.md 两个接口加 `leaf_id?`，data-model.md `tool_calls` 加 `label`，contract/README.md 版本记录；types.ts 无需改 · 后端：`branch/path.py` 支持 leaf_id，schema 版本 2（旧库自动补列）· 未决改编：B1 的 U40–U43 → U44–U47（与 F4 撞号），U44、U46、U47 移入已定决定，U45（PyMuPDF AGPL）留在未决并关联 U10 · bbox 测试改为“fixture 仍是 F0 占位值时 xfail，否则正常断言（容差 2 pt）”，临时代入 F4 实测值已验证会转为通过 · `uv run pytest -q` 81 passed, 1 xfailed
 - 2026-11-23 · [B1] 数据库、上传与解析、混合检索 · 完成 · 分支 feat/B1-ingest · `cd server && uv run pytest -q` 77 passed, 1 xfailed（fixture 的脚注 bbox 仍是 F0 占位值，F4 实测值在其工作区未合并；按 F4 实测值比对差 ≤1.3 pt）· 契约比对：B1 负责的 13 个路由 29 份 fixtures（13×成功/错误 + 证据 3 个变体）状态码、错误码、结构全部通过，树与证据样例逐字段相等 · 嵌入默认本地假嵌入器，未发起任何付费调用 · 只改了一个 web 文件 `web/vite.config.ts`（`MN_BACKEND` 时关 MSW 并代理 /api，默认不变）· 截图 server/tests/screenshots/B1-文件栏-真实后端-{列表,解析中,就绪}.png · 未决 U40–U43（后改编为 U44–U47）

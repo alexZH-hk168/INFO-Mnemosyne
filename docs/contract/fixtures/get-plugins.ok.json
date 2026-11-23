@@ -8,6 +8,7 @@
       {
         "id": "arxiv",
         "name": "ArXiv MCP Server",
+        "short_name": "arXiv",
         "version": "1.0.0",
         "status": "installed",
         "permissions": [
@@ -22,6 +23,7 @@
       {
         "id": "fetch",
         "name": "Fetch MCP Server",
+        "short_name": "网页检索",
         "version": "1.0.0",
         "status": "installed",
         "permissions": [
@@ -35,6 +37,7 @@
       {
         "id": "markitdown",
         "name": "MarkItDown MCP",
+        "short_name": "PDF 解析",
         "version": "1.0.0",
         "status": "installed",
         "permissions": [

@@ -54,7 +54,9 @@ test('浏览器里每份 REST 成功/错误样例都由 MSW 按 fixture 应答',
     const out: { file: string; status: number; body: unknown }[] = [];
     for (const [file, fx] of list) {
       ctl.resetMockScenarios();
-      ctl.setMockScenario(fx.endpoint, fx.kind === 'error' ? 'error' : file);
+      // 带变体名的错误样例（F6b：post-plugins-id.not-adapted.error.json）按文件名指定，其余错误样例走场景 'error'
+      const errVariant = fx.kind === 'error' && file.split('.').length > 3;
+      ctl.setMockScenario(fx.endpoint, fx.kind === 'error' && !errVariant ? 'error' : file);
       const [method, rawPath] = fx.endpoint.split(' ');
       const path = rawPath.replace(/\{(\w+)\}/g, (_: string, k: string) =>
         encodeURIComponent(fx.request?.params?.[k] ?? 'x'),

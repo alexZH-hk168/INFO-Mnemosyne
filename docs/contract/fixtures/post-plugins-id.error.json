@@ -9,13 +9,13 @@
       "message": "插件启动失败：tools/list 在 30 s 内没有返回",
       "retriable": true,
       "details": {
-        "log_tail": "[docling-mcp] starting server (stdio)\n[docling-mcp] loading models…\n[mnemosyne] tools/list timed out after 30000 ms"
+        "log_tail": "[markitdown-mcp] starting server (stdio)\n[markitdown-mcp] waiting for initialize…\n[mnemosyne] tools/list timed out after 30000 ms"
       }
     }
   },
   "request": {
     "params": {
-      "id": "docling"
+      "id": "markitdown"
     },
     "body": {
       "config": {}
