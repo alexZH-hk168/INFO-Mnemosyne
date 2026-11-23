@@ -47,3 +47,38 @@
 
 类别（插件）：学术检索、网页检索与抓取、文献管理、文档解析、笔记与知识库、记忆卡片、代码与 Notebook、视频课程、百科、数学计算、技术文档。
 类别（Skill）：PDF 阅读、文档写作、课件与演示、表格与数据、技能制作、文献综述、科研写作、批判性阅读、科研查证、引用管理、编程学习、项目构思。
+
+## B3b 实现约定（v0.5 草案 [B3b]，编排统一后定稿）
+
+**固定版本**（2026-11-23 按 PyPI / npm 官方页面核对的最新版，写在 `server/registry/sources/manifests/<id>.json` 的 `args` 里）：
+
+| 插件 | 启动 | 验收 |
+|---|---|---|
+| arxiv | `uvx arxiv-mcp-server@0.8.2 --storage-path ~/.mnemosyne/plugins/arxiv` | v1 完整验收（真实安装待磁盘问题解决后由编排做） |
+| fetch | `uvx mcp-server-fetch@2026.11.18` | 同上 |
+| markitdown | `uvx markitdown-mcp@0.0.1a8` | 未验收 |
+| tavily | `npx -y tavily-mcp@0.2.22`（需 `TAVILY_API_KEY`） | 未验收 |
+
+其余 14 个市场条目没有适配清单：只展示，`POST /api/plugins/{id}` 返回 `VALIDATION_ERROR`（未决 U92）。
+
+**evidence_mapping 写法**：键 `title`、`url`、`quote`（必需），可选 `items`；值是路径字符串或路径数组（取第一个非空值）。
+`$` 是当前记录，`$.a.b`、`$.a[0]` 逐级取；`$args.x` 取本次调用参数；`$text` 取工具返回的全部文本。`items` 指向记录列表
+（如 arXiv `search_papers` 的 `$.papers`），取不到数组时整个结果当一条记录（如 `get_abstract`）。结果先取 MCP 的
+structuredContent，否则把文本当 JSON 解析。每次调用最多 5 条证据。
+
+- arxiv：`{"items": "$.papers", "title": "$.title", "url": ["$.url", "$.pdf_url"], "quote": ["$.abstract", "$.summary"]}`（按 v0.8.2 源码 `tools/search.py`、`tools/get_abstract.py` 的返回结构确认）。
+- fetch：`{"title": "$args.url", "url": "$args.url", "quote": "$text"}`。
+
+**证据落库**：记录有 http(s) URL → 运行时写一条 `web_snapshots`（`text` = 标题 + 空行 + 引文全文，`http_status` 记 200），
+返回 `EvidenceDraft(kind="web", source_id=snapshot_id, locator={snapshot_id, char_range})`；快照内容来自插件返回，
+不是 Mnemosyne 另行抓取的页面（未决 U91）。没有 URL → `kind="plugin"`，`locator={plugin_id, tool_name, fields}`。
+`evidence` 行（含 `captured_in_message_id`）由 B2 写。
+
+**运行时**：后台线程持有全部会话，legacy `initialize` 握手；空闲 `MN_PLUGIN_IDLE_S`（默认 600 s）回收；
+启动 + `tools/list` 自检上限 `MN_PLUGIN_START_TIMEOUT_S`（默认 30 s）；单次调用超时默认 30 s，超时的 `ToolResult`
+`is_error=true`、文本以 `PLUGIN_TIMEOUT` 开头。配置项以环境变量注入插件进程，密钥值加密存进 `config_json`
+（密钥文件 `<data_dir>/secret.key`）。子进程额外继承代理与 uv/npm 镜像相关环境变量。
+
+**registry 额外字段**：`plugins.json` 每项另有 `verified`、`short_name?`、`manifest?`，以及详情页用的
+`tools?`、`about_zh?`、`usage_zh?`、`permission_notes?`。条目 id 与简称来自 `server/registry/sources/overlay.json`，
+其余市场字段只来自调研 JSON。

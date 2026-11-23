@@ -1,0 +1,45 @@
+{
+  "manifest": {
+    "id": "markitdown",
+    "name": "MarkItDown MCP",
+    "version": "1.0.0",
+    "source_url": "https://github.com/microsoft/markitdown",
+    "license": "MIT",
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "markitdown-mcp@0.0.1a8"
+    ],
+    "env_schema": {},
+    "permissions": [
+      "network",
+      "fs_read"
+    ],
+    "tools_allow": [
+      "convert_to_markdown"
+    ],
+    "evidence_mapping": {
+      "title": "$args.uri",
+      "url": "$args.uri",
+      "quote": "$text"
+    }
+  },
+  "details": {
+    "tools": [
+      {
+        "name": "convert_to_markdown",
+        "description": "把 http/https/file/data URI 指向的文件转成 Markdown"
+      }
+    ],
+    "permission_notes": {
+      "network": "读取 http/https 地址",
+      "fs_read": "可读取本机用户有权限的任意文件（上游 README 的安全说明）"
+    }
+  },
+  "upstream": {
+    "package": "markitdown-mcp (PyPI)",
+    "version": "0.0.1a8",
+    "checked": "2026-11-23：PyPI JSON 最新版 0.0.1a8（上传于 2026-10-21）；上游 README：只有一个工具 convert_to_markdown(uri)",
+    "verified": false
+  }
+}

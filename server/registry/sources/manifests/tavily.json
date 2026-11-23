@@ -1,0 +1,56 @@
+{
+  "manifest": {
+    "id": "tavily",
+    "name": "Tavily MCP",
+    "version": "1.0.0",
+    "source_url": "https://github.com/tavily-ai/tavily-mcp",
+    "license": "MIT",
+    "transport": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "tavily-mcp@0.2.22"
+    ],
+    "env_schema": {
+      "TAVILY_API_KEY": {
+        "required": true,
+        "secret": true,
+        "label": "Tavily API Key"
+      }
+    },
+    "permissions": [
+      "network"
+    ],
+    "tools_allow": [
+      "tavily-search",
+      "tavily-extract"
+    ],
+    "evidence_mapping": {
+      "items": "$.results",
+      "title": "$.title",
+      "url": "$.url",
+      "quote": "$.content"
+    }
+  },
+  "details": {
+    "tools": [
+      {
+        "name": "tavily-search",
+        "description": "实时网页检索"
+      },
+      {
+        "name": "tavily-extract",
+        "description": "抽取指定网页的正文"
+      }
+    ],
+    "permission_notes": {
+      "network": "访问 Tavily API"
+    }
+  },
+  "upstream": {
+    "package": "tavily-mcp (npm)",
+    "version": "0.2.22",
+    "checked": "2026-11-23：npm registry latest 0.2.22（MIT）；README 出现的工具名 tavily-search、tavily-extract；evidence_mapping 未按真实返回结构确认（未验收）",
+    "verified": false
+  }
+}

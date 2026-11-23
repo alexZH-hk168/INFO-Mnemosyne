@@ -1,0 +1,45 @@
+{
+  "manifest": {
+    "id": "fetch",
+    "name": "Fetch MCP Server",
+    "version": "1.0.0",
+    "source_url": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+    "license": "MIT",
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "mcp-server-fetch@2026.11.18"
+    ],
+    "env_schema": {},
+    "permissions": [
+      "network"
+    ],
+    "tools_allow": [
+      "fetch"
+    ],
+    "evidence_mapping": {
+      "title": "$args.url",
+      "url": "$args.url",
+      "quote": "$text"
+    }
+  },
+  "details": {
+    "tools": [
+      {
+        "name": "fetch",
+        "description": "抓取网页并转成 Markdown；可用 start_index 分段继续读"
+      }
+    ],
+    "about_zh": "抓取一个网页并转成 Markdown 文本。抓到的正文会存成网页快照，回答里的引用可以点开快照核对原文与抓取时间。",
+    "usage_zh": "在对话里给出网址并提问，例如“读一下 https://jalammar.github.io/illustrated-transformer/ ，讲讲多头注意力”，助手会调用 fetch。也可以在输入框的“插件”弹层里按对话关闭它。",
+    "permission_notes": {
+      "network": "访问对话中给出的网址；默认遵守 robots.txt，拒绝内网与回环地址"
+    }
+  },
+  "upstream": {
+    "package": "mcp-server-fetch (PyPI)",
+    "version": "2026.11.18",
+    "checked": "2026-11-23：PyPI JSON 最新版 2026.11.18（上传于 2026-11-18，MIT）；上游 README（modelcontextprotocol/servers main 分支 src/fetch）只列一个工具 fetch(url, max_length, start_index, raw, timeout_ms)，失败以 isError 结果返回",
+    "verified": true
+  }
+}
