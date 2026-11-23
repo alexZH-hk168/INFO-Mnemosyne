@@ -28,7 +28,7 @@ import type {
 } from '../api/types';
 import type { RestFixture } from './fixture-types';
 import { fixtures, getMockScenario } from './handlers';
-import { MARKET_DATA } from './market-data';
+import { MARKET_DATA, notAdaptedMessage, PLUGIN_MANIFESTS, PLUGIN_SHORT_NAMES, withShortName } from './market-data';
 
 /** 安装自检的模拟耗时（规格 3-安装-安装确认弹窗：约 5–30 s；演示缩短为 1.5 s，测试可改） */
 let selfCheckMs = 1500;
@@ -67,6 +67,8 @@ interface MarketWorld {
   failing: Map<ID, ApiError>;
   /** 设置保存后模拟“测试调用失败” */
   modelUnavailable: boolean;
+  /** F6b 追加：会话插件接口的 reason（插件不可用的原因，如“本机 Zotero 未连接”）；只有演示场景会填 */
+  reasons: Map<ID, string>;
 }
 
 const fx = (file: string) => fixtures[file] as RestFixture;
@@ -91,13 +93,17 @@ function initialWorld(): MarketWorld {
     memory: [...body<MemoryItemList>('get-memory-items.ok.json').items, structuredClone(SUPERSEDED_DEMO)],
     failing,
     modelUnavailable: false,
+    reasons: new Map(),
   };
 }
 
 let world = initialWorld();
+/** F6b 追加：PUT /api/conversations/{cid}/plugins 是否模拟失败 */
+let failPut = false;
 
 export function resetMarketWorld(): void {
   world = initialWorld();
+  failPut = false;
 }
 
 const err = (status: number, code: string, message: string, retriable = false, details?: Record<string, unknown>) =>
@@ -112,7 +118,7 @@ function marketList(type: 'plugin' | 'skill'): MarketList {
   const installed = new Set(type === 'plugin' ? world.plugins.map((p) => p.id) : world.skills.map((s) => s.id));
   return {
     items: MARKET_DATA.filter((m) => m.type === type).map((m): MarketItem => ({
-      ...m,
+      ...withShortName(type, m), // F6b：插件带 short_name（契约 v0.5 并行草案）
       installed: installed.has(m.id),
       ...(type === 'plugin' ? { verified: verifiedIds().has(m.id) } : {}),
     })),
@@ -139,11 +145,15 @@ function pluginDetail(id: ID): PluginDetail | null {
     tools: base?.tools ?? [],
     verified: base?.verified ?? verifiedIds().has(id),
   };
+  // F6b：简称（契约 v0.5 并行草案）
+  const short = installed?.short_name ?? base?.short_name ?? PLUGIN_SHORT_NAMES[id];
+  if (short) detail.short_name = short;
   if (installed?.last_check_at) detail.last_check_at = installed.last_check_at;
   if (installed?.config_set) detail.config_set = [...installed.config_set];
   if (installed?.config) detail.config = { ...installed.config };
-  // v0.3 可选字段：只有 fixture 写了的插件才有（arxiv）
-  if (base?.manifest) detail.manifest = base.manifest;
+  // v0.3 可选字段：只有 fixture 写了的插件才有（arxiv）；F6b：其余有适配清单的（tavily、fetch、markitdown）取 PLUGIN_MANIFESTS
+  const manifest = base?.manifest ?? PLUGIN_MANIFESTS[id];
+  if (manifest) detail.manifest = structuredClone(manifest);
   if (base?.about_zh) detail.about_zh = base.about_zh;
   if (base?.usage_zh) detail.usage_zh = base.usage_zh;
   if (base?.permission_notes) detail.permission_notes = base.permission_notes;
@@ -166,8 +176,20 @@ function convList(cid: ID): ConversationPlugin[] {
   // 编排决定（F4 修，待用户追认）：没保存过设置的对话默认启用全部已安装插件，与 UI-09“安装后默认在当前对话启用”一致
   return world.plugins.map((p) => {
     const hit = saved?.find((c) => c.plugin_id === p.id);
-    return { plugin_id: p.id, enabled: saved ? (hit?.enabled ?? false) : true, status: p.status };
+    const row: ConversationPlugin = {
+      plugin_id: p.id,
+      enabled: saved ? (hit?.enabled ?? false) : true,
+      status: p.status,
+    };
+    const reason = world.reasons.get(p.id); // F6b
+    if (reason) row.reason = reason;
+    return row;
   });
+}
+
+/** F6b 追加：某对话当前是否启用了某插件（chat-world 据此决定是否回放插件回合） */
+export function isPluginEnabled(cid: ID, pluginId: ID): boolean {
+  return convList(cid).some((c) => c.plugin_id === pluginId && c.enabled && c.status === 'installed');
 }
 
 export const marketWorldHandlers: HttpHandler[] = [
@@ -194,6 +216,8 @@ export const marketWorldHandlers: HttpHandler[] = [
     const id = String(params.id);
     const d = pluginDetail(id);
     if (!d) return err(404, 'NOT_FOUND', '插件不存在');
+    // F6b（编排决定，来自 B3b U92）：没有适配清单的插件不能安装，与后端一样返回 400
+    if (!d.manifest) return err(400, 'VALIDATION_ERROR', notAdaptedMessage(id), false);
     const input = (await request.json().catch(() => ({}))) as Partial<InstallPluginBody>;
     const config = input.config ?? {};
     const already = world.plugins.find((p) => p.id === id);
@@ -219,6 +243,7 @@ export const marketWorldHandlers: HttpHandler[] = [
     const plugin: InstalledPlugin = {
       id,
       name: d.name,
+      ...(d.short_name ? { short_name: d.short_name } : {}),
       version: d.version,
       status: 'installed',
       permissions: d.permissions,
@@ -249,6 +274,7 @@ export const marketWorldHandlers: HttpHandler[] = [
   }),
   http.put('*/api/conversations/:cid/plugins', async ({ params, request }) => {
     if (deferred('PUT /api/conversations/{cid}/plugins')) return undefined;
+    if (failPut) return err(500, 'INTERNAL', '保存插件设置失败', true); // F6b：测试开关
     const cid = String(params.cid);
     const input = (await request.json().catch(() => ({}))) as { enabled_plugin_ids?: unknown };
     if (!Array.isArray(input.enabled_plugin_ids)) return err(400, 'VALIDATION_ERROR', 'enabled_plugin_ids 必须是数组');
@@ -387,5 +413,64 @@ export const marketControls = {
   /** 设置保存后测试调用失败（MODEL_UNAVAILABLE） */
   setModelUnavailable(on: boolean): void {
     world.modelUnavailable = on;
+  },
+  /**
+   * F6b 追加：复现概念图 UI-11 的插件组合（截图与弹层状态测试用）。已安装 ArXiv、Tavily（API Key 已配置）、MarkItDown、
+   * Zotero（status=error，reason“本机 Zotero 未连接”）；cid 对话里前三个启用。Tavily 的配置项取自
+   * get-plugins-id.not-installed.ok.json；Zotero 名称取自市场条目，fixture 没有它的权限与配置样例，这里留空（演示数据，R4）。
+   */
+  seedUi11(cid: ID = 'cnv_transformer'): void {
+    const tavily = pluginDetail('tavily');
+    const keep = world.plugins.filter((p) => p.id === 'arxiv' || p.id === 'markitdown');
+    const extra: InstalledPlugin[] = [];
+    if (tavily) {
+      extra.push({
+        id: 'tavily',
+        name: tavily.name,
+        ...(tavily.short_name ? { short_name: tavily.short_name } : {}),
+        version: tavily.version,
+        status: 'installed',
+        permissions: tavily.permissions,
+        config_schema: tavily.config_schema,
+        last_check_at: iso(),
+        config_set: Object.keys(tavily.config_schema),
+        config: {},
+      });
+    }
+    const z = marketItem('zotero');
+    extra.push({
+      id: 'zotero',
+      name: z?.name ?? 'zotero',
+      short_name: PLUGIN_SHORT_NAMES.zotero,
+      version: '1.0.0',
+      status: 'error',
+      permissions: [],
+      config_schema: {},
+      config_set: [],
+      config: {},
+    });
+    const order = ['arxiv', 'tavily', 'markitdown', 'zotero'];
+    world.plugins = [...keep, ...extra].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    world.reasons.set('zotero', '本机 Zotero 未连接');
+    world.convPlugins.set(
+      cid,
+      world.plugins.map((p) => ({ plugin_id: p.id, enabled: p.id !== 'zotero', status: p.status })),
+    );
+  },
+  /**
+   * F6b 追加：直接从模拟后端移除一个已安装插件（等同卸载，不经界面），给“重新安装有适配清单的插件”类测试准备初始状态。
+   * 第一版只有 arxiv、tavily、fetch、markitdown 能安装，而前三个初始已装，测“无需配置的安装”只能先移除再装。
+   */
+  removePlugin(id: ID): void {
+    world.plugins = world.plugins.filter((p) => p.id !== id);
+    for (const [cid, list] of world.convPlugins)
+      world.convPlugins.set(
+        cid,
+        list.filter((c) => c.plugin_id !== id),
+      );
+  },
+  /** F6b 追加：让某对话的会话插件写接口失败一次以上（测乐观更新回滚）；传 false 恢复 */
+  failConvPluginsPut(on: boolean): void {
+    failPut = on;
   },
 };

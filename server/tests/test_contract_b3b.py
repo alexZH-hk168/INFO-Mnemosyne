@@ -50,7 +50,7 @@ FIXTURE_NAMES = b3b_fixtures()
 
 
 def test_fixture_inventory():
-    """12 个路由每个都有成功与错误样例（共 25 份，含未安装插件详情变体）。"""
+    """12 个路由每个都有成功与错误样例（共 26 份，含未安装插件详情变体、F6b 的未适配插件安装错误）。"""
     endpoints: dict[str, set] = {}
     for name in FIXTURE_NAMES:
         data = json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))
@@ -58,19 +58,20 @@ def test_fixture_inventory():
     assert set(endpoints) == set(RESPONSE_MODEL)
     for ep, kinds in endpoints.items():
         assert kinds == {"ok", "error"}, ep
-    assert len(FIXTURE_NAMES) == 25
+    assert len(FIXTURE_NAMES) == 26
 
 
 @pytest.fixture
 def world(b3b_env, client, db, monkeypatch):
     from app.config import get_config
 
-    # fetch 换成本地假服务（v1 验收的真实 uvx 安装由编排在磁盘问题解决后做）；docling 用握手前睡 30 s 的假服务模拟自检超时
+    # fetch 换成本地假服务（v1 验收的真实 uvx 安装由编排做）；markitdown 用握手前睡 30 s 的假服务模拟自检超时
+    # （F6b 把 post-plugins-id.error 的插件由 docling 改成 markitdown；docling 没有适配清单，走 not-adapted 的 400）
     reg = write_registry(
         b3b_env / "registry",
         overrides={
             "fetch": fake_manifest("fetch", name="Fetch MCP Server", tools_allow=["fetch"], mapping={"title": "$args.url", "url": "$args.url", "quote": "$text"}),
-            "docling": fake_manifest("docling", name="Docling MCP", extra_args=["--delay", "30"]),
+            "markitdown": fake_manifest("markitdown", name="MarkItDown MCP", extra_args=["--delay", "30"], permissions=("network", "fs_read")),
         },
     )
     monkeypatch.setenv("MN_REGISTRY_DIR", str(reg))
@@ -153,18 +154,16 @@ def _drop(items: list[dict], *keys: str) -> list[dict]:
 
 @pytest.mark.parametrize("kind", ["plugins", "skills"])
 def test_market_equals_fixture(kind, client, world):
-    """市场条目逐字段等于 fixture（fixture 由调研清单机械转换）；short_name 是 v0.5 新增字段，比对时去掉。"""
+    """市场条目逐字段等于 fixture（fixture 由调研清单机械转换；F6b 起插件 fixture 也带 short_name）。"""
     fx = json.loads((FIXTURES / f"get-market-{kind}.ok.json").read_text(encoding="utf-8"))
     body = client.get(f"/api/market/{kind}").json()
-    assert _drop(body["items"], "short_name") == fx["body"]["items"]
+    assert body["items"] == fx["body"]["items"]
 
 
 def test_installed_and_conversation_plugins_match_fixture(client, world):
     fx = json.loads((FIXTURES / "get-plugins.ok.json").read_text(encoding="utf-8"))["body"]["plugins"]
     body = client.get("/api/plugins").json()["plugins"]
-    got = _drop(body, "short_name", "permissions")
-    assert got == _drop(fx, "permissions")
-    # 权限取适配清单：markitdown 按上游 README 声明 network + fs_read（fixture 只写了 fs_read，见未决 U90）
+    assert body == fx  # U96 已同步：markitdown 权限 network + fs_read
     assert {p["id"]: p["permissions"] for p in body} == {"arxiv": ["network", "fs_write"], "fetch": ["network"], "markitdown": ["network", "fs_read"]}
     fx = json.loads((FIXTURES / "get-conversations-cid-plugins.ok.json").read_text(encoding="utf-8"))["body"]["plugins"]
     body = client.get("/api/conversations/cnv_transformer/plugins").json()["plugins"]
@@ -179,8 +178,7 @@ def test_arxiv_detail_matches_fixture(client, world):
               "verified", "tools", "about_zh", "usage_zh", "permission_notes"):
         assert body[k] == fx[k], k
     assert body["manifest"]["tools_allow"] == fx["manifest"]["tools_allow"]
-    # 启动参数固定了上游版本号（fixture 是 F6 的未固定写法）
-    assert body["manifest"]["args"] == ["arxiv-mcp-server@0.8.2", "--storage-path", "~/.mnemosyne/plugins/arxiv"]
+    assert body["manifest"]["args"] == fx["manifest"]["args"] == ["arxiv-mcp-server@0.8.2", "--storage-path", "~/.mnemosyne/plugins/arxiv"]
 
 
 def test_tavily_not_installed_detail_matches_fixture(client, world):
@@ -195,3 +193,45 @@ def test_skill_detail_matches_fixture(client, world):
     body = client.get("/api/skills/pdf").json()
     assert {k: v for k, v in body.items() if k != "dir_path"} == {k: v for k, v in fx.items() if k != "dir_path"}
     assert body["dir_path"].endswith("/skills/pdf")
+
+
+def test_plugin_turn_steps_and_evidence_match_fixture(client, world):
+    """F6b 的插件回合（sse-turn-plugin.json）：树接口里插件步骤带 plugin_id，插件证据的标题与 SSE 样例一致。"""
+    from tests.test_contract_fixtures import make_plugin_turn_active
+
+    fx = json.loads((FIXTURES / "sse-turn-plugin.json").read_text(encoding="utf-8"))
+    done = [e["data"] for e in fx["events"] if e["event"] == "step" and e["data"]["status"] == "done"]
+    tree = client.get("/api/conversations/cnv_transformer/tree").json()
+    steps = [m for m in tree["messages"] if m["id"] == "msg_plugin_a1"][0]["steps"]
+    assert steps == [{k: d[k] for k in ("step_id", "kind", "label", "status", "duration_ms", "plugin_id")} for d in done]
+    ev = next(e["data"] for e in fx["events"] if e["event"] == "evidence" and e["data"]["source_type"] == "plugin")
+    make_plugin_turn_active(world)
+    body = client.get(f"/api/evidence/{ev['eid']}").json()
+    assert body["title"] == ev["title"] and body["locator"] == ev["locator"]
+
+
+def test_arxiv_get_abstract_becomes_plugin_evidence(b3b_env, db):
+    """真实 arxiv-mcp-server 0.8.2 的 get_abstract 返回结构（源码 tools/get_abstract.py）→ 无 URL 插件证据，
+    标题、fields 形状与 F6b 的 get-evidence-eid.plugin.ok 一致；search_papers 的记录带 url → 网页快照。"""
+    from app.plugins import mapping, registry
+
+    manifest = registry.plugin_entry("arxiv")["manifest"]
+    fx = json.loads((FIXTURES / "get-evidence-eid.plugin.ok.json").read_text(encoding="utf-8"))["body"]
+    f = fx["locator"]["fields"]
+    raw = {"status": "success", **f, "pdf_url": "https://arxiv.org/pdf/1706.03762"}
+    drafts = mapping.to_evidence(db, plugin_id="arxiv", plugin_name="ArXiv MCP Server", tool_name="get_abstract",
+                                 mapping=manifest["evidence_mapping"], arguments={"paper_id": "1706.03762"},
+                                 text=json.dumps(raw), structured=None)
+    assert len(drafts) == 1
+    d = drafts[0]
+    assert d.kind == "plugin" and d.source_id == "arxiv" and d.title == fx["title"]
+    assert d.locator["tool_name"] == "get_abstract" and d.locator["fields"]["authors"] == f["authors"]
+    assert {k: d.locator["fields"][k] for k in f} == f
+    assert fx["quote"] in d.quote  # 样例只截了摘要中的一句；运行时给整段摘要，引用句由回答校验
+    assert mapping.title_from_locator(manifest, d.locator) == fx["title"]
+    search = {"total_results": 1, "papers": [{"id": "1706.03762", "title": "Attention Is All You Need", "abstract": f["abstract"],
+                                              "url": "https://arxiv.org/pdf/1706.03762"}]}
+    drafts = mapping.to_evidence(db, plugin_id="arxiv", plugin_name="ArXiv MCP Server", tool_name="search_papers",
+                                 mapping=manifest["evidence_mapping"], arguments={"query": "attention"},
+                                 text=json.dumps(search), structured=None)
+    assert [x.kind for x in drafts] == ["web"] and drafts[0].title == fx["title"]

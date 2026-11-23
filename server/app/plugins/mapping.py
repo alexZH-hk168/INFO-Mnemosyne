@@ -6,6 +6,8 @@ evidence_mapping 写法（契约 plugin-manifest.md 写“工具结果 → 证�
 - 键：`title`、`url`、`quote`（必需才能产生证据），可选 `items`。
 - 值：一个路径字符串，或路径数组（依次取第一个非空值）。
 - 路径：`$` 是当前记录；`$.a.b`、`$.a[0].b` 逐级取；`$args.x` 取本次调用参数；`$text` 取工具返回的全部文本。
+- 模板：含 `{$…}` 的字符串按模板拼接，如 `"arXiv:{$.paper_id} · {$.title}"`；任一占位取不到值时整条模板视为空，
+  接着试数组里的下一项（F6b 对齐：arXiv 证据标题写成“arXiv:编号 · 题名”）。
 - `items`：结果里记录列表的路径（如 arXiv 的 `$.papers`），每条记录各产生一条证据；省略或该路径取不到数组时，
   整个结果是一条记录（结果本身是数组则每个元素一条）。
 - 结果先取 MCP 的 structuredContent（SDK 把纯字符串返回包成 `{"result": "…"}` 的除外），否则把文本当 JSON 解析；
@@ -15,7 +17,10 @@ evidence_mapping 写法（契约 plugin-manifest.md 写“工具结果 → 证�
 - 记录有 http(s) URL → 写一条 web_snapshots（text = 标题 + 空行 + 引文全文），证据 kind=web，
   locator = {snapshot_id, char_range}（码点、左闭右开，指向引文在快照里的位置）。快照内容来自插件返回，
   不是 Mnemosyne 另外抓取的页面；http_status 记 200（插件调用成功）。
-- 没有 URL → kind=plugin，locator = {plugin_id, tool_name, fields}，fields 是记录的原始字段（截断）。
+- 没有 URL → kind=plugin，locator = {plugin_id, tool_name, fields}，fields 是记录的原始字段：字符串截断到 2000 字，
+  数字/布尔/空值与“标量数组”（如作者列表）原样保留，其余嵌套结构转成 JSON 文本。
+- 插件证据的标题不入库：`GET /api/evidence/{eid}` 用 `title_from_locator()` 对 fields 重新套一次清单的 title
+  映射（`$args` 占位此时取不到，跳到下一项），与回合里 SSE `evidence` 事件的标题一致。
 """
 
 from __future__ import annotations
@@ -31,7 +36,9 @@ from app.ids import new_id, now_iso, sha256_text
 MAX_RECORDS = 5
 MAX_QUOTE = 2000
 MAX_FIELD = 2000
+MAX_LIST = 50
 _TOKEN = re.compile(r"\.([A-Za-z_][\w-]*)|\[(\d+)\]")
+_PLACEHOLDER = re.compile(r"\{(\$[^{}]*)\}")
 
 
 def parse_result(text: str, structured: Any) -> Any:
@@ -79,10 +86,29 @@ def pick(spec: Any, record: Any, args: dict, text: str) -> Any:
     for p in paths:
         if not isinstance(p, str):
             continue
+        if _PLACEHOLDER.search(p):
+            v = _render(p, record, args, text)
+            if v:
+                return v
+            continue
         v = get_path(p, record, args, text)
         if v not in (None, "", [], {}):
             return v
     return None
+
+
+def _render(template: str, record: Any, args: dict, text: str) -> str:
+    missing = False
+
+    def sub(m: re.Match) -> str:
+        nonlocal missing
+        v = _as_text(get_path(m.group(1), record, args, text))
+        if not v:
+            missing = True
+        return v
+
+    out = _PLACEHOLDER.sub(sub, template)
+    return "" if missing else out
 
 
 def _as_text(v: Any) -> str:
@@ -102,6 +128,8 @@ def _fields(record: Any) -> dict:
     for k, v in list(record.items())[:30]:
         if isinstance(v, (str, int, float, bool)) or v is None:
             out[str(k)] = v if not isinstance(v, str) else v[:MAX_FIELD]
+        elif isinstance(v, list) and all(isinstance(x, (str, int, float, bool)) or x is None for x in v):
+            out[str(k)] = [x[:MAX_FIELD] if isinstance(x, str) else x for x in v[:MAX_LIST]]
         else:
             out[str(k)] = _as_text(v)[:MAX_FIELD]
     return out
@@ -167,3 +195,13 @@ def to_evidence(
     if drafts:
         conn.commit()
     return drafts
+
+
+def title_from_locator(manifest: dict | None, locator: dict) -> str | None:
+    """插件证据（无 URL）的标题：对 locator.fields 重新套清单的 title 映射；取不到返回 None。"""
+    mapping = (manifest or {}).get("evidence_mapping") or {}
+    fields = locator.get("fields")
+    if not mapping.get("title") or not isinstance(fields, dict):
+        return None
+    title = _as_text(pick(mapping["title"], fields, {}, ""))
+    return title or None

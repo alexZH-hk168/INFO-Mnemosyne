@@ -1,0 +1,168 @@
+{
+  "endpoint": "POST /api/conversations/{cid}/messages",
+  "kind": "sse",
+  "description": "插件证据回合（F6b）：ArXiv 插件 get_abstract 一次，返回无 URL 的题录字段作为证据 E1，另引论文第 4 页脚注 E2，两条引用均 supported",
+  "status": 200,
+  "content_type": "text/event-stream",
+  "events": [
+    {
+      "event": "message.start",
+      "data": {
+        "message_id": "msg_plugin_a1",
+        "client_msg_id": "f5a6b7c8-d9e0-4f1a-8b2c-3d4e5f6a7b8c",
+        "user_message_id": "msg_plugin_u1",
+        "seq": 1
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_plugin_1",
+        "kind": "plugin_tool",
+        "label": "arXiv：get_abstract 1706.03762",
+        "plugin_id": "arxiv",
+        "status": "running",
+        "seq": 2
+      }
+    },
+    {
+      "event": "step",
+      "data": {
+        "step_id": "stp_plugin_1",
+        "kind": "plugin_tool",
+        "label": "arXiv：get_abstract 1706.03762",
+        "plugin_id": "arxiv",
+        "status": "done",
+        "duration_ms": 860,
+        "seq": 3
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_arxiv_abs",
+        "label": "E1",
+        "source_type": "plugin",
+        "source_id": "arxiv",
+        "title": "arXiv:1706.03762 · Attention Is All You Need",
+        "locator": {
+          "plugin_id": "arxiv",
+          "tool_name": "get_abstract",
+          "fields": {
+            "paper_id": "1706.03762",
+            "title": "Attention Is All You Need",
+            "authors": [
+              "Ashish Vaswani",
+              "Noam Shazeer",
+              "Niki Parmar",
+              "Jakob Uszkoreit",
+              "Llion Jones",
+              "Aidan N. Gomez",
+              "Lukasz Kaiser",
+              "Illia Polosukhin"
+            ],
+            "published": "2017-06-12",
+            "categories": [
+              "cs.CL",
+              "cs.LG"
+            ],
+            "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data."
+          }
+        },
+        "quote": "We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.",
+        "sha256": "ed7631200a18f20fc81a069dbaec1e4780737fd416877c9496ab815a38eb1fd7",
+        "seq": 4
+      }
+    },
+    {
+      "event": "evidence",
+      "data": {
+        "eid": "evd_att_p4_fn4",
+        "label": "E2",
+        "source_type": "material",
+        "source_id": "doc_attention",
+        "title": "Attention Is All You Need",
+        "locator": {
+          "page": 4,
+          "sentence_ids": [
+            "s4_fn4_1",
+            "s4_fn4_2"
+          ],
+          "bbox": [
+            107.8,
+            700.3,
+            504,
+            724
+          ]
+        },
+        "quote": "To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Σ q_i k_i, has mean 0 and variance d_k.",
+        "sha256": "1e89e1f28722f2767b49bb175399bf7dc0ab9e18b33edb458ee5ad0efa8c0363",
+        "seq": 5
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "arXiv 上的摘要写明，Transformer 只依靠注意力机制，完全去掉了循环和卷积[[E1]]。",
+        "seq": 6
+      }
+    },
+    {
+      "event": "delta",
+      "data": {
+        "text": "论文第 4 页的脚注解释了为什么要缩放点积：dₖ 越大，点积的方差越大[[E2]]。",
+        "seq": 7
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_plugin_1",
+        "eid": "evd_arxiv_abs",
+        "label": "E1",
+        "sentence_start": 0,
+        "sentence_end": 45,
+        "verdict": "supported",
+        "seq": 8
+      }
+    },
+    {
+      "event": "citation",
+      "data": {
+        "citation_id": "cit_plugin_2",
+        "eid": "evd_att_p4_fn4",
+        "label": "E2",
+        "sentence_start": 45,
+        "sentence_end": 81,
+        "verdict": "supported",
+        "seq": 9
+      }
+    },
+    {
+      "event": "message.end",
+      "data": {
+        "message_id": "msg_plugin_a1",
+        "usage": {
+          "prompt_tokens": 3120,
+          "completion_tokens": 96
+        },
+        "latency_ms": 3870,
+        "cancelled": false,
+        "seq": 10
+      }
+    }
+  ],
+  "request": {
+    "params": {
+      "cid": "cnv_transformer"
+    },
+    "body": {
+      "client_msg_id": "f5a6b7c8-d9e0-4f1a-8b2c-3d4e5f6a7b8c",
+      "content": "用 arXiv 查一下这篇论文的摘要，它的主要贡献是什么？",
+      "web_search": false,
+      "scope": {
+        "mode": "all"
+      }
+    }
+  }
+}

@@ -98,8 +98,10 @@ describe('MSW · REST 成功样例', () => {
 });
 
 describe('MSW · REST 错误样例', () => {
-  it.each(restErr)('%s', async (_file, fx) => {
-    setMockScenario(fx.endpoint, 'error');
+  it.each(restErr)('%s', async (file, fx) => {
+    // 不带变体名的错误样例走场景 'error'；带变体名的（F6b：post-plugins-id.not-adapted.error.json）按文件名指定
+    const variant = file.split('.').length > 3;
+    setMockScenario(fx.endpoint, variant ? file : 'error');
     const res = await fetch(urlFor(fx.endpoint, fx), initFor(fx.endpoint, fx));
     expect(res.status).toBe(fx.status);
     expect(await res.json()).toEqual(fx.body);

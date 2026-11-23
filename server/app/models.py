@@ -81,7 +81,7 @@ class Step(Strict):
     label: str
     status: Literal["running", "done", "error"]
     duration_ms: int | None = None
-    plugin_id: str | None = None  # 契约 v0.5 [F6b]（原 U60）：kind=plugin_tool 时发起调用的插件 id
+    plugin_id: str | None = None  # v0.5 [F6b]（原 U60）：kind=plugin_tool 时发起调用的插件 id
 
 
 class Citation(Strict):

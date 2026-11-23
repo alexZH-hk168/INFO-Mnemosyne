@@ -6,6 +6,7 @@
   "body": {
     "id": "arxiv",
     "name": "ArXiv MCP Server",
+    "short_name": "arXiv",
     "version": "1.0.0",
     "status": "installed",
     "permissions": [
@@ -99,7 +100,7 @@
       "transport": "stdio",
       "command": "uvx",
       "args": [
-        "arxiv-mcp-server",
+        "arxiv-mcp-server@0.8.2",
         "--storage-path",
         "~/.mnemosyne/plugins/arxiv"
       ],

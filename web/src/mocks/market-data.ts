@@ -395,3 +395,62 @@ export const MARKET_DATA: Omit<MarketItem, 'installed'>[] = [
     "repo_url": "https://github.com/obra/superpowers/tree/main/skills/brainstorming"
   }
 ];
+
+/**
+ * F6b 追加（契约 v0.5 并行草案 `short_name?`，原 U36）：18 个插件的简称，输入框插件胶囊用。
+ * 与后端 B3b 的 server/registry/plugins.json（分支 feat/B3b-plugins 5dbcbce）逐条一致：arxiv、fetch、markitdown 取自 UX 规格
+ * （UI-11 托条“网页检索 · PDF 解析 · arXiv”），其余 15 个由 B3b 拟定，待用户确认（编排 2026-11-23）。
+ */
+export const PLUGIN_SHORT_NAMES: Record<string, string> = {
+  arxiv: 'arXiv',
+  'paper-search': '论文检索',
+  tavily: 'Tavily 检索',
+  exa: 'Exa 检索',
+  'brave-search': 'Brave 检索',
+  fetch: '网页检索',
+  zotero: 'Zotero',
+  markitdown: 'PDF 解析',
+  docling: 'Docling 解析',
+  obsidian: 'Obsidian',
+  notion: 'Notion',
+  anki: 'Anki',
+  jupyter: 'Jupyter',
+  github: 'GitHub',
+  'youtube-transcript': 'YouTube 字幕',
+  wikipedia: '维基百科',
+  wolfram: 'Wolfram',
+  context7: '技术文档',
+};
+
+/**
+ * F6b 追加（编排决定，来自 B3b 的 U92）：第一版有 Mnemosyne 适配清单（mnemosyne-plugin.json）的插件只有这 4 个，
+ * 其余 14 个后端安装返回 400 VALIDATION_ERROR，前端安装按钮置灰。启动信息照抄 B3b 的 server/registry/plugins.json
+ * （transport、command、args、tools_allow）；arxiv 的详情 fixture 自 F6 起已有 manifest（args 未锁版本，见 PROGRESS），这里不重复。
+ */
+export const PLUGIN_MANIFESTS: Record<
+  string,
+  { transport: 'stdio' | 'http'; command: string; args: string[]; tools_allow?: string[] }
+> = {
+  tavily: {
+    transport: 'stdio',
+    command: 'npx',
+    args: ['-y', 'tavily-mcp@0.2.22'],
+    tools_allow: ['tavily-search', 'tavily-extract'],
+  },
+  fetch: { transport: 'stdio', command: 'uvx', args: ['mcp-server-fetch@2026.11.18'], tools_allow: ['fetch'] },
+  markitdown: {
+    transport: 'stdio',
+    command: 'uvx',
+    args: ['markitdown-mcp@0.0.1a8'],
+    tools_allow: ['convert_to_markdown'],
+  },
+};
+
+/** B3b 对未适配插件安装请求的错误文案（server/app/plugins/runtime.py） */
+export const notAdaptedMessage = (id: string) => `插件 ${id} 还没有 Mnemosyne 适配清单，暂时不能安装`;
+
+/** 插件条目带上简称（Skill 不加） */
+export function withShortName<T extends { id: string }>(type: 'plugin' | 'skill', item: T): T & { short_name?: string } {
+  const short = type === 'plugin' ? PLUGIN_SHORT_NAMES[item.id] : undefined;
+  return short ? { ...item, short_name: short } : item;
+}

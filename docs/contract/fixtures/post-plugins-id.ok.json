@@ -6,6 +6,7 @@
   "body": {
     "id": "fetch",
     "name": "Fetch MCP Server",
+    "short_name": "网页检索",
     "version": "1.0.0",
     "status": "installed",
     "permissions": [

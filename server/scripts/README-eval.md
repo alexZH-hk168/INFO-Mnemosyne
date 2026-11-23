@@ -36,7 +36,7 @@ $P scripts/metrics.py --pred runs/full-{B1,B2,M,A1,A2,A4}/predictions.jsonl --ju
 |---|---|---|
 | B1 | 全部 session 按时间顺序放进上下文 | 假模型下跑通 |
 | B2 | 每个轮次（user、assistant 都算）一个块，嵌入余弦取前 k，要求按编号引用 | 假模型 + 本地哈希嵌入下跑通 |
-| M | `eval_lib/adapter.py` 的 `BackendAdapter`：回放 session（按 session 缓存，各系统共用）→ 提问 → 回答、引用、检索结果 | 真实适配器 `MnemosyneBackendAdapter`（`eval_lib/backend.py`，INT1）：在本进程里调用后端数据库、B2 回合与 B3a 记忆任务；每题一个独立库（`--backend-data/items/<题目哈希>/`），回放缓存只在同题 M/A1–A4 间复用；A1 去掉 open_source 工具、A2 跳过引用校验、A3 记忆召回不按分支过滤、A4 不注入 L4 画像。假模型下 A1 与 M 结果相同（假模型从不调用 open_source） |
+| M | `eval_lib/adapter.py` 的 `BackendAdapter`：回放 session（按 session 缓存，各系统共用）→ 提问 → 回答、引用、检索结果 | 真实适配器 `MnemosyneBackendAdapter`（`eval_lib/backend.py`，INT1）：在本进程里调用后端数据库、B2 回合与 B3a 记忆任务；每题一个独立库（`--backend-data/items/<题目哈希>/`），回放缓存只在同题 M/A1–A4 间复用；A1 去掉 open_source 工具、A2 跳过引用校验、A3 记忆召回不按分支过滤、A4 不注入 L4 画像。eval_mini 上假模型的 A1 与 M 结果相同（这批题假模型没有调用 open_source），A1 的差别要等真实模型才看得出 |
 | A1 | `Flags(open_source=False)` 不回溯原文 | 同 M |
 | A2 | `Flags(citations=False)` 不要求引用、不做引用校验；`cited_turn_hit_rate` 记不适用 | 同 M |
 | A3 | `Flags(branch_scope=False)` 检索不按分支路径过滤（只在 BranchMem 上跑） | 同 M |

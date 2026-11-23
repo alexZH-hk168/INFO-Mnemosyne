@@ -385,6 +385,13 @@ def test_memory_plugin_skill_hooks(client, db, run_jobs, monkeypatch):
     row = db.execute("SELECT captured_in_message_id FROM evidence WHERE id = ?", (evs[1]["eid"],)).fetchone()
     assert row["captured_in_message_id"] == aid
     assert db.execute("SELECT tool_name FROM tool_calls WHERE message_id = ? AND step_index = 4", (aid,)).fetchone()[0] == "arxiv__search_papers"
+    # v0.5 [F6b] Step.plugin_id：插件步骤（SSE 的 running/done 两条与树接口）都带插件 id，其余步骤不带
+    plugin_steps = [d for e, d in events if e == "step" and d["kind"] == "plugin_tool"]
+    assert len(plugin_steps) == 2 and all(d["plugin_id"] == "arxiv" for d in plugin_steps)
+    assert all("plugin_id" not in d for e, d in events if e == "step" and d["kind"] != "plugin_tool")
+    tree = client.get(f"/api/conversations/{hist_cid}/tree").json()
+    steps = [m for m in tree["messages"] if m["id"] == aid][0]["steps"]
+    assert [s.get("plugin_id") for s in steps] == [None, None, None, "arxiv"]
 
     # 关闭记忆：不出现 recall_memory，也不调用 on_turn_finished
     client.put("/api/settings", json={"memory_enabled": False})

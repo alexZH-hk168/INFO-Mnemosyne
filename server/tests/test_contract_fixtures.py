@@ -123,10 +123,18 @@ def prepare(name: str, world: sqlite3.Connection, monkeypatch):
             raise sqlite3.OperationalError("disk I/O error")
 
         monkeypatch.setattr(projects, "project_out", boom)
+    if name == "get-evidence-eid.plugin.ok":
+        make_plugin_turn_active(world)
     if name == "post-documents-did-reparse.error":
         path = world.execute("SELECT path FROM documents WHERE id = 'doc_longmemeval'").fetchone()[0]
         with open(path, "wb") as f:
             f.write(make_encrypted_pdf())
+
+
+def make_plugin_turn_active(conn: sqlite3.Connection) -> None:
+    """插件证据只在抓取它的回合位于当前路径时可见：把 F6b 的插件回合设为当前叶子（回合刚结束时的真实状态）。"""
+    conn.execute("UPDATE conversations SET active_leaf_id = 'msg_plugin_a1' WHERE id = 'cnv_transformer'")
+    conn.commit()
 
 
 @pytest.mark.parametrize("name", FIXTURE_NAMES)
@@ -163,7 +171,7 @@ def test_tree_equals_fixture(client, world):
     fx = json.loads((FIXTURES / "get-conversations-cid-tree.ok.json").read_text(encoding="utf-8"))
     body = client.get("/api/conversations/cnv_transformer/tree").json()
     # seed 另加的消息（不在该 fixture 里）：重新生成的兄弟回答、F4 代码问答回合
-    extra = {"msg_tf_a1b", "msg_code_u1", "msg_code_a1"}
+    extra = {"msg_tf_a1b", "msg_code_u1", "msg_code_a1", "msg_plugin_u1", "msg_plugin_a1"}
     body["messages"] = [x for x in body["messages"] if x["id"] not in extra]
     expected = dict(fx["body"])
     # 契约没有规定 messages 的顺序（样例是主线在前、分支在后，接口按 created_at），按 id 比较
@@ -174,10 +182,12 @@ def test_tree_equals_fixture(client, world):
 
 @pytest.mark.parametrize(
     "variant",
-    ["get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.message.ok", "get-evidence-eid.web.ok", "get-evidence-eid.code.ok"],
+    ["get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.message.ok", "get-evidence-eid.web.ok", "get-evidence-eid.code.ok", "get-evidence-eid.plugin.ok"],
 )
 def test_evidence_equals_fixture(variant, client, world):
     fx = json.loads((FIXTURES / f"{variant}.json").read_text(encoding="utf-8"))
+    if variant.endswith("plugin.ok"):
+        make_plugin_turn_active(world)
     body = client.get(f"/api/evidence/{fx['request']['params']['eid']}").json()
     expected = dict(fx["body"])
     if variant.endswith("web.ok"):

@@ -28,7 +28,7 @@ def run(coro):
 
 # ---------- 切句与偏移 ----------
 
-@pytest.mark.parametrize("name", ["sse-turn-full", "sse-turn-cancel", "post-messages-mid-regenerate.ok"])
+@pytest.mark.parametrize("name", ["sse-turn-full", "sse-turn-cancel", "post-messages-mid-regenerate.ok", "sse-turn-plugin"])
 def test_sentence_spans_match_contract_fixtures(name):
     fx = load_fixture(name)
     raw = "".join(e["data"]["text"] for e in fx["events"] if e["event"] == "delta")

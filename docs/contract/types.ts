@@ -1,4 +1,4 @@
-// Mnemosyne 接口类型草案 v0.3（2026-11-23；v0.3 只追加可选字段）
+// Mnemosyne 接口类型草案 v0.3（2026-11-23；v0.3 只追加可选字段）；v0.5 并行草案只追加 short_name?、Step.plugin_id?（F6b）
 // 来源：docs/contract/*.md。F0 里程碑把本文件拷到 web/src/api/types.ts，之后两处保持一致。
 // 字段保持 snake_case，与后端 JSON 一致。
 // 字符偏移（sentence_start/end、anchor_start/end、char_range）一律左闭右开、按 Unicode 码点计数；

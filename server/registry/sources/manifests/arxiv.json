@@ -38,11 +38,12 @@
     ],
     "evidence_mapping": {
       "items": "$.papers",
-      "title": "$.title",
-      "url": [
-        "$.url",
-        "$.pdf_url"
+      "title": [
+        "arXiv:{$.paper_id} · {$.title}",
+        "arXiv:{$.id} · {$.title}",
+        "$.title"
       ],
+      "url": "$.url",
       "quote": [
         "$.abstract",
         "$.summary"
@@ -139,6 +140,7 @@
     "package": "arxiv-mcp-server (PyPI)",
     "version": "0.8.2",
     "checked": "2026-11-23：PyPI JSON 最新版 0.8.2（上传于 2026-10-08）；GitHub tag v0.8.2 的 tools/search.py 返回 {papers:[{id,title,authors,abstract,categories,published,url,resource_uri}]}，tools/get_abstract.py 返回 {status,paper_id,title,authors,abstract,categories,published,pdf_url}；--storage-path 见 config.py",
-    "verified": true
+    "verified": true,
+    "mapping_note": "url 只取 search_papers 记录的 $.url：get_abstract 只有 pdf_url，按 F6b 样例 get-evidence-eid.plugin.ok 作无 URL 插件证据（右栏题录卡片），不建网页快照（2026-11-23 F6b 对齐）"
   }
 }

@@ -3,8 +3,11 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import FourPane from '../layout/FourPane';
-import { setMockScenario } from '../mocks/handlers';
+import type { PluginDetail as PluginDetailT } from '../api/types';
+import type { RestFixture } from '../mocks/fixture-types';
+import { fixtures, setMockScenario } from '../mocks/handlers';
 import { MARKET_DATA } from '../mocks/market-data';
+import { marketControls } from '../mocks/market-world';
 import { goMarket } from '../lib/nav';
 import { useChat } from '../store/chat';
 import { useLayout } from '../store/layout';
@@ -329,20 +332,24 @@ describe('3-安装-安装确认弹窗', () => {
   });
 
   it('无需配置：跳过第 ② 步；成功且有当前对话时追加到本对话启用列表', async () => {
+    // F6b：第一版只有 4 个插件有适配清单（B3b U92），无需配置的 fetch 初始已装，先从模拟后端移除再装
+    marketControls.removePlugin('fetch');
     act(() => useChat.getState().setConversation('cnv_transformer'));
-    await openInstall('paper-search');
+    await openInstall('fetch');
     const steps = await screen.findByTestId('market.install-dialog.steps');
     await waitFor(() => expect(steps).toHaveTextContent('无需配置'));
     expect(screen.getByTestId('market.install-dialog.next')).toHaveTextContent('安装');
     fireEvent.click(screen.getByTestId('market.install-dialog.next'));
     await waitFor(() => expect(screen.queryByTestId('market.install-dialog')).not.toBeInTheDocument());
     await waitFor(() =>
-      expect(screen.getByTestId('market.install-button:paper-search')).toHaveTextContent('已安装 · 本对话已启用'),
+      expect(screen.getByTestId('market.install-button:fetch')).toHaveTextContent('已安装 · 本对话已启用'),
     );
   });
 
   it('自检失败：红色原因 +“查看日志”展开 log_tail +“重试”', async () => {
-    await openInstall('docling');
+    // F6b：自检失败样例改为 markitdown（docling 没有适配清单，安装直接 400）；先从模拟后端移除再装
+    marketControls.removePlugin('markitdown');
+    await openInstall('markitdown');
     await screen.findByTestId('market.install-dialog.permissions');
     fireEvent.click(screen.getByTestId('market.install-dialog.next'));
     const failed = await screen.findByTestId('market.install-dialog.failed');
@@ -354,6 +361,49 @@ describe('3-安装-安装确认弹窗', () => {
     fireEvent.click(screen.getByTestId('market.install-dialog.retry'));
     expect(await screen.findByTestId('market.install-dialog.checking')).toBeInTheDocument();
     expect(await screen.findByTestId('market.install-dialog.failed')).toBeInTheDocument();
+  });
+
+  it('F6b：没有适配清单的插件（manifest 缺省）卡片按钮置灰并提示“暂未适配，第一版不能安装”，点了不弹窗', async () => {
+    openMarket('/market/plugins');
+    await cards();
+    const btn = screen.getByTestId('market.install-button:docling');
+    await waitFor(() => expect(btn).toBeDisabled());
+    expect(btn).toHaveAttribute('data-state', 'unavailable');
+    expect(screen.getByTestId('market.install-button.not-adapted:docling')).toHaveTextContent(
+      '暂未适配，第一版不能安装',
+    );
+    expect(screen.queryByTestId('market.install-button.unverified:docling')).toBeNull();
+    fireEvent.click(btn);
+    expect(useUI.getState().modal).toBeNull();
+    // 有适配清单的 tavily 照常可装；已安装的 arxiv 不受影响
+    await waitFor(() => expect(screen.getByTestId('market.install-button:tavily')).toBeEnabled());
+    expect(screen.queryByTestId('market.install-button.not-adapted:tavily')).toBeNull();
+    expect(screen.getByTestId('market.install-button:arxiv')).toBeEnabled();
+    const blocked = MARKET_DATA.filter((m) => m.type === 'plugin').filter(
+      (m) => screen.queryByTestId(`market.install-button.not-adapted:${m.id}`) !== null,
+    );
+    await waitFor(() => expect(screen.getAllByTestId(/^market\.install-button\.not-adapted:/)).toHaveLength(14));
+    expect(blocked.length).toBeLessThanOrEqual(14);
+  });
+
+  it('F6b：详情页同样置灰；模拟后端对未适配插件的安装返回 400 VALIDATION_ERROR', async () => {
+    openMarket('/market/plugin/docling');
+    const btn = await screen.findByTestId('market.install-button');
+    await waitFor(() => expect(btn).toBeDisabled());
+    expect(screen.getByTestId('market.install-button.not-adapted')).toHaveTextContent('暂未适配，第一版不能安装');
+    const res = await fetch('http://localhost/api/plugins/docling', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ config: {} }),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: '插件 docling 还没有 Mnemosyne 适配清单，暂时不能安装',
+        retriable: false,
+      },
+    });
   });
 
   it('取消 / Esc 关闭，焦点回到触发按钮', async () => {
@@ -379,7 +429,7 @@ describe('3-条目卡片-插件详情页 / 工具列表 / 配置卡 / 卸载', (
   it('契约 v0.3：启动命令、简介、用法、权限说明来自接口；不在 tools_allow 的工具标“未启用”', async () => {
     openMarket('/market/plugin/arxiv');
     expect(await screen.findByTestId('market.plugin-config.command')).toHaveTextContent(
-      'uvx arxiv-mcp-server --storage-path ~/.mnemosyne/plugins/arxiv',
+      'uvx arxiv-mcp-server@0.8.2 --storage-path ~/.mnemosyne/plugins/arxiv',
     );
     expect(screen.getByTestId('market.plugin-detail.lead')).toHaveTextContent('论文下载到本地后按章节读取');
     expect(screen.getByTestId('market.plugin-detail.usage')).toHaveTextContent('助手会调用 search_papers');
@@ -395,6 +445,10 @@ describe('3-条目卡片-插件详情页 / 工具列表 / 配置卡 / 卸载', (
   });
 
   it('v0.3 字段缺省时退回：无 manifest 不显示启动命令，权限只写名称，用法用通用说明', async () => {
+    // F6b：Tavily 的详情 fixture 补了 manifest（B3b U92），这里用去掉 manifest 的同一份数据测退回
+    const { manifest: _m, ...noManifest } = (fixtures['get-plugins-id.not-installed.ok.json'] as RestFixture)
+      .body as PluginDetailT;
+    server.use(http.get('*/api/plugins/tavily', () => HttpResponse.json(noManifest)));
     openMarket('/market/plugin/tavily');
     await screen.findByTestId('market.plugin-config');
     expect(screen.queryByTestId('market.plugin-config.command')).not.toBeInTheDocument();

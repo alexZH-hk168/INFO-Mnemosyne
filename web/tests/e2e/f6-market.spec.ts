@@ -26,10 +26,16 @@ test('1-项目栏-插件与Skill入口：点击切到 /market/plugins，行高�
   await expect(entry).toHaveAttribute('aria-current', 'page');
   await expect(page.getByTestId('files.panel')).toHaveCount(0);
   await shot(page, '1-项目栏-插件与Skill入口');
-  await page.getByTestId('market.install-button:paper-search').click();
+  // F6b：第一版只有 4 个插件有适配清单（B3b U92），先卸载 Fetch 再装回来，看数字 4 → 3 → 4
+  // （MarkItDown 是自检失败样例，装回会失败）
+  await page.getByTestId('market.card.open:fetch').click();
+  await page.getByTestId('market.uninstall').click();
+  await page.getByTestId('market.uninstall.ok').click();
+  await expect(entry.getByTestId('sidebar.market-entry.count')).toHaveText('3');
+  await page.getByTestId('market.install-button').click();
   await page.getByTestId('market.install-dialog.next').click();
   await expect(page.getByTestId('market.install-dialog')).toHaveCount(0);
-  await expect(entry.getByTestId('sidebar.market-entry.count')).toHaveText('5');
+  await expect(entry.getByTestId('sidebar.market-entry.count')).toHaveText('4');
 });
 
 test('2-插件与Skill-市场页：UI-07 插件市场 18 张卡、三列；UI-08 Skill 市场 12 张', async ({ page }) => {
@@ -166,7 +172,13 @@ test('3-安装-安装确认弹窗：成功路径（权限 → 配置 → 自检 
 test('3-安装-安装确认弹窗：自检失败路径（查看日志、重试、关闭）', async ({ page }) => {
   await openMarket(page);
   await mock(page, 'setSelfCheckMs', 200);
-  await page.getByTestId('market.install-button:docling').click();
+  // F6b：自检失败样例改为 markitdown（docling 没有适配清单）；先在详情页卸载，再回列表从卡片安装
+  await page.getByTestId('market.card.open:markitdown').click();
+  await page.getByTestId('market.uninstall').click();
+  await page.getByTestId('market.uninstall.ok').click();
+  await page.getByTestId('market.breadcrumbs.tab').click();
+  await expect(page.getByTestId('market.install-button:markitdown')).toHaveText('安装');
+  await page.getByTestId('market.install-button:markitdown').click();
   await page.getByTestId('market.install-dialog.next').click();
   await expect(page.getByTestId('market.install-dialog.failed')).toBeVisible();
   await page.getByTestId('market.install-dialog.show-log').click();
@@ -176,7 +188,7 @@ test('3-安装-安装确认弹窗：自检失败路径（查看日志、重试�
   await expect(page.getByTestId('market.install-dialog.failed')).toBeVisible();
   await page.getByTestId('market.install-dialog.cancel').click();
   await expect(page.getByTestId('market.install-dialog')).toHaveCount(0);
-  await expect(page.getByTestId('market.install-button:docling')).toBeFocused();
+  await expect(page.getByTestId('market.install-button:markitdown')).toBeFocused();
 });
 
 test('3-条目卡片-插件详情页：UI-09 复现；面包屑回列表', async ({ page }) => {

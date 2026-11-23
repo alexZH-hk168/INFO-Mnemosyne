@@ -243,10 +243,10 @@ test.describe('输入框控件', () => {
   test('插件区入口：列出本对话插件，点击打开会话插件弹层（F6 挂载点）', async ({ page }) => {
     await openConversation(page);
     const entry = page.getByTestId('composer.plugin-entry');
-    await expect(entry).toContainText('ArXiv MCP Server');
+    await expect(entry).toContainText('arXiv'); // F6b：改用简称（原 U36）
     await entry.click();
     await expect(entry).toHaveAttribute('aria-expanded', 'true');
-    await shot(page, '1-输入框-插件区入口');
+    // F6b：本规格截图改由 f6b-plugins.spec.ts 生成（弹层已实现）
   });
 
   test('附件：上传到当前项目，小卡显示解析进度，同时出现在文件栏', async ({ page }) => {

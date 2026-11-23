@@ -57,7 +57,7 @@ import type {
   UploadResult,
 } from '../api/endpoints';
 import type { FixtureFile, FixtureRequest, RestFixture, SseFixture } from './fixture-types';
-import { MARKET_DATA } from './market-data';
+import { MARKET_DATA, notAdaptedMessage, PLUGIN_MANIFESTS, PLUGIN_SHORT_NAMES, withShortName } from './market-data';
 
 // ---------------------------------------------------------------- 工具函数
 
@@ -152,6 +152,7 @@ function err(
   code: ErrorCode,
   message: string,
   details?: Record<string, unknown>,
+  variant?: string, // F6b 追加：同一接口的其他错误样例 `<接口>.<变体>.error.json`
 ) {
   const content: RestFixture = {
     endpoint,
@@ -161,7 +162,7 @@ function err(
     body: apiError(code, message, RETRIABLE[code], details),
   };
   if (request) content.request = request;
-  files.push({ file: `${slug(endpoint)}.error.json`, content });
+  files.push({ file: `${slug(endpoint)}${variant ? `.${variant}` : ''}.error.json`, content });
 }
 
 function sse(
@@ -482,6 +483,48 @@ const EV: Record<'fn4' | 'l05' | 'web' | 'p5' | 'hw3' | 'code', EvidenceSeed> = 
 // pptx 的 char_range 要与 quote 长度一致
 (EV.l05.locator as { char_range: [number, number] }).char_range = [0, cpLen(EV.l05.quote)];
 
+// F6b 追加（原 U43）：无 URL 的插件证据（ArXiv 插件 get_abstract 返回的题录字段），给“插件结果卡片从胶囊点进去”的端到端测试用。
+// 题名、作者、摘要照 arXiv:1706.03762v7 第 1 页原文（public/samples/attention-is-all-you-need.pdf，pdftotext 核对）；
+// published 为 arXiv v1 提交日期。fields 的键名是模拟形状，真实返回以 B3b 接入后实测为准；去掉了 URL 字段，
+// 按 evidence-locator.md“插件（无 URL）”走右栏只读卡片。
+const ARXIV_ABSTRACT =
+  'The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. ' +
+  'The best performing models also connect the encoder and decoder through an attention mechanism. ' +
+  'We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. ' +
+  'Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. ' +
+  'Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. ' +
+  'On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. ' +
+  'We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.';
+const EV_PLUGIN: EvidenceSeed = {
+  id: 'evd_arxiv_abs',
+  source_type: 'plugin',
+  source_id: 'arxiv',
+  title: 'arXiv:1706.03762 · Attention Is All You Need',
+  locator: {
+    plugin_id: 'arxiv',
+    tool_name: 'get_abstract',
+    fields: {
+      paper_id: '1706.03762',
+      title: 'Attention Is All You Need',
+      authors: [
+        'Ashish Vaswani',
+        'Noam Shazeer',
+        'Niki Parmar',
+        'Jakob Uszkoreit',
+        'Llion Jones',
+        'Aidan N. Gomez',
+        'Lukasz Kaiser',
+        'Illia Polosukhin',
+      ],
+      published: '2017-06-12',
+      categories: ['cs.CL', 'cs.LG'],
+      abstract: ARXIV_ABSTRACT,
+    },
+  },
+  quote:
+    'We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.',
+};
+
 function evidenceEvent(seed: EvidenceSeed, label: string): EventNoSeq {
   return {
     event: 'evidence',
@@ -507,6 +550,7 @@ const CLIENT = {
   cancel: 'c9d8e7f6-a5b4-4c3d-8e2f-1a0b9c8d7e6f',
   error: 'd1e2f3a4-b5c6-4d7e-8f90-a1b2c3d4e5f6',
   code: 'e4f5a6b7-c8d9-4e0f-9a1b-2c3d4e5f6a7b', // F4 追加：代码问答回合
+  plugin: 'f5a6b7c8-d9e0-4f1a-8b2c-3d4e5f6a7b8c', // F6b 追加：插件证据回合
 };
 
 const q1 = '结合第 5 讲课件，讲讲注意力为什么要除以 √dₖ。最好和我上次作业卡住的地方联系起来。';
@@ -773,7 +817,7 @@ const INSTALLED_SKILLS = ['pdf', 'literature-review'];
 const VERIFIED_PLUGINS = ['arxiv', 'fetch'];
 const market = (type: MarketItem['type']): MarketList => ({
   items: MARKET_DATA.filter((m) => m.type === type).map((m) => ({
-    ...m,
+    ...withShortName(type, m), // F6b：插件带 short_name（契约 v0.5 并行草案）
     installed: (type === 'plugin' ? INSTALLED_PLUGINS : INSTALLED_SKILLS).includes(m.id),
     ...(type === 'plugin' ? { verified: VERIFIED_PLUGINS.includes(m.id) } : {}),
   })),
@@ -783,6 +827,7 @@ const plugins: InstalledPlugin[] = [
   {
     id: 'arxiv',
     name: 'ArXiv MCP Server',
+    short_name: PLUGIN_SHORT_NAMES['arxiv'], // F6b
     version: '1.0.0',
     status: 'installed',
     permissions: ['network', 'fs_write'],
@@ -794,6 +839,7 @@ const plugins: InstalledPlugin[] = [
   {
     id: 'fetch',
     name: 'Fetch MCP Server',
+    short_name: PLUGIN_SHORT_NAMES['fetch'], // F6b
     version: '1.0.0',
     status: 'installed',
     permissions: ['network'],
@@ -805,9 +851,10 @@ const plugins: InstalledPlugin[] = [
   {
     id: 'markitdown',
     name: 'MarkItDown MCP',
+    short_name: PLUGIN_SHORT_NAMES['markitdown'], // F6b
     version: '1.0.0',
     status: 'installed',
-    permissions: ['fs_read'],
+    permissions: ['network', 'fs_read'],
     config_schema: {},
     last_check_at: '2026-11-22T06:00:05Z',
     config_set: [],
@@ -850,7 +897,7 @@ const arxivDetail: PluginDetail = {
   manifest: {
     transport: 'stdio',
     command: 'uvx',
-    args: ['arxiv-mcp-server', '--storage-path', '~/.mnemosyne/plugins/arxiv'],
+    args: ['arxiv-mcp-server@0.8.2', '--storage-path', '~/.mnemosyne/plugins/arxiv'],
     tools_allow: ARXIV_TOOLS.map((t) => t.name).filter((n) => !ARXIV_PRO_ONLY.includes(n)),
   },
   about_zh:
@@ -1080,6 +1127,69 @@ sse(
         message_id: 'msg_code_a1',
         usage: { prompt_tokens: 2210, completion_tokens: 142 },
         latency_ms: 4630,
+        cancelled: false,
+      },
+    },
+  ]),
+);
+
+// F6b 追加（原 U43）：提到 arXiv 的提问用插件回合：一个 plugin_tool 步骤（ArXiv get_abstract）、一条无 URL 的插件证据（E1）
+// 与论文第 4 页脚注（E2）。mocks/chat-world.ts 在本对话启用了 arxiv 且提问含 “arXiv” 时选用本回合。
+// 步骤 label 以插件简称开头（“arXiv：…”），会话插件弹层据此统计“本轮调用 N 次”（见 PROGRESS 未决 U60）。
+const qPlugin = '用 arXiv 查一下这篇论文的摘要，它的主要贡献是什么？';
+const pluginDeltas = [
+  'arXiv 上的摘要写明，Transformer 只依靠注意力机制，完全去掉了循环和卷积[[E1]]。',
+  '论文第 4 页的脚注解释了为什么要缩放点积：dₖ 越大，点积的方差越大[[E2]]。',
+];
+const pluginContent = pluginDeltas.join('');
+const pluginStep: Step = {
+  step_id: 'stp_plugin_1',
+  kind: 'plugin_tool',
+  label: 'arXiv：get_abstract 1706.03762',
+  plugin_id: 'arxiv', // 契约 v0.5 并行草案 [F6b]（原 U60）
+  status: 'done',
+  duration_ms: 860,
+};
+sse(
+  'sse-turn-plugin.json',
+  'POST /api/conversations/{cid}/messages',
+  '插件证据回合（F6b）：ArXiv 插件 get_abstract 一次，返回无 URL 的题录字段作为证据 E1，另引论文第 4 页脚注 E2，两条引用均 supported',
+  {
+    params: { cid: CID },
+    body: {
+      client_msg_id: CLIENT.plugin,
+      content: qPlugin,
+      web_search: false,
+      scope: { mode: 'all' },
+    } satisfies SendMessageBody,
+  },
+  numbered([
+    {
+      event: 'message.start',
+      data: { message_id: 'msg_plugin_a1', client_msg_id: CLIENT.plugin, user_message_id: 'msg_plugin_u1' },
+    },
+    {
+      event: 'step',
+      data: {
+        step_id: pluginStep.step_id,
+        kind: pluginStep.kind,
+        label: pluginStep.label,
+        plugin_id: 'arxiv',
+        status: 'running',
+      },
+    },
+    { event: 'step', data: { ...pluginStep } },
+    evidenceEvent(EV_PLUGIN, 'E1'),
+    evidenceEvent(EV.fn4, 'E2'),
+    ...pluginDeltas.map((text): EventNoSeq => ({ event: 'delta', data: { text } })),
+    { event: 'citation', data: cite(pluginContent, 'cit_plugin_1', EV_PLUGIN, 'E1', 'supported') },
+    { event: 'citation', data: cite(pluginContent, 'cit_plugin_2', EV.fn4, 'E2', 'supported') },
+    {
+      event: 'message.end',
+      data: {
+        message_id: 'msg_plugin_a1',
+        usage: { prompt_tokens: 3120, completion_tokens: 96 },
+        latency_ms: 3870,
         cancelled: false,
       },
     },
@@ -1591,6 +1701,13 @@ ok<Evidence>(
   evidenceFull(EV.code, [{ message_id: 'msg_code_a1', label: 'E1' }]),
   'code',
 );
+ok<Evidence>(
+  'GET /api/evidence/{eid}',
+  'ArXiv 插件 get_abstract 的题录字段（F6b 追加，无 URL 插件证据，右栏只读卡片）',
+  { params: { eid: EV_PLUGIN.id } },
+  evidenceFull(EV_PLUGIN, [{ message_id: 'msg_plugin_a1', label: 'E1' }]),
+  'plugin',
+);
 err(
   'GET /api/evidence/{eid}',
   '证据来自兄弟分支，不在当前路径上',
@@ -1645,11 +1762,13 @@ ok<PluginDetail>(
   {
     id: 'tavily',
     name: 'Tavily MCP',
+    short_name: PLUGIN_SHORT_NAMES.tavily, // F6b
     version: '1.0.0',
     status: 'not_installed',
     permissions: ['network'],
     config_schema: { TAVILY_API_KEY: { required: true, secret: true, label: 'Tavily API Key' } },
     verified: false,
+    manifest: PLUGIN_MANIFESTS.tavily, // F6b：有适配清单才能安装（编排决定，来自 B3b U92）
     tools: [
       { name: 'tavily-search', description: '实时网页检索' },
       { name: 'tavily-extract', description: '抽取指定网页的正文' },
@@ -1665,16 +1784,27 @@ ok<InstalledPlugin>(
   { params: { id: 'fetch' }, body: { config: {} } satisfies InstallPluginBody },
   plugins[1],
 );
+// F6b 改：docling 没有适配清单（B3b U92），安装直接 400；自检失败样例换成有适配清单的 MarkItDown（卸载后重装或重新自检时）
 err(
   'POST /api/plugins/{id}',
   '启动后 tools/list 失败',
-  { params: { id: 'docling' }, body: { config: {} } satisfies InstallPluginBody },
+  { params: { id: 'markitdown' }, body: { config: {} } satisfies InstallPluginBody },
   'PLUGIN_SELF_CHECK_FAILED',
   '插件启动失败：tools/list 在 30 s 内没有返回',
   {
     log_tail:
-      '[docling-mcp] starting server (stdio)\n[docling-mcp] loading models…\n[mnemosyne] tools/list timed out after 30000 ms',
+      '[markitdown-mcp] starting server (stdio)\n[markitdown-mcp] waiting for initialize…\n[mnemosyne] tools/list timed out after 30000 ms',
   },
+);
+// F6b 追加（编排决定，来自 B3b U92）：没有适配清单的插件不能安装
+err(
+  'POST /api/plugins/{id}',
+  '插件没有 Mnemosyne 适配清单（第一版 18 个里只有 arxiv、tavily、fetch、markitdown 有），不能安装',
+  { params: { id: 'docling' }, body: { config: {} } satisfies InstallPluginBody },
+  'VALIDATION_ERROR',
+  notAdaptedMessage('docling'),
+  undefined,
+  'not-adapted',
 );
 
 ok<OkResult>('DELETE /api/plugins/{id}', '卸载插件', { params: { id: 'markitdown' } }, { ok: true });

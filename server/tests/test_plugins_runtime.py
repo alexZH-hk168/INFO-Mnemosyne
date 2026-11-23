@@ -122,7 +122,7 @@ def test_call_tool_evidence_web_and_plugin(rt):
     ev = res.evidence[0]
     assert ev.kind == "plugin" and ev.source_id == "fake" and ev.quote == "反向传播按链式法则逐层求梯度。"
     assert ev.locator["plugin_id"] == "fake" and ev.locator["tool_name"] == "note"
-    assert ev.locator["fields"]["tags"] == "作业3, BP" and ev.title == "笔记 bp"
+    assert ev.locator["fields"]["tags"] == ["作业3", "BP"] and ev.title == "笔记 bp"
 
 
 def test_fetch_style_mapping_uses_args_and_text(rt):
@@ -274,3 +274,10 @@ def test_mapping_paths():
     assert mapping.parse_result('{"k": 1}', {"result": '{"k": 1}'}) == {"k": 1}
     assert mapping.parse_result("not json", None) is None
     assert mapping.parse_result("", {"k": 2}) == {"k": 2}
+    # 模板：占位全部取到才用，否则试下一项（F6b：arXiv 标题“arXiv:编号 · 题名”）
+    spec = ["arXiv:{$.paper_id} · {$.title}", "arXiv:{$.id} · {$.title}", "$.title"]
+    assert mapping.pick(spec, {"paper_id": "1706.03762", "title": "T"}, {}, "") == "arXiv:1706.03762 · T"
+    assert mapping.pick(spec, {"id": "2410.10813", "title": "L"}, {}, "") == "arXiv:2410.10813 · L"
+    assert mapping.pick(spec, {"title": "only"}, {}, "") == "only"
+    assert mapping.title_from_locator({"evidence_mapping": {"title": spec}}, {"fields": {"paper_id": "1", "title": "x"}}) == "arXiv:1 · x"
+    assert mapping.title_from_locator({"evidence_mapping": {"title": "$args.url"}}, {"fields": {}}) is None

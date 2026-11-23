@@ -20,7 +20,7 @@ from app.agent.text import strip_markers
 from app.branch.path import is_message_visible
 from app.ids import new_id, now_iso, sha256_text
 from app.llm.base import ToolCallReq, tool_schema
-from app.repo import evidence_title, plugin_id_of
+from app.repo import evidence_title
 from app.retrieval.search import evidence_for_hit, hybrid_search
 from app.web import fetch as webfetch
 from app.web import search as websearch
@@ -264,6 +264,13 @@ async def _dispatch(turn: "Turn", name: str, args: dict) -> Outcome:
 
 # ---------- 步骤 ----------
 
+def _step_extra(turn: "Turn", name: str) -> dict:
+    """v0.5 [F6b] Step.plugin_id：插件工具步骤带上发起调用的插件 id。"""
+    if name in turn.plugin_tools and "__" in name:
+        return {"plugin_id": name.partition("__")[0]}
+    return {}
+
+
 def _start_step(turn: "Turn", name: str, label: str, args: dict) -> str:
     step_id = new_id("stp")
     turn.step_index += 1
@@ -273,17 +280,8 @@ def _start_step(turn: "Turn", name: str, label: str, args: dict) -> str:
         (step_id, turn.assistant_message_id, turn.step_index, name, label, json.dumps(args, ensure_ascii=False)),
     )
     turn.conn.commit()
-    turn.em.emit("step", {"step_id": step_id, "kind": _kind(name), "label": label, "status": "running", "plugin_id": _plugin_id(name)})
+    turn.em.emit("step", {"step_id": step_id, "kind": name if name in STEP_KINDS else "plugin_tool", "label": label, "status": "running", **_step_extra(turn, name)})
     return step_id
-
-
-def _kind(name: str) -> str:
-    return name if name in STEP_KINDS else "plugin_tool"
-
-
-def _plugin_id(name: str) -> str | None:
-    """契约 v0.5 [F6b]（原 U60）：插件工具步骤带 plugin_id；其他步骤为 None，事件里省略。"""
-    return plugin_id_of(name) if _kind(name) == "plugin_tool" else None
 
 
 def _finish_step(turn: "Turn", step_id: str, name: str, label: str, status: str, ms: int, result: dict) -> None:
@@ -293,8 +291,8 @@ def _finish_step(turn: "Turn", step_id: str, name: str, label: str, status: str,
     )
     turn.conn.commit()
     turn.em.emit("step", {
-        "step_id": step_id, "kind": _kind(name), "label": label, "status": status, "duration_ms": ms,
-        "plugin_id": _plugin_id(name),
+        "step_id": step_id, "kind": name if name in STEP_KINDS else "plugin_tool", "label": label, "status": status, "duration_ms": ms,
+        **_step_extra(turn, name),
     })
 
 

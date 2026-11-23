@@ -90,11 +90,14 @@ v0.3 追加的可选字段（只增不改）：
 - `PluginDetail.manifest?: {transport: "stdio"|"http", command, args: string[], tools_allow?: string[]}`：取自适配清单（[plugin-manifest.md](./plugin-manifest.md)），详情页“配置”卡显示启动命令；`tools` 中不在 `tools_allow` 里的工具标“未启用”，省略 `tools_allow`＝全部开放。
 - `PluginDetail.about_zh?`：详情页简介；`usage_zh?`：“在 Mnemosyne 里怎么用”；`permission_notes?: {network?, fs_read?, fs_write?, exec?}`：每项权限的具体范围（如“访问 arXiv 与 Semantic Scholar”）。缺省时前端只显示权限名。
 
-v0.5 草案 [B3b] 追加的可选字段（只增不改，编排统一后定稿）：
+v0.5 并行草案追加的可选字段（只增不改，[F6b]）：
 
+- `MarketItem.short_name?`、`InstalledPlugin.short_name?`：插件简称，输入框上的插件胶囊用（“arXiv · 网页检索 · PDF 解析”）；缺省时用 `name`。
+- 能否安装：`POST /api/plugins/{id}` 对没有 Mnemosyne 适配清单的插件返回 400 `VALIDATION_ERROR`（B3b U92）。前端据 `GET /api/plugins/{id}` 的 `manifest?` 是否存在判断，缺省时安装按钮置灰。
+
+v0.5 草案 [B3b] 追加的可选字段（只增不改，编排统一后定稿）：
 - `short_name?: string`（原 U36）：插件简称，如 `fetch`→“网页检索”、`markitdown`→“PDF 解析”、`arxiv`→“arXiv”。出现在 `MarketItem`（只对插件）、`InstalledPlugin`（因而也在 `PluginDetail`）与会话插件列表的每一项（`{plugin_id, enabled, status, reason?, short_name?}`），输入框插件胶囊直接读 `['convPlugins', cid]` 即可显示。
 - 会话插件列表里 `status` 为 `error` / `disabled` 或缺必填配置的插件，`enabled` 返回 `false` 并给 `reason`（B3b 实现约定，不是新字段）。
-
 `Skill = {id, name, description, dir_path, source_url?, license?, enabled}`
 
 插件与 Skill 的 id 不加类型前缀（v0.2）：插件 id 即 manifest 的 `id`（如 `arxiv`，工具命名空间 `arxiv__search_papers`），Skill id 即 `SKILL.md` 的 `name`（如 `pdf`）。市场条目 `MarketItem.id` 与安装后的 id 相同。
