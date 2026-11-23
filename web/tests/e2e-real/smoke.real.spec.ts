@@ -125,6 +125,9 @@ test('真实后端：项目 → 上传 → 提问 → 证据 → 重新生成 �
   // 4. 步骤行 + 带证据胶囊的回答
   const mid = await lastAnswerId(page);
   await expect(page.getByTestId(`chat.step-trail:${mid}`)).toBeVisible();
+  // INT2（U110）：新库没有历史对话可召回，步骤行按实际证据数写“没有找到相关的历史对话”，不再是“参考 1 段”
+  await expect(page.getByTestId(`chat.step-trail:${mid}`)).toContainText('没有找到相关的历史对话');
+  await expect(page.getByTestId(`chat.step-trail:${mid}`)).not.toContainText('参考 1 段历史对话');
   const chip = page.getByTestId(`chat.evidence-chip:${mid}:E1`);
   await expect(chip).toBeVisible();
   await expect(chip).toHaveText(/p\.4/);
@@ -172,12 +175,31 @@ test('真实后端：项目 → 上传 → 提问 → 证据 → 重新生成 �
   const bid = (await panel.getAttribute('data-bid'))!;
   expect(bid).toMatch(/^br_/);
   await expect(page).toHaveURL(new RegExp(`/c/${cid}/b/${bid}$`));
+  // INT2（U113 ②）：英文 quote 的分支标题按单词边界截（INT1 时是“The input co”）
+  await expect(page.getByTestId(`right.tabs.tab:branch:${bid}`)).toContainText('The input');
+  await expect(page.getByTestId(`right.tabs.tab:branch:${bid}`)).not.toContainText('The input co');
   await shot(page, '分支-新建');
   const branchBox = panel.getByTestId('composer.box').getByRole('textbox');
   await branchBox.fill('这里的 dk 指什么？');
+  // INT2（U113 ①）：分支追问流式期间，主线来源列表与证据胶囊不出现“…”占位（INT1 截图 10 曾短暂出现）
+  await page.evaluate(() => {
+    const w = window as unknown as { __mnPlaceholderSeen: boolean };
+    w.__mnPlaceholderSeen = false;
+    const root = document.querySelector('[data-testid="chat.panel"]')!;
+    const check = () => {
+      for (const el of root.querySelectorAll(
+        '[data-testid^="chat.source-list.item:"], [data-testid^="chat.evidence-chip:"]',
+      ))
+        if ((el.textContent ?? '').includes('…')) w.__mnPlaceholderSeen = true;
+    };
+    new MutationObserver(check).observe(root, { subtree: true, childList: true, characterData: true });
+  });
   await panel.getByTestId('composer.send').click();
   await expect(panel.locator('[data-testid^="chat.answer-body:"]').first()).toBeVisible({ timeout: 30_000 });
   await expect(panel.locator('[data-testid^="chat.evidence-chip:"]').first()).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __mnPlaceholderSeen: boolean }).__mnPlaceholderSeen)).toBe(
+    false,
+  );
   await shot(page, '分支-追问回答');
   await page.getByTestId('right.branch-merge').click();
   await page.getByTestId('right.branch-merge.confirm').click();
@@ -219,6 +241,12 @@ test('真实后端：项目 → 上传 → 提问 → 证据 → 重新生成 �
   await page.getByTestId('sidebar.new-chat').click();
   await expect(page.getByTestId('home.onboard')).toBeVisible();
   await expect(entry).toHaveText('已启用 1 个插件');
+  // INT2（U113 ③）：回主页后右栏不再显示上一段对话的分支面板（材料预览标签属于项目，保留）
+  await expect(page.getByTestId('right.branch-panel')).toHaveCount(0);
+  await expect(page.locator('[data-testid^="right.tabs.tab:branch:"]')).toHaveCount(0);
+  // 留下的 PDF 标签按普通文件预览显示：没有上一段对话的证据栏，页数正常
+  await expect(page.getByTestId('right.evidence-bar')).toHaveCount(0);
+  await expect(page.getByTestId('right.pdf-toolbar.pages')).toHaveText('/ 15 页', { timeout: 30_000 });
   await shot(page, '输入框插件区-主页已启用1个');
 
   expect(apiErrors, apiErrors.join('\n')).toEqual([]);

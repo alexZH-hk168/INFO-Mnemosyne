@@ -322,4 +322,17 @@ test.describe('F5 分支对话', () => {
     await card.getByTestId('chat.merge-card.open:msg_tf_merge1').click();
     await expect(page.getByTestId('right.tabs.tab:branch:br_variance')).toHaveAttribute('data-active', 'true');
   });
+
+  test('INT2（U113 ③）：开着分支面板点“新建对话”回主页，右栏不再显示分支面板并按 U40 收起', async ({ page }) => {
+    await openConversation(page, `/c/${CID}/b/br_variance`);
+    await expect(panel(page)).toBeVisible();
+    await page.getByTestId('sidebar.new-chat').click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(panel(page)).toHaveCount(0);
+    await expect(page.getByTestId('right.tabs.tab:branch:br_variance')).toHaveCount(0);
+    await expect(page.getByTestId('shell.collapsed-rail:3')).toBeVisible();
+    // 浏览器后退回到对话：主线正常显示
+    await page.goBack();
+    await expect(page.getByTestId('chat.assistant-message:msg_tf_a2')).toBeVisible();
+  });
 });

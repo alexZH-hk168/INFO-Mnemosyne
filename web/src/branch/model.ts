@@ -44,8 +44,26 @@ export function forkOrdinal(tree: ConversationTree, branch: Branch): number {
 /** “主线 · N 个分支”：不计 archived（与 ConversationSummary.branch_count 口径一致，编排决定 U47） */
 export const countedBranches = (branches: Branch[]) => branches.filter((b) => b.status !== 'archived');
 
-/** 分支默认标题：quote 前 12 字（规格 2-划词工具条-开分支追问「交互细则」） */
-export const defaultBranchTitle = (quote: string) => Array.from(quote.trim()).slice(0, 12).join('');
+const AUTO_TITLE_LEN = 12;
+const TITLE_MAX = 60;
+const WORD_CHAR = /[A-Za-z0-9\u00C0-\u024F'\u2019-]/;
+
+/**
+ * 分支默认标题：quote 前 12 字（规格 2-划词工具条-开分支追问「交互细则」）。空白先合并为一个空格。
+ * INT2（U113 ②）：截断点两侧都是西文单词字符（切在单词中间）时退到前一个空格；开头就是超长单词则保留整个单词（至多 60）。
+ * 中文仍是前 12 字。与后端 server/app/api/branches.py 的 auto_title 同一规则。
+ */
+export function defaultBranchTitle(quote: string): string {
+  const t = Array.from(quote.replace(/\s+/g, ' ').trim());
+  if (t.length <= AUTO_TITLE_LEN) return t.join('');
+  const head = t.slice(0, AUTO_TITLE_LEN).join('');
+  if (WORD_CHAR.test(t[AUTO_TITLE_LEN - 1]) && WORD_CHAR.test(t[AUTO_TITLE_LEN])) {
+    const cut = head.lastIndexOf(' ');
+    if (cut > 0) return head.slice(0, cut).trimEnd();
+    return Array.from(t.join('').split(' ')[0]).slice(0, TITLE_MAX).join('');
+  }
+  return head.trimEnd();
+}
 
 /** 状态文字 */
 export const STATUS_TEXT: Record<Branch['status'], string> = { open: '进行中', merged: '已合并', archived: '已归档' };

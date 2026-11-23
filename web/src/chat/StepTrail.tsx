@@ -1,7 +1,7 @@
 // 规格：1-助手回答-步骤行（chat.step-trail）
 // 回答顶部一行：“› 检索 2 份材料、1 个网页，参考 1 段历史对话 · 3 步 · 9 秒”（秒数为整轮耗时，编排决定 U35）。点击展开每一步（图标、label、状态、耗时）与本轮证据。
 // running：摘要后转圈并显示当前步骤 label；有 error 步骤：该步红色、摘要末尾“1 步失败”；verifying：末尾“核对引用…”；无步骤不渲染。
-// 记忆相关步骤只说“参考 N 段历史对话”，不出现“记忆”二字。
+// 记忆相关步骤只说“参考 N 段历史对话”（N＝实际取到的历史对话证据数，0 时“没有找到相关的历史对话”，U110），不出现“记忆”二字。
 import { memo, useState } from 'react';
 import type { Evidence, ID, Step } from '../api/types';
 import { ChevronIcon, DotIcon } from '../icons/ChatIcons';
@@ -17,6 +17,8 @@ interface Props {
   steps: Step[];
   /** 本轮证据（流式中来自 SSE；历史消息为已加载到的证据） */
   evidence: Evidence[];
+  /** INT2（U110）：evidence 是否为本轮全部证据（流式证据池 true；历史消息只有被引用的证据，false） */
+  evidenceComplete?: boolean;
   verifying: boolean;
   /** 整轮耗时（毫秒，U35）；未知时不显示秒数 */
   latencyMs?: number;
@@ -24,11 +26,11 @@ interface Props {
 
 const fmtMs = (ms?: number) => (ms === undefined ? '' : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} 秒`);
 
-function StepTrail({ messageId, steps, evidence, verifying, latencyMs }: Props) {
+function StepTrail({ messageId, steps, evidence, evidenceComplete = true, verifying, latencyMs }: Props) {
   const [open, setOpen] = useState(false);
   const leafId = useLeafId(); // F5：分支面板里打开证据带 leaf_id
   if (steps.length === 0) return null;
-  const s = summarizeSteps(steps, evidence, latencyMs);
+  const s = summarizeSteps(steps, evidence, latencyMs, evidenceComplete);
   const detailId = `step-detail-${messageId}`;
 
   return (

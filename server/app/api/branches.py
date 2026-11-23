@@ -26,6 +26,8 @@ router = APIRouter()
 
 TITLE_MAX = 60
 AUTO_TITLE_LEN = 12  # U48：标题取 anchor.quote 去首尾空白后的前 12 个字符（码点）
+# INT2（U113 ②）：西文单词字符。截断点两侧都是它时说明切在单词中间，退到前一个空格；与 web/src/branch/model.ts 的 defaultBranchTitle 同一规则
+_WORD_CHAR = re.compile(r"[A-Za-z0-9\u00C0-\u024F'\u2019\-]")
 
 
 def _ws(s: str) -> str:
@@ -33,7 +35,17 @@ def _ws(s: str) -> str:
 
 
 def auto_title(quote: str) -> str:
-    return _ws(quote)[:AUTO_TITLE_LEN]
+    """中文取前 12 字；英文按单词边界截（不超过 12 字符，退到前一个空格；开头就是超长单词时保留这个单词，至多 TITLE_MAX）。"""
+    t = _ws(quote)
+    if len(t) <= AUTO_TITLE_LEN:
+        return t
+    head = t[:AUTO_TITLE_LEN]
+    if _WORD_CHAR.match(t[AUTO_TITLE_LEN - 1]) and _WORD_CHAR.match(t[AUTO_TITLE_LEN]):
+        cut = head.rfind(" ")
+        if cut > 0:
+            return head[:cut].rstrip()
+        return t.split(" ", 1)[0][:TITLE_MAX]
+    return head.rstrip()
 
 
 def _branch_or_404(conn: sqlite3.Connection, bid: str) -> sqlite3.Row:
