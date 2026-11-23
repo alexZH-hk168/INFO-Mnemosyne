@@ -20,6 +20,8 @@
 | E1     | LongMemEval 数据准备、BranchMem 生成                          | B1                                           | 部分完成：prep/gen_branchmem 代码与合成迷你数据单测通过；未下载真实数据集、未生成真实 BranchMem（U2、磁盘）；未决 U100–U106                                     | feat/E-eval（worktree `worktrees/E-eval`）· 2026-11-23                    |
 | E2     | 跑分、判分、指标、消融                                        | B3、E1                                       | 部分完成：run_eval/judge/metrics 在假模型、假判分、桩适配器下跑通；M/A1–A4 真实适配器等 B2 Python API；真跑等 U2（先 dev-120 的 M 前 10 题报成本）                | feat/E-eval（worktree `worktrees/E-eval`）· 2026-11-23                    |
 
+| B3a    | 长程记忆（jobs worker、L2/L3/L4、recall、/api/memory/*）与分支接口（创建/合并/改名归档、可见性 5 条规则） | B1；对 Agent 回合只经 `app/agent/hooks.py` | 完成（本地 feat/B3a-memory，未合 main；pytest 123 passed（B1 原 86 + B3a 新增 37）；三组分支隔离用例通过；“先喜欢 A 后改 B”用 memory.recall 断言取回被 SUPERSEDE 的 A 及有效期，端到端问答待 B2 合并后由编排验证；模型调用全部走 llm_port 确定性假实现；U80–U89 已由编排决定） | feat/B3a-memory（worktree `worktrees/B3a-memory`，服务端口 8102）· 2026-11-23 |
+
 F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 
 ## 共享文件锁
@@ -78,19 +80,7 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-23 | 编排决定，待用户追认：契约升 v0.4（只增可选字段），`GET /api/evidence/{eid}` 与 `GET /api/web_snapshots/{sid}` 加可选 query `leaf_id`，给了就按该叶到根的路径判可见性，不给沿用 `active_leaf_id`；`leaf_id` 与被判断消息不同对话时按那个对话自己的 `active_leaf_id`；不存在的 `leaf_id` 返回 `VALIDATION_ERROR`。F5 分支面板打开证据时传它（原 U44，B1 提出时编号 U40，因与 F4 撞号改编） |
 | 2026-11-23 | 编排决定，待用户追认：契约 v0.4 给 data-model `tool_calls` 补 `label TEXT` 列，`Message.steps[].label` 取该列（为空退回 tool_name），`args_json.label` 不再作约定；B2 写步骤时写该列（原 U46，B1 提出时编号 U42） |
 | 2026-11-23 | 编排决定，待用户追认：`ConversationSummary.branch_count` 不计 archived 分支；多文件上传整批原子，有不支持类型整批 400、一个都不落盘；第一版重复上传不去重；PDF 句子 bbox 不含句首脚注上标号（原 U47，B1 提出时编号 U43） |
-| 2026-11-23 | U70：设置存 `data/settings.json`（0600），不建 settings 表 | 编排决定，待用户追认 |
-| 2026-11-23 | U71：第二关重叠率分母取回答句；一中一外不剔除交小模型；小模型失败记 partial；阈值等 dev 集再调 | 编排决定，待用户追认 |
-| 2026-11-23 | U72：推断只来自 partial，不加 `inferred_spans`（v0.6 不做） | 编排决定，待用户追认 |
-| 2026-11-23 | U74：契约 v0.5 给 `POST /regenerate` 加可选请求体 `{web_search?, scope?, forced_skill?}`；集成阶段实现，前端重新生成时带上原回合参数 | 编排决定，待用户追认 |
-| 2026-11-23 | U75：接受；`index_web`（网页快照进材料检索）v1 不做 | 编排决定，待用户追认 |
-| 2026-11-23 | U76/U95：编排已在主仓库补 `uv lock` | 编排决定，待用户追认 |
-| 2026-11-23 | U90：markitdown 权限按上游 README 声明 `network`+`fs_read`，fixture 与清单一致（交 F6b 改 fixture） | 编排决定，待用户追认 |
-| 2026-11-23 | U91：插件结果快照不进文件栏，只经证据胶囊打开；内容取插件返回字段，不另抓 URL | 编排决定，待用户追认 |
-| 2026-11-23 | U92：无适配清单的插件前端置灰“暂未适配，第一版不能安装”（交 F6b），后端保持 400 | 编排决定，待用户追认 |
-| 2026-11-23 | U94：编排已在 `main.py` lifespan 收尾调用 `plugins.shutdown()` | 编排决定，待用户追认 |
-| 2026-11-23 | U100、U101、U104、U106：按 E 的方案接受；U104 新增参数与输出补进 `docs/contract/scripts.md`（集成阶段） | 编排决定，待用户追认 |
-| 2026-11-23 | U102：dev-120 按官方 6 个题型各 20 题分层，拒答题（`_abs`）混在原题型里，不单列一层（与立项稿“每类约 20”一致） | 编排决定，待用户追认 |
-| 2026-11-23 | U103：BranchMem 目标改为“实际可得数（约 120–150）”，不造变体、不扩源；论文里如实写题数 | 编排决定，待用户追认 |
+| 2026-11-23 | 编排决定，待用户追认：记忆混合检索的向量一路暂时固定用本地 FakeEmbedder（召回时现算，不建表），即使配置了真实嵌入也不调用；U2 定后改为真实嵌入并缓存（原 U89，B3a 提出） |
 
 ## 未决（需要用户拍板）
 
@@ -130,6 +120,9 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 
 - 2026-11-23 · [E] 评测脚本（代码与测试部分） · 部分完成 · 分支 feat/E-eval · 五个脚本 prep_longmemeval/gen_branchmem/run_eval/judge/metrics + `server/scripts/eval_lib/` + 说明 `server/scripts/README-eval.md` · `.venv/bin/python -m pytest -q tests/test_eval_*.py` 33 passed；后端全量 `pytest -q` 119 passed · 只用手写合成迷你数据（16 题，6 类 + 3 拒答），未下载 LongMemEval、未发起任何付费调用 · 官方字段、题型、判分模板（逐字比对一致）、检索指标口径已核对（README-eval.md「官方核对」）· M/A1–A4 真实适配器等 B2 Python API（`MnemosyneBackendAdapter` 抛 NotImplementedError，TODO 写明）· 新增依赖无（标准库 + 已有 httpx）· 未决 U100–U106
 - 2026-11-23 · [E] 评测脚本（代码与测试部分） · 开始 · 分支 feat/E-eval（worktree `INFO5000项目/worktrees/E-eval`）· 范围按编排收窄：不下载 LongMemEval、不发起付费调用，只用手写合成迷你数据测试
+
+- 2026-11-23 · [B3a] 长程记忆、分支接口与 jobs worker · 完成 · 分支 feat/B3a-memory · `server/.venv/bin/python -m pytest -q` 123 passed（新增 test_b3a_branches 7、test_b3a_memory 10、test_b3a_contract 20） · 契约比对：分支 3 个路由、记忆 4 个路由共 15 份 fixtures 状态码/错误码/结构全部通过，记忆列表、PUT、summary 逐字段相等 · 新增：app/memory/{llm_port,store,pipeline,recall,service}.py、app/jobs/worker.py、app/api/{memory,branches}.py；扩展 app/branch/path.py（5 条可见性规则，含 open_source 判定 `check_open_source`）；共用文件只追加：models.py（分支与记忆模型）、main.py（注册两个 router、lifespan 启停 JobsWorker） · 无新第三方库 · 未发起任何付费调用 · 落地 U48 · 契约变更 v0.5 草案 [B3a]：`GET /api/memory/summary` 加可选 query `project_id`，`status` 取值写明 · 中途 /home/user 磁盘写满（0 字节）暂停，改动备份到 /tmp；编排扩容后落盘提交 · 提出 U80–U89，已由编排决定（见已定决定）
+- 2026-11-23 · [B3a] 长程记忆、分支接口与 jobs worker · 开始 · 分支 feat/B3a-memory（worktree `INFO5000项目/worktrees/B3a-memory`，端口 8102）· 只做原 B3 第 1、2 项；模型调用走 `server/app/memory/llm_port.py` 的确定性假实现，不发起付费调用
 - 2026-11-23 · [B1] 合并 F4 后 fixtures 对齐 · 完成 · 分支 fix/B1-fixtures · 未改 fixtures 与 web/ · seed 改用 F4 的 Markdown/Notebook 原文样例，补 `evd_tfpy_l7` 证据与 `msg_code_u1/a1` 代码问答回合（只写 cit_code_1）；ipynb 原文改为 `text/plain`（契约 code/md 一律 text/plain，ipynb 属 code 组）；`active_leaf` 测试的预期叶子随之改为 msg_code_a1 · `pytest -q` 86 passed（bbox 用例已自动转正）· 发现 fixture 内部两处不一致（非契约违规）：文档列表里 doc_transformer_py `lines=212` 而原文样例 11 行；`evd_tfpy_l7.quote` 去掉了第 7 行行首缩进
 - 2026-11-23 · [B1] 编排反馈整改 · 完成 · 分支 feat/B1-ingest · 契约变更 v0.4（编排 Agent 决定，待用户追认）：rest-api.md 两个接口加 `leaf_id?`，data-model.md `tool_calls` 加 `label`，contract/README.md 版本记录；types.ts 无需改 · 后端：`branch/path.py` 支持 leaf_id，schema 版本 2（旧库自动补列）· 未决改编：B1 的 U40–U43 → U44–U47（与 F4 撞号），U44、U46、U47 移入已定决定，U45（PyMuPDF AGPL）留在未决并关联 U10 · bbox 测试改为“fixture 仍是 F0 占位值时 xfail，否则正常断言（容差 2 pt）”，临时代入 F4 实测值已验证会转为通过 · `uv run pytest -q` 81 passed, 1 xfailed
 - 2026-11-23 · [B1] 数据库、上传与解析、混合检索 · 完成 · 分支 feat/B1-ingest · `cd server && uv run pytest -q` 77 passed, 1 xfailed（fixture 的脚注 bbox 仍是 F0 占位值，F4 实测值在其工作区未合并；按 F4 实测值比对差 ≤1.3 pt）· 契约比对：B1 负责的 13 个路由 29 份 fixtures（13×成功/错误 + 证据 3 个变体）状态码、错误码、结构全部通过，树与证据样例逐字段相等 · 嵌入默认本地假嵌入器，未发起任何付费调用 · 只改了一个 web 文件 `web/vite.config.ts`（`MN_BACKEND` 时关 MSW 并代理 /api，默认不变）· 截图 server/tests/screenshots/B1-文件栏-真实后端-{列表,解析中,就绪}.png · 未决 U40–U43（后改编为 U44–U47）
