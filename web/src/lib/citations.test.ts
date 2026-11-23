@@ -146,7 +146,8 @@ describe('步骤摘要', () => {
     const latency = end && end.event === 'message.end' ? end.data.latency_ms : -1;
     expect(latency).toBe(9120);
     const s = summarizeSteps(steps, fullEvidence, latency);
-    expect(s.text).toBe('检索 2 份材料、1 个网页，参考 1 段历史对话');
+    // INT2（U110）：sse-turn-full 有 recall_memory 步骤但事件流里没有 message 类证据，按实际证据数为 0（原期望“参考 1 段”按步骤数计）
+    expect(s.text).toBe('检索 2 份材料、1 个网页，没有找到相关的历史对话');
     expect(s.count).toBe(3);
     expect(s.seconds).toBe(9);
     expect(s.failed).toBe(0);
@@ -164,7 +165,8 @@ describe('步骤摘要', () => {
     expect(historyLatencyMs({ ...a1, created_at: '2026-11-22T06:19:00Z' }, byId, [])).toBeUndefined();
   });
   it('没有证据时网页按步骤数', () => {
-    expect(summarizeSteps(steps).text).toBe('检索 1 个网页，参考 1 段历史对话');
+    // INT2（U110）：证据池为空时历史对话按 0 条计（原期望按步骤数“参考 1 段”）
+    expect(summarizeSteps(steps).text).toBe('检索 1 个网页，没有找到相关的历史对话');
     expect(summarizeSteps([steps[0]]).text).toBe('检索项目材料');
   });
   it('进行中与失败', () => {
@@ -174,6 +176,19 @@ describe('步骤摘要', () => {
     const s = summarizeSteps(err);
     expect(s.failed).toBe(1);
     expect(s.text).toBe('抓取网页');
+  });
+  it('U110：历史对话按实际证据去重计数；0 条写“没有找到相关的历史对话”；只有被引用证据时不据此断定没找到', () => {
+    const recall: Step[] = [{ step_id: 'r', kind: 'recall_memory', label: '参考 2 段历史对话', status: 'done' }];
+    const msgEv = (source_id: string) => ({ source_type: 'message' as const, source_id });
+    expect(summarizeSteps(recall, [msgEv('m1'), msgEv('m1'), msgEv('m2')]).text).toBe('参考 2 段历史对话');
+    expect(summarizeSteps(recall, []).text).toBe('没有找到相关的历史对话');
+    // 历史消息（evidenceComplete=false）：只读到被引用的证据，0 条时看步骤 label
+    expect(summarizeSteps(recall, [], undefined, false).text).toBe('参考历史对话');
+    expect(summarizeSteps(recall, [msgEv('m1')], undefined, false).text).toBe('参考 1 段历史对话');
+    const none: Step[] = [{ step_id: 'r', kind: 'recall_memory', label: '没有找到相关的历史对话', status: 'done' }];
+    expect(summarizeSteps(none, [], undefined, false).text).toBe('没有找到相关的历史对话');
+    // 没有历史对话步骤：不出现这一段
+    expect(summarizeSteps([steps[0]], fullEvidence).text).not.toContain('历史对话');
   });
   it('任何文案都不出现“记忆”', () => {
     expect(Object.values(STEP_KIND_NAME).join('')).not.toContain('记忆');

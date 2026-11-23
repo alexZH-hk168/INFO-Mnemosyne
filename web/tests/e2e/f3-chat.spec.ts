@@ -122,7 +122,8 @@ test.describe('对话栏与证据', () => {
     await openConversation(page);
     await page.getByTestId('chat.message-list').evaluate((el) => (el.scrollTop = 0));
     const trail = page.getByTestId('chat.step-trail:msg_tf_a1');
-    await expect(trail).toContainText('检索 2 份材料、1 个网页，参考 1 段历史对话');
+    // INT2（U110）：历史消息的证据里没有 message 类，召回步骤 label 表明找到过 → “参考历史对话”（不带数字）
+    await expect(trail).toContainText('检索 2 份材料、1 个网页，参考历史对话');
     await expect(trail).toContainText('3 步 · 9 秒'); // U35：整轮耗时
     await trail.click();
     await expect(page.getByTestId('chat.step-trail.detail:msg_tf_a1')).toBeVisible();

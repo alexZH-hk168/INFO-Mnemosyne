@@ -284,7 +284,8 @@ describe('1-助手回答-步骤行', () => {
   it('摘要与 UI-05 格式一致，展开后列出每一步', async () => {
     open();
     const trail = await screen.findByTestId('chat.step-trail:msg_tf_a1', {}, { timeout: 5000 });
-    await waitFor(() => expect(trail).toHaveTextContent('检索 2 份材料、1 个网页，参考 1 段历史对话'));
+    // INT2（U110）：历史消息只读到被引用的证据（其中没有 message 类），召回步骤 label 表明找到过 → 不带数字的“参考历史对话”
+    await waitFor(() => expect(trail).toHaveTextContent('检索 2 份材料、1 个网页，参考历史对话'));
     expect(trail).toHaveTextContent('3 步 · 9 秒'); // U35：整轮耗时，历史消息 = 06:20:09 − 06:20:00
     expect(trail.textContent).not.toContain('记忆');
     fireEvent.click(trail);

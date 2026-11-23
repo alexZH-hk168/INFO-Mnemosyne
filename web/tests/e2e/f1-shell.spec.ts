@@ -137,6 +137,8 @@ test('全局快捷键：Alt+1 / Alt+2 切换左两栏；Ctrl 与 Meta 的 . 切�
     await expect(page.getByTestId('shell.collapsed-rail:1')).toBeVisible();
     await page.keyboard.press(`${mod}+Period`);
     await expect(page.getByTestId('shell.collapsed-rail:3')).toBeVisible();
+    // INT2：等历史回答的证据读完再截图（否则来源卡偶尔停在“1 · …”加载占位）
+    await expect(page.locator('[data-testid^="chat.source-list.item:"]', { hasText: '…' })).toHaveCount(0);
     if (mod === 'Control') await shot(page, '1-外壳-全局快捷键'); // 三栏都被快捷键收起后的状态
     await page.keyboard.press('Alt+Digit1');
     await page.keyboard.press('Alt+Digit2');

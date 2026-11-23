@@ -44,6 +44,15 @@ $P scripts/metrics.py --pred runs/full-{B1,B2,M,A1,A2,A4}/predictions.jsonl --ju
 
 `--adapter stub` 是本地词面检索 + 抽取式回答的桩，只为验证流水线（缓存、映射、分支过滤、引用开关），**它的数字不得写进论文**。
 
+## 已知限制（真跑前必读）
+
+- **每题一位新用户、独立库（U111，编排决定，待用户追认）**：系统 M 每题一个全新数据库，因为记忆有 global 作用域，共库会跨题召回。代价是 LongMemEval 的填充 session 在题间重复时要重新回放，回放成本按题线性增长；真实模型下记忆抽取费用随题数增长。回放缓存只在同一题的 M/A1–A4 之间复用，不跨题。替代做法（按 session 内容建共享库再按题复制）本版不做。论文里按“每题一位新用户”描述实验设置。
+- **记账低估与缺项（U112，编排决定接受为已知限制，待用户追认）**：
+  - 记忆的 `llm_port` 不回报 token，真实模型下 `replay_tokens_*` 与回放费用记 0，**低估**真实花费；
+  - M 的 `cost_usd` 记 `null`：适配器不知道单价，`--price-in/--price-out` 只作用于 B1/B2；
+  - `retrieved_ids` 的分数是按名次的 1/(rank+1)，evidence 表不存召回分数，依赖分数绝对值的指标不能用。
+  - 报成本（见“预算硬约束”）时必须写明这三点。是否给 `llm_port` 加用量回报、是否给证据落召回分数，等真跑（U2）前再定。
+
 ## 官方核对（2026-11-23）
 
 - 字段与题型：官方 README（https://github.com/xiaowu0162/LongMemEval ，HEAD `9e0b455`）列出 `question_id, question_type, question, answer, question_date, haystack_session_ids, haystack_dates, haystack_sessions, answer_session_ids`；turn 为 `{role, content}`，证据轮带 `has_answer: true`；`question_id` 以 `_abs` 结尾为拒答题；6 类题型 `single-session-user / single-session-assistant / single-session-preference / temporal-reasoning / knowledge-update / multi-session`。另用 HTTP Range 只取了 `longmemeval_s_cleaned.json` 的前 12 KB，实际键名与 README 一致，日期格式为 `2023/05/30 (Tue) 23:40`，证据 session 的 id 以 `answer_` 开头。HF 预览报 `answer` 列有整数，转换时保留原类型。

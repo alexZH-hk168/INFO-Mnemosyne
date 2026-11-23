@@ -15,6 +15,7 @@ import EvidenceHover from './EvidenceHover';
 import BranchOverview from './ChatHeader';
 import MessageList from './MessageList';
 import SelectionToolbar from './SelectionToolbar';
+import { seedEvidenceCache } from './seedEvidence';
 import './chat.css';
 
 /** F5 挂载点：1-对话栏-分支概览标签（“主线 · 2 个分支”） */
@@ -68,6 +69,7 @@ export default function ChatColumn() {
       // INT1：项目栏的对话数（Project.conversation_count）在新对话首轮后变化
       void qc.invalidateQueries({ queryKey: queryKeys.projects() });
     }
+    seedEvidenceCache(qc, streaming.evidence, turn.branch_id ? streaming.message_id : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endKey]);
 

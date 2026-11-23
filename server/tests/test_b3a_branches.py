@@ -177,6 +177,35 @@ def test_create_branch_title_and_validation(world, client):
     assert bad({"conversation_id": CID}) == "VALIDATION_ERROR"
 
 
+def test_auto_title_word_boundary():
+    """INT2（U113 ②）：中文前 12 字；英文不切在单词中间；与前端 defaultBranchTitle 同一组用例。"""
+    from app.api.branches import auto_title
+
+    assert auto_title("The input consists of queries and keys") == "The input"
+    assert auto_title("  Scaled   dot-product attention  ") == "Scaled"
+    assert auto_title("softmax 饱和时梯度同样几乎为 0") == "softmax 饱和时梯"
+    assert auto_title("为什么要除以根号 dk 才能让方差稳定") == "为什么要除以根号 dk"
+    assert auto_title("Backpropagation through time") == "Backpropagation"
+    assert auto_title("multi-head attention") == "multi-head"
+    assert auto_title("Attention is all you need") == "Attention is"
+    assert auto_title("short one") == "short one"
+    assert auto_title("exactly 12ch") == "exactly 12ch"
+
+
+def test_create_branch_english_title_not_cut_mid_word(world, client):
+    """建分支接口走 auto_title：英文 quote 的标题不切在单词中间（INT1 冒烟里是“The input co”）。"""
+    text = "The input consists of queries and keys of dimension dk."
+    world.execute("UPDATE messages SET content = ? WHERE id = 'msg_tf_a1b'", (text,))
+    world.commit()
+    quote = "The input consists of queries and keys"
+    r = client.post(
+        "/api/branches",
+        json={"conversation_id": CID, "fork_message_id": "msg_tf_a1b", "anchor": {"start": 0, "end": len(quote), "quote": quote}},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["title"] == "The input"
+
+
 def test_update_branch_rename_archive(world, client):
     r = client.put("/api/branches/br_onehot", json={"title": "  独热输出  "})
     assert r.status_code == 200 and r.json()["title"] == "独热输出"

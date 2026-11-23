@@ -47,7 +47,7 @@ interface Props {
 const EMPTY_EV: Evidence[] = [];
 
 /** 证据：流式中/刚结束的用本地池，历史消息按引用逐条读 ['evidence', eid]（与胶囊共用缓存） */
-function useAnswerEvidence(messageId: ID, citations: Citation[]): Evidence[] {
+function useAnswerEvidence(messageId: ID, citations: Citation[]): { evidence: Evidence[]; complete: boolean } {
   const local = useChat((s) => (s.streaming?.message_id === messageId ? s.streaming.evidence : null));
   const leafId = useLeafId();
   const eids = useMemo(() => [...new Set(citations.map((c) => c.eid))], [citations]);
@@ -61,11 +61,12 @@ function useAnswerEvidence(messageId: ID, citations: Citation[]): Evidence[] {
         }),
     })),
   });
-  if (local) return local;
+  if (local) return { evidence: local, complete: true };
   const loaded = results.flatMap((r, i) =>
     r.data ? [{ ...r.data, label: r.data.label ?? citations.find((c) => c.eid === eids[i])?.label }] : [],
   );
-  return loaded.length ? loaded : EMPTY_EV;
+  // 历史消息只读得到被引用的证据（U110：步骤行不能据此断定“没有找到”）
+  return { evidence: loaded.length ? loaded : EMPTY_EV, complete: false };
 }
 
 function AssistantMessage({
@@ -78,7 +79,7 @@ function AssistantMessage({
   branches,
   variant = 'main',
 }: Props) {
-  const evidence = useAnswerEvidence(view.id, view.citations);
+  const { evidence, complete: evidenceComplete } = useAnswerEvidence(view.id, view.citations);
   const final0 = view.status === 'saved' || view.status === 'cancelled';
   const marks = useMemo(
     () => (branches && final0 ? markGroupsFor(view.id, view.content, branches) : undefined),
@@ -95,6 +96,7 @@ function AssistantMessage({
         messageId={view.id}
         steps={view.steps}
         evidence={evidence}
+        evidenceComplete={evidenceComplete}
         verifying={view.status === 'verifying'}
         latencyMs={view.latencyMs}
       />
