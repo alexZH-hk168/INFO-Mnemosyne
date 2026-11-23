@@ -3,6 +3,7 @@
 // 无标签时显示空态：“点回答里的证据，或在文件栏选一个文件预览”。
 import '../styles/preview.css';
 import type { ReactNode } from 'react';
+import BranchPanel from '../branch/BranchPanel';
 import { useLayout, type Tab } from '../store/layout';
 import { tabForEvidence } from '../store/evidence';
 import CodeViewer from './CodeViewer';
@@ -33,15 +34,8 @@ function Content({ tab }: { tab: Tab }): ReactNode {
     case 'plugin':
       return <PluginResultCard key={tab.id} tab={tab} />;
     case 'branch':
-      // 分支面板属于 F5（2-开分支追问-分支面板），这里只占位
-      return (
-        <div
-          data-testid="right.branch-placeholder"
-          className="flex h-full items-center justify-center text-[12.5px] text-faint"
-        >
-          分支面板（F5 实现）
-        </div>
-      );
+      // F5：2-开分支追问-分支面板
+      return <BranchPanel key={tab.id} tab={tab} />;
   }
 }
 

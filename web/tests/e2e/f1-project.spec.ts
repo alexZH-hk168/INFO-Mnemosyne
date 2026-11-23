@@ -116,7 +116,8 @@ test('对话行：点击 URL 为 /c/:cid；点分支数在右栏打开最近一�
   await expect(page).toHaveURL(/\/c\/cnv_week6_cards$/);
   await expect(page.getByTestId('chat.panel') /* F3：对话栏替换了占位 */).toBeVisible();
   await page.getByTestId('sidebar.conversation-row.branches:cnv_transformer').click();
-  await expect(page).toHaveURL(/\/c\/cnv_transformer$/);
+  // F5：分支标签激活时路由为 /c/:cid/b/:bid（规格 2-划词工具条-开分支追问「验收」；见 PROGRESS 未决 U49）
+  await expect(page).toHaveURL(/\/c\/cnv_transformer\/b\/br_onehot$/);
   await expect(page.getByTestId('right.tabs.tab:branch:br_onehot')).toHaveAttribute('data-active', 'true');
 });
 

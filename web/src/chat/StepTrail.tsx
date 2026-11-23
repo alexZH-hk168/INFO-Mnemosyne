@@ -9,6 +9,7 @@ import { Spinner } from '../icons/Icons';
 import { labelNumber } from '../lib/citations';
 import { chipTone, longPosition, TONE_CLASS } from '../lib/evidenceDisplay';
 import { STEP_KIND_NAME, summarizeSteps } from '../lib/steps';
+import { useLeafId } from '../branch/leafContext';
 import { openEvidence } from './EvidenceChip';
 
 interface Props {
@@ -25,6 +26,7 @@ const fmtMs = (ms?: number) => (ms === undefined ? '' : ms < 1000 ? `${ms} ms` :
 
 function StepTrail({ messageId, steps, evidence, verifying, latencyMs }: Props) {
   const [open, setOpen] = useState(false);
+  const leafId = useLeafId(); // F5：分支面板里打开证据带 leaf_id
   if (steps.length === 0) return null;
   const s = summarizeSteps(steps, evidence, latencyMs);
   const detailId = `step-detail-${messageId}`;
@@ -89,7 +91,7 @@ function StepTrail({ messageId, steps, evidence, verifying, latencyMs }: Props) 
                   <button
                     type="button"
                     data-testid={`chat.step-trail.evidence:${ev.id}`}
-                    onClick={() => openEvidence(ev.id, messageId, ev)}
+                    onClick={() => openEvidence(ev.id, messageId, ev, leafId)}
                     className={`mn-focus inline-flex max-w-[260px] items-center gap-1 rounded-chip px-1.5 py-0.5 text-[11.5px] ${
                       TONE_CLASS[chipTone(ev.source_type)]
                     }`}

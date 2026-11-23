@@ -2,13 +2,15 @@
 // 按主线路径（根 → active_leaf，沿 parent 链）顺序渲染用户消息、助手回答；正在进行的一轮（useChat.turn / streaming）叠在末尾：
 // 发送后立即插入用户消息（乐观，透明 0.7），回答流式出现；树里出现这一轮后由树渲染（settleTurn）。
 // 重新生成时从被替换的回答处截断，后面接新回答。新内容到来时若用户在底部则自动滚动；上滚时不抢滚动，底部出现“↓ 新内容”。
-// 消息块最大宽度 720 px 居中。合并卡片（role=merge_note）与划词工具条属 F5：merge_note 先按普通文字占位。
+// 消息块最大宽度 720 px 居中。F5：merge_note 渲染为合并卡片（MergeCard），主线回答带分支标记（branches 传给 AssistantMessage）；
+// 划词工具条挂在对话栏（ChatColumn → SelectionToolbar），只认这里的主线回答正文。
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ConversationTree, ID, Message } from '../api/types';
 import { ArrowDownIcon } from '../icons/ChatIcons';
 import { historyLatencyMs } from '../lib/latency';
 import { useChat } from '../store/chat';
 import AssistantMessage, { type AssistantView } from './AssistantMessage';
+import MergeCard from './MergeCard';
 import UserMessage from './UserMessage';
 
 /** 主线路径：从叶子沿 parent_id 回到根 */
@@ -160,10 +162,12 @@ function MessageList({ conversationId, tree, docTitles }: Props) {
                   conversationId={conversationId}
                   siblings={siblings}
                   busy={busy}
+                  branches={tree.branches}
                 />
               );
             }
-            // merge_note（F5 合并卡片）/ tool：占位
+            if (m.role === 'merge_note') return <MergeCard key={m.id} message={m} tree={tree} />;
+            // tool：占位
             return (
               <div key={m.id} data-testid={`chat.message-list.other:${m.id}`} className="text-[12.5px] text-muted">
                 {m.content}

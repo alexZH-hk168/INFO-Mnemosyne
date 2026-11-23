@@ -10,13 +10,15 @@ import { GlobeIcon, PuzzleIcon } from '../icons/Icons';
 import { labelNumber } from '../lib/citations';
 import { chipPosition, sourceKind } from '../lib/evidenceDisplay';
 import { useEvidence } from '../store/evidence';
+import { useLeafId } from '../branch/leafContext';
 import { openEvidence, useLocalEvidence } from './EvidenceChip';
 
 const MAX_VISIBLE = 4;
 
 function SourceCard({ messageId, citation }: { messageId: ID; citation: Citation }) {
   const local = useLocalEvidence(messageId, citation.eid, citation.label);
-  const remote = useEvidenceQuery(local ? null : citation.eid);
+  const leafId = useLeafId(); // F5：分支面板里带 leaf_id（v1 分支面板不显示来源列表，保持与胶囊一致）
+  const remote = useEvidenceQuery(local ? null : citation.eid, leafId);
   const ev = local ?? remote.data;
   const selected = useEvidence((s) => s.selectedEvidenceId === citation.eid);
   const num = labelNumber(citation.label);
@@ -44,7 +46,7 @@ function SourceCard({ messageId, citation }: { messageId: ID; citation: Citation
       data-testid={`chat.source-list.item:${citation.eid}`}
       data-verdict={citation.verdict}
       aria-pressed={selected}
-      onClick={() => openEvidence(citation.eid, messageId, ev)}
+      onClick={() => openEvidence(citation.eid, messageId, ev, leafId)}
       className={`mn-focus inline-flex max-w-[280px] items-center gap-1.5 rounded-btn border bg-surface px-2 py-1 text-[12px] text-ink-2 hover:border-faint ${
         selected ? 'border-evi-ring' : 'border-line'
       }`}

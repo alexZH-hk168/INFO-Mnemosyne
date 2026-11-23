@@ -315,10 +315,10 @@ test.describe('标签条与外壳', () => {
     await expect(page.getByTestId('right.panel.empty')).toBeVisible();
   });
 
-  test('分支标签内容留给 F5（占位）', async ({ page }) => {
+  test('分支标签显示分支面板（F5 替换了 F4 的占位）', async ({ page }) => {
     await openApp(page, '/c/cnv_transformer/b/br_variance', { fixedClock: true });
     await expect(page.getByTestId('right.tabs.tab:branch:br_variance')).toHaveAttribute('data-active', 'true');
-    await expect(page.getByTestId('right.branch-placeholder')).toBeVisible();
+    await expect(page.getByTestId('right.branch-panel')).toHaveAttribute('data-bid', 'br_variance');
   });
 
   test('右栏全程没有编辑入口', async ({ page }) => {

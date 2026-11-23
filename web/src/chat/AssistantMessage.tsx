@@ -2,12 +2,15 @@
 // 无气泡的正文块：顶部步骤行，正文（Markdown＋公式＋证据胶囊），底部来源列表与操作。
 // 状态：streaming 正文逐字出现、胶囊虚线待确认；verifying 步骤行末尾“核对引用…”；saved 胶囊按 verdict 显示；
 // cancelled 末尾灰字“已停止生成”；error 红色提示条＋“重新生成”。流式连接：重连中灰字提示，重连失败保留内容并给“重新生成”。
-// 分支标记（1-助手回答-分支标记）属 F5，这里不渲染。
+// F5 追加：`branches` 有本条回答的分支时画分支标记（1-助手回答-分支标记）；`variant="branch"`（分支面板里）不显示来源列表、
+// 操作行与“重新生成”（与 UI-05 右栏一致；分支里的重新生成/切换兄弟回答 v1 不做）。在分支里读证据时带 leaf_id（U44）。
 import { useQueries } from '@tanstack/react-query';
 import { memo, useMemo } from 'react';
 import { api } from '../api/client';
 import { queryKeys } from '../api/queries';
-import type { Citation, Evidence, ID, Step } from '../api/types';
+import type { Branch, Citation, Evidence, ID, Step } from '../api/types';
+import { useLeafId } from '../branch/leafContext';
+import { markGroupsFor } from '../lib/branchMarkup';
 import { AlertIcon } from '../icons/ChatIcons';
 import { useChat, type Connection, type StreamStatus } from '../store/chat';
 import AnswerBody from './AnswerBody';
@@ -35,6 +38,10 @@ interface Props {
   /** 仅流式中的这一条：连接状态与错误 */
   connection?: Connection;
   errorText?: string;
+  /** F5 追加：对话树里的分支（主线回答据此画分支标记） */
+  branches?: Branch[];
+  /** F5 追加：main（默认，对话栏）/ branch（分支面板） */
+  variant?: 'main' | 'branch';
 }
 
 const EMPTY_EV: Evidence[] = [];
@@ -42,12 +49,16 @@ const EMPTY_EV: Evidence[] = [];
 /** 证据：流式中/刚结束的用本地池，历史消息按引用逐条读 ['evidence', eid]（与胶囊共用缓存） */
 function useAnswerEvidence(messageId: ID, citations: Citation[]): Evidence[] {
   const local = useChat((s) => (s.streaming?.message_id === messageId ? s.streaming.evidence : null));
+  const leafId = useLeafId();
   const eids = useMemo(() => [...new Set(citations.map((c) => c.eid))], [citations]);
   const results = useQueries({
     queries: (local ? [] : eids).map((eid) => ({
-      queryKey: queryKeys.evidence(eid),
+      queryKey: queryKeys.evidenceAt(eid, leafId),
       queryFn: ({ signal }: { signal: AbortSignal }) =>
-        api.get<Evidence>(`/api/evidence/${encodeURIComponent(eid)}`, { signal }),
+        api.get<Evidence>(`/api/evidence/${encodeURIComponent(eid)}`, {
+          signal,
+          ...(leafId ? { query: { leaf_id: leafId } } : {}),
+        }),
     })),
   });
   if (local) return local;
@@ -57,8 +68,23 @@ function useAnswerEvidence(messageId: ID, citations: Citation[]): Evidence[] {
   return loaded.length ? loaded : EMPTY_EV;
 }
 
-function AssistantMessage({ view, conversationId, siblings, busy, connection, errorText }: Props) {
+function AssistantMessage({
+  view,
+  conversationId,
+  siblings,
+  busy,
+  connection,
+  errorText,
+  branches,
+  variant = 'main',
+}: Props) {
   const evidence = useAnswerEvidence(view.id, view.citations);
+  const final0 = view.status === 'saved' || view.status === 'cancelled';
+  const marks = useMemo(
+    () => (branches && final0 ? markGroupsFor(view.id, view.content, branches) : undefined),
+    [branches, final0, view.id, view.content],
+  );
+  const inBranch = variant === 'branch';
   const live = view.status === 'streaming' || view.status === 'verifying';
   const final = view.status === 'saved' || view.status === 'cancelled';
   const lost = connection === 'lost';
@@ -78,6 +104,7 @@ function AssistantMessage({ view, conversationId, siblings, busy, connection, er
           content={view.content}
           citations={view.citations}
           streaming={view.status === 'streaming' && !lost}
+          marks={marks}
         />
       ) : (
         live && (
@@ -110,23 +137,25 @@ function AssistantMessage({ view, conversationId, siblings, busy, connection, er
         >
           <AlertIcon size={15} />
           <span className="min-w-0 flex-1">{lost ? '连接中断，已保留生成到的内容' : (errorText ?? '生成失败')}</span>
-          <button
-            type="button"
-            data-testid={`chat.assistant-message.retry:${view.id}`}
-            disabled={busy}
-            onClick={() => {
-              const t: { conversation_id: ID; parent_id?: ID } = { conversation_id: conversationId };
-              if (view.parentId) t.parent_id = view.parentId;
-              useChat.getState().regenerate(view.id, t);
-            }}
-            className="mn-focus flex-none rounded-btn-sm px-2 py-0.5 text-ink-2 hover:bg-sel hover:text-ink"
-          >
-            重新生成
-          </button>
+          {!inBranch && (
+            <button
+              type="button"
+              data-testid={`chat.assistant-message.retry:${view.id}`}
+              disabled={busy}
+              onClick={() => {
+                const t: { conversation_id: ID; parent_id?: ID } = { conversation_id: conversationId };
+                if (view.parentId) t.parent_id = view.parentId;
+                useChat.getState().regenerate(view.id, t);
+              }}
+              className="mn-focus flex-none rounded-btn-sm px-2 py-0.5 text-ink-2 hover:bg-sel hover:text-ink"
+            >
+              重新生成
+            </button>
+          )}
         </div>
       )}
-      {final && <SourceList messageId={view.id} citations={view.citations} />}
-      {final && (
+      {final && !inBranch && <SourceList messageId={view.id} citations={view.citations} />}
+      {final && !inBranch && (
         <MessageActions
           conversationId={conversationId}
           messageId={view.id}

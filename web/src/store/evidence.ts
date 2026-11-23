@@ -14,6 +14,8 @@ export interface SelectOptions {
   evidence?: Evidence;
   /** （F4 追加）本回答的证据顺序（证据栏左右切换用）；缺省时沿用流式池顺序 */
   evidenceIds?: ID[];
+  /** （F5 追加）分支面板里打开时为分支当前叶子：右栏读证据/快照时带 `leaf_id`（契约 v0.4，U44）；主线为空 */
+  leafId?: ID | null;
 }
 
 export interface EvidenceState {
@@ -29,6 +31,8 @@ export interface EvidenceState {
   setMessageEvidence: (ids: ID[]) => void;
   /** 悬停浮层 */
   hover: HoverInfo | null;
+  /** （F5 追加）当前证据从分支面板打开时的分支叶子（右栏请求带 leaf_id）；主线为 null */
+  selectedLeafId: ID | null;
 }
 
 /** 证据 → 右栏预览标签。material 按 locator 形状区分 pdf / pptx / code / md；ref_id 取打开预览所需的 id。 */
@@ -68,7 +72,12 @@ export const useEvidence = create<EvidenceState>()((set) => ({
     const pool = streaming && streaming.message_id === messageId ? streaming.evidence : [];
     const ev = pool.find((x) => x.id === eid) ?? opts?.evidence;
     const ids = opts?.evidenceIds ?? (pool.length ? pool.map((x) => x.id) : [eid]);
-    set({ selectedEvidenceId: eid, selectedMessageId: messageId, messageEvidence: ids });
+    set({
+      selectedEvidenceId: eid,
+      selectedMessageId: messageId,
+      messageEvidence: ids,
+      selectedLeafId: opts?.leafId ?? null,
+    });
     if (ev) useLayout.getState().openTab(tabForEvidence(ev));
   },
   setMessageEvidence: (ids) =>
@@ -78,4 +87,5 @@ export const useEvidence = create<EvidenceState>()((set) => ({
         : { messageEvidence: ids },
     ),
   hover: null,
+  selectedLeafId: null,
 }));

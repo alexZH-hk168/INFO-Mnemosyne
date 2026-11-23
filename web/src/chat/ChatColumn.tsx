@@ -1,5 +1,6 @@
 // 规格：1-对话行-对话栏（chat.panel）＋ 1-对话栏-流式连接（chat.stream-client，客户端在 api/sse.ts）
-// 中间区显示一段对话：头部（标题；“主线 · N 个分支”标签属 F5，挂载点 BranchOverviewSlot）、消息列表、底部输入框（variant=chat）。
+// 中间区显示一段对话：头部（标题；“主线 · N 个分支”标签由 F5 的 ChatHeader 实现，挂载点 BranchOverviewSlot）、消息列表、底部输入框（variant=chat）。
+// F5 追加：主线回答的划词工具条（SelectionToolbar）挂在这里。
 // 只渲染主线路径（根 → active_leaf）。加载中 3 段消息骨架；NOT_FOUND 显示“对话不存在或已删除”与“回到主页”。
 // 头部右侧的搜索、分享、更多图标 v1 不做。回答结束（saved/cancelled/error）后失效 ['tree', cid]、['conversations', pid]、['documents', pid]。
 import { useQueryClient } from '@tanstack/react-query';
@@ -11,12 +12,14 @@ import { goHome } from '../lib/nav';
 import { useChat } from '../store/chat';
 import Composer from './Composer';
 import EvidenceHover from './EvidenceHover';
+import BranchOverview from './ChatHeader';
 import MessageList from './MessageList';
+import SelectionToolbar from './SelectionToolbar';
 import './chat.css';
 
 /** F5 挂载点：1-对话栏-分支概览标签（“主线 · 2 个分支”） */
-export function BranchOverviewSlot(_props: { tree: ConversationTree }) {
-  return null;
+export function BranchOverviewSlot({ tree }: { tree: ConversationTree }) {
+  return <BranchOverview tree={tree} />;
 }
 
 function Skeleton() {
@@ -127,6 +130,7 @@ export default function ChatColumn() {
         </div>
       )}
       <EvidenceHover />
+      {tree.data && <SelectionToolbar conversationId={cid} tree={tree.data} />}
     </section>
   );
 }

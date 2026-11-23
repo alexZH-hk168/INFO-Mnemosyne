@@ -96,3 +96,42 @@
     visibility: hidden;
   }
 }
+
+/* ---------------------------------------------------------------- F5：分支标记（1-助手回答-分支标记） */
+.mn-branch-text {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: var(--muted);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+/* merged：实线淡色 */
+.mn-branch-text[data-merged] {
+  text-decoration-style: solid;
+  text-decoration-color: var(--faint);
+}
+/* 回到原处：闪烁高亮 1.2 s */
+.mn-branch-text[data-flash] {
+  animation: mn-branch-flash 1.2s ease-in-out;
+}
+@keyframes mn-branch-flash {
+  0%,
+  50% {
+    background-color: var(--evi-hl);
+  }
+  25%,
+  75% {
+    background-color: transparent;
+  }
+  100% {
+    background-color: var(--evi-hl);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mn-branch-text[data-flash] {
+    animation: none;
+    background-color: var(--evi-hl);
+  }
+}

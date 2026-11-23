@@ -26,8 +26,13 @@ export interface AnswerMarkup {
 /**
  * @param raw 原文（含 `[[E#]]`）
  * @param citations 已收到的引用
+ * @param marks （F5 追加，可选）分支标记的纯文本码点区间，按组序号插入起止占位（见 lib/branchMarkup）
  */
-export function buildAnswerMarkup(raw: string, citations: Citation[]): AnswerMarkup {
+export function buildAnswerMarkup(
+  raw: string,
+  citations: Citation[],
+  marks: { start: number; end: number }[] = [],
+): AnswerMarkup {
   const { markers } = parseCitations(raw);
   const pairs = matchCitations(markers, citations);
   type Op = { at: number; end: number; text: string; order: number };
@@ -48,12 +53,27 @@ export function buildAnswerMarkup(raw: string, citations: Citation[]): AnswerMar
     ops.push({ at, end: at, text: `${SENTINEL_OPEN}i${inferences.length}${SENTINEL_CLOSE}`, order: 1 });
     inferences.push({ citation: c });
   }
+  // F5：分支标记。起点放在紧挨着的标记之后（order 2，排在上一句的“推断”之后）；终点放在标记之前（order -1，小标在胶囊前，与 UI-05 一致）
+  marks.forEach((mk, g) => {
+    ops.push({
+      at: plainCpToRaw(raw, mk.start, 'after'),
+      end: -1,
+      text: `${SENTINEL_OPEN}s${g}${SENTINEL_CLOSE}`,
+      order: 2,
+    });
+    ops.push({
+      at: plainCpToRaw(raw, mk.end, 'before'),
+      end: -1,
+      text: `${SENTINEL_OPEN}e${g}${SENTINEL_CLOSE}`,
+      order: -1,
+    });
+  });
   ops.sort((a, b) => a.at - b.at || a.order - b.order);
   let out = '';
   let last = 0;
   for (const op of ops) {
     out += raw.slice(last, op.at) + op.text;
-    last = Math.max(last, op.end);
+    last = Math.max(last, op.at, op.end);
   }
   out += raw.slice(last);
   return { source: out, chips, inferences };

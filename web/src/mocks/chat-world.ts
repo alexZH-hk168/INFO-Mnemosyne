@@ -3,10 +3,15 @@
 // 事件内容一律取自 docs/contract/fixtures 的事件流样例（sse-turn-full、post-messages-mid-regenerate），只改写本轮的
 // message_id、user_message_id、client_msg_id、step_id、citation_id 与 seq；`forced_skill` 时补一个 load_skill 步骤（R4：演示数据只在 mocks）。
 // 规则同 world.ts：某接口用 setMockScenario 指定了场景时，本层不处理，交回 handlers.ts 按 fixture 应答。
+// F5 追加：分支（POST /api/branches、POST /api/branches/{bid}/merge、PUT /api/branches/{bid}）——新建的分支与合并卡片写进本层状态，
+// 树里随之出现；merge 返回一条 merge_note 消息并把分支置为 merged，主线叶子移到这条消息。另导出 leafGuardHandlers：
+// 证据与网页快照接口接受可选 `leaf_id`（契约 v0.4），不是已有消息时按契约返回 VALIDATION_ERROR。
 import { http, HttpResponse, type HttpHandler } from 'msw';
-import type { ActiveLeafResult } from '../api/endpoints';
+import type { ActiveLeafResult, MergeResult, UpdateBranchBody } from '../api/endpoints';
 import type {
+  Branch,
   Citation,
+  CreateBranchBody,
   Conversation,
   ConversationTree,
   Evidence,
@@ -16,7 +21,8 @@ import type {
   SseEvent,
   Step,
 } from '../api/types';
-import { cpLength, parseCitations, stripCitations } from '../lib/citations';
+import { defaultBranchTitle } from '../branch/model';
+import { cpLength, parseCitations, sliceByCp, stripCitations } from '../lib/citations';
 import type { RestFixture, SseFixture } from './fixture-types';
 import { fixtures, formatSse, getMockScenario, SSE_INTERVAL_MS } from './handlers';
 import { upsertConversationSummary } from './world';
@@ -47,6 +53,10 @@ interface ConvState {
   runs: Run[];
   /** 显式切换过的叶子（PUT active_leaf）及时间 */
   leafOverride?: { id: ID; at: number };
+  /** F5 追加：本层改过的分支表（新建、合并、归档）；为空时用 fixture 的 */
+  branches?: Branch[];
+  /** F5 追加：合并产生的 merge_note 消息 */
+  notes?: Message[];
 }
 
 interface ChatWorld {
@@ -103,13 +113,18 @@ function conv(cid: ID): ConvState | undefined {
   return st;
 }
 
+/** F5 追加：当前分支表（本层改过的优先） */
+function branchesOf(st: ConvState): Branch[] {
+  return st.branches ?? st.base?.branches ?? [];
+}
+
 function visibleRuns(st: ConvState): Run[] {
   const t = now();
   return st.runs.filter((r) => !r.streaming && r.readyAt <= t);
 }
 
 function allMessages(st: ConvState): Message[] {
-  const out = [...(st.base?.messages ?? [])];
+  const out = [...(st.base?.messages ?? []), ...(st.notes ?? [])];
   for (const r of visibleRuns(st)) {
     if (r.user) out.push(r.user);
     out.push(r.assistant);
@@ -150,7 +165,7 @@ function treeOf(st: ConvState): ConversationTree {
   const root = messages.find((m) => !m.parent_id);
   if (root) conversation.root_message_id = root.id;
   if (leaf) conversation.active_leaf_id = leaf;
-  const tree: ConversationTree = { conversation, messages, branches: st.base?.branches ?? [] };
+  const tree: ConversationTree = { conversation, messages, branches: branchesOf(st) };
   if (leaf) tree.active_leaf_id = leaf;
   return tree;
 }
@@ -339,7 +354,8 @@ function touchSummary(st: ConvState) {
     id: c.id,
     title: c.title,
     updated_at: c.updated_at,
-    branch_count: (st.base?.branches ?? []).filter((b) => b.status === 'open').length,
+    // F5：不计 archived（编排决定 U47），原来只计 open
+    branch_count: branchesOf(st).filter((b) => b.status !== 'archived').length,
   });
 }
 
@@ -503,6 +519,151 @@ export const chatWorldHandlers: HttpHandler[] = [
     if (hasRest) return undefined;
     const ev = evidenceIndex().get(eid);
     return ev ? HttpResponse.json(ev) : undefined;
+  }),
+
+  // ---------------------------------------------------------------- F5 追加：分支
+  http.post('*/api/branches', async ({ request }) => {
+    if (deferred('POST /api/branches')) return undefined;
+    const body = (await request.json().catch(() => ({}))) as Partial<CreateBranchBody>;
+    const st = body.conversation_id ? conv(body.conversation_id) : undefined;
+    if (!st) return apiError(404, 'NOT_FOUND', '对话不存在');
+    const fork = allMessages(st).find((m) => m.id === body.fork_message_id);
+    if (!fork) return apiError(404, 'NOT_FOUND', 'fork 消息不存在');
+    const a = body.anchor;
+    if (fork.role !== 'assistant' || !a || !Number.isInteger(a.start) || !Number.isInteger(a.end) || a.end <= a.start)
+      return apiError(400, 'VALIDATION_ERROR', '锚点不合法');
+    // 锚点必须与 fork 消息去标记纯文本的这一段一致（码点、左闭右开）
+    if (sliceByCp(stripCitations(fork.content), a.start, a.end) !== a.quote)
+      return apiError(400, 'VALIDATION_ERROR', '锚点原句与偏移不一致');
+    const sample = fx<RestFixture>('post-branches.ok.json');
+    const sampleReq = sample.request?.body as CreateBranchBody | undefined;
+    const same =
+      sampleReq &&
+      sampleReq.conversation_id === body.conversation_id &&
+      sampleReq.fork_message_id === body.fork_message_id &&
+      sampleReq.anchor.start === a.start &&
+      sampleReq.anchor.end === a.end &&
+      !branchesOf(st).some((b) => b.id === (sample.body as Branch).id);
+    w.seq += 1;
+    // 主线前 N 轮：从根到 fork 消息路径上的用户消息数
+    const byId = new Map(allMessages(st).map((m) => [m.id, m]));
+    let turns = 0;
+    for (let cur: Message | undefined = fork; cur; cur = cur.parent_id ? byId.get(cur.parent_id) : undefined)
+      if (cur.role === 'user' && !cur.branch_id) turns += 1;
+    const branch: Branch = same
+      ? { ...(structuredClone(sample.body) as Branch), created_at: iso() }
+      : {
+          id: `br_new${w.seq}`,
+          conversation_id: st.conversation.id,
+          fork_message_id: fork.id,
+          anchor_start: a.start,
+          anchor_end: a.end,
+          anchor_quote: a.quote,
+          // 规格“标题默认取 quote 前 12 字”；契约请求没有 title，由后端生成（未决 U48）
+          title: defaultBranchTitle(a.quote),
+          status: 'open',
+          created_at: iso(),
+          context_turns: turns,
+        };
+    st.branches = [...branchesOf(st), branch];
+    touchSummary(st);
+    return HttpResponse.json(branch);
+  }),
+
+  http.post('*/api/branches/:bid/merge', async ({ params }) => {
+    if (deferred('POST /api/branches/{bid}/merge')) return undefined;
+    const bid = String(params.bid);
+    const st = convOfBranch(bid);
+    const branch = st && branchesOf(st).find((b) => b.id === bid);
+    if (!st || !branch) return apiError(404, 'NOT_FOUND', '分支不存在');
+    if (branch.status !== 'open') return apiError(400, 'VALIDATION_ERROR', '分支已合并或已归档');
+    await sleep(MERGE_DELAY_MS); // “合并中”：后端要总结要点，约数秒
+    const messages = allMessages(st);
+    const leaf = effectiveLeaf(st, messages);
+    const sample = fx<RestFixture>('post-branches-bid-merge.ok.json').body as MergeResult;
+    w.seq += 1;
+    let content: string;
+    if (sample.branch.id === bid) content = sample.merge_note.content;
+    else {
+      // 模拟“总结要点”：取分支最后一条回答的第一句
+      const answers = messages
+        .filter((m) => m.branch_id === bid && m.role === 'assistant')
+        .sort((x, y) => x.created_at.localeCompare(y.created_at));
+      const last = answers[answers.length - 1];
+      const first = last ? (stripCitations(last.content).split(/(?<=[。！？.!?])/)[0] ?? '') : '';
+      content = `分支「${branch.title}」要点：${Array.from(first).slice(0, 80).join('')}`;
+    }
+    const note: Message = {
+      id: sample.branch.id === bid ? sample.merge_note.id : `msg_merge${w.seq}`,
+      conversation_id: st.conversation.id,
+      role: 'merge_note',
+      content,
+      created_at: iso(),
+      ...(leaf ? { parent_id: leaf } : {}),
+    };
+    const merged: Branch = { ...branch, status: 'merged', merged_into_message_id: note.id };
+    st.branches = branchesOf(st).map((b) => (b.id === bid ? merged : b));
+    st.notes = [...(st.notes ?? []), note];
+    st.leafOverride = { id: note.id, at: now() };
+    st.conversation = { ...st.conversation, updated_at: note.created_at };
+    touchSummary(st);
+    return HttpResponse.json({ branch: merged, merge_note: note } satisfies MergeResult);
+  }),
+
+  http.put('*/api/branches/:bid', async ({ params, request }) => {
+    if (deferred('PUT /api/branches/{bid}')) return undefined;
+    const bid = String(params.bid);
+    const st = convOfBranch(bid);
+    const branch = st && branchesOf(st).find((b) => b.id === bid);
+    if (!st || !branch) return apiError(404, 'NOT_FOUND', '分支不存在');
+    const body = (await request.json().catch(() => ({}))) as Partial<UpdateBranchBody> & Record<string, unknown>;
+    let next: Branch;
+    if ('status' in body && body.status === 'archived') next = { ...branch, status: 'archived' };
+    else if ('title' in body && typeof body.title === 'string' && body.title.trim())
+      next = { ...branch, title: body.title.trim() };
+    else return apiError(400, 'VALIDATION_ERROR', '只能归档或改标题');
+    st.branches = branchesOf(st).map((b) => (b.id === bid ? next : b));
+    touchSummary(st);
+    return HttpResponse.json(next);
+  }),
+];
+
+/** F5：合并时模拟“后端总结要点”的耗时 */
+export const MERGE_DELAY_MS = 600;
+
+function apiError(status: number, code: string, message: string) {
+  return HttpResponse.json({ error: { code, message, retriable: false } }, { status });
+}
+
+/** F5：分支所在对话（fixture 的那段对话首次访问时登记） */
+function convOfBranch(bid: ID): ConvState | undefined {
+  conv(fixtureTree().conversation.id);
+  return [...w.convs.values()].find((s) => branchesOf(s).some((b) => b.id === bid));
+}
+
+/** F5：某个消息 id 是否存在（任一对话） */
+function messageExists(mid: ID): boolean {
+  conv(fixtureTree().conversation.id);
+  return [...w.convs.values()].some((s) => allMessages(s).some((m) => m.id === mid));
+}
+
+/**
+ * F5 追加（契约 v0.4，编排决定 U44）：证据与网页快照接受可选 query `leaf_id`。
+ * 不是已有消息 → 400 VALIDATION_ERROR；否则交给后面的层按原样应答（模拟层不做路径可见性过滤，那是后端 B1/B3 的事）。
+ * 排在 chatWorldHandlers 之前注册。
+ */
+export const leafGuardHandlers: HttpHandler[] = [
+  http.get('*/api/evidence/:eid', ({ request }) => {
+    if (deferred('GET /api/evidence/{eid}')) return undefined;
+    const leaf = new URL(request.url).searchParams.get('leaf_id');
+    if (leaf !== null && !messageExists(leaf)) return apiError(400, 'VALIDATION_ERROR', 'leaf_id 不是已有消息');
+    return undefined;
+  }),
+  http.get('*/api/web_snapshots/:sid', ({ request }) => {
+    if (deferred('GET /api/web_snapshots/{sid}')) return undefined;
+    const leaf = new URL(request.url).searchParams.get('leaf_id');
+    if (leaf !== null && !messageExists(leaf)) return apiError(400, 'VALIDATION_ERROR', 'leaf_id 不是已有消息');
+    return undefined;
   }),
 ];
 

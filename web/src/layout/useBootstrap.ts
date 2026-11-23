@@ -42,9 +42,12 @@ export function useBootstrap(): { offline: boolean } {
   }, [tree.data]);
 
   // 直接打开 /c/:cid/b/:bid：右栏打开该分支标签
+  // F5：读 store 里的最新值，不用渲染时的闭包值。分支面板切换时（旧面板卸载、新面板挂载各改一次 activeBranchId），
+  // 若同一次提交里 tree.data 也变了，用旧闭包会把标签切回旧分支，两个面板来回抢（Maximum update depth）。
   useEffect(() => {
-    if (!activeBranchId || !tree.data) return;
-    const b = tree.data.branches.find((x) => x.id === activeBranchId);
+    const bid = useChat.getState().activeBranchId;
+    if (!bid || !tree.data) return;
+    const b = tree.data.branches.find((x) => x.id === bid);
     if (b) useLayout.getState().openTab(tabFor('branch', b.id, b.title));
   }, [activeBranchId, tree.data]);
 
