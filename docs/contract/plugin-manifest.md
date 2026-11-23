@@ -76,7 +76,7 @@ structuredContent，否则把文本当 JSON 解析。每次调用最多 5 条证
 `evidence` 行（含 `captured_in_message_id`）由 B2 写。
 
 **运行时**：后台线程持有全部会话，legacy `initialize` 握手；空闲 `MN_PLUGIN_IDLE_S`（默认 600 s）回收；
-启动 + `tools/list` 自检上限 `MN_PLUGIN_START_TIMEOUT_S`（默认 30 s）；单次调用超时默认 30 s，超时的 `ToolResult`
+启动 + `tools/list` 自检上限 `MN_PLUGIN_START_TIMEOUT_S`（默认 30 s；[VER1] 安装、改配置、重新检查时另用 `MN_PLUGIN_INSTALL_TIMEOUT_S`，默认 180 s）；单次调用超时默认 30 s，超时的 `ToolResult`
 `is_error=true`、文本以 `PLUGIN_TIMEOUT` 开头。配置项以环境变量注入插件进程，密钥值加密存进 `config_json`
 （密钥文件 `<data_dir>/secret.key`）。子进程额外继承代理与 uv/npm 镜像相关环境变量。
 

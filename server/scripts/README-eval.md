@@ -59,7 +59,8 @@ $P scripts/metrics.py --pred runs/full-{B1,B2,M,A1,A2,A4}/predictions.jsonl --ju
 - 文件与校验：HF `xiaowu0162/longmemeval-cleaned` 的 `longmemeval_s_cleaned.json` 大小 277383467，sha256 `d6f21ea9…c3a442`（取自 HF API 的 lfs 字段），写在 `eval_lib/lme.py`。数据集卡片未写许可证；数据不进仓库。
 - 判分：`src/evaluation/evaluate_qa.py`（MIT，Copyright (c) 2024 Di Wu）。五段提示模板逐字移植到 `eval_lib/judge_prompts.py`（已用脚本与官方文件逐字比对一致），判定规则同官方：回复含 `yes` 即对、`'_abs' in question_id` 走拒答模板、temperature 0、max_tokens 10；gpt-4o 对应 `gpt-4o-2024-08-06`。
 - 检索指标：官方 `src/retrieval/eval_utils.py` 给 recall_any/recall_all/ndcg，`print_retrieval_metrics.py` 主报 recall_all@k，并跳过拒答题；官方轮次级索引只含 user 轮、轮次编号从 1 开始。本仓库口径与差异见 `eval_lib/metrics_core.py` 文件头与未决 U101。
-- 未核实：清洗版各题型的实际题数（论文给的是原版）、拒答题在清洗版里的 `answer_session_ids` 与 `has_answer` 标注方式（迷你数据按“相关 session、无 has_answer”手写）。
+- 已核实（[VER1] 2026-11-23，下载的清洗版 `longmemeval_s_cleaned.json`，sha256 与登记一致）：500 题，multi-session 133、temporal-reasoning 133、knowledge-update 78、single-session-user 70、single-session-assistant 56、single-session-preference 30，其中拒答 30（ssu 6、ms 12、tr 6、ku 6）；拒答题 30 道都给了 `answer_session_ids`，其中共 10 个轮次标了 `has_answer`（迷你数据按“相关 session、无 has_answer”手写，与真实数据在这一点不同；检索指标本就跳过拒答题，不影响结果）。单题 haystack 平均 101,495 token（tiktoken o200k_base，95,156–103,818）、平均 47.7 个 session。
+- [VER1] 注意：`lme_dev120.jsonl` 按题型排序，`--max-items 10` 取到的前 10 题全是 single-session-user（U146）；系统 M 的 `recall@k_turn` 口径待定（U142）。
 
 ## 测试
 

@@ -2,7 +2,8 @@
 
 行为只依赖传进来的消息与工具清单（和真实模型同一套协议）：
 - 一轮里还没有工具结果：按可用工具依次请求 search_materials、recall_memory、fetch_url（用户消息里有网址时）或 search_web；
-  用户消息里写了某个插件工具的全名（`插件id__工具名`）时也调用它。
+  用户消息里写了某个插件工具的全名（`插件id__工具名`）时也调用它；全名后面紧跟一个 JSON 对象时把它当参数
+  （[VER1] 真实插件验收用，例如 `arxiv__search_papers {"query": "attention"}`），否则参数为空。
 - 有 search_web 结果但还没抓网页：抓第一条结果。
 - 否则给出最终回答：按证据编号轮流写三种句子，覆盖引用校验的三种结果：
   原文照录（→ supported）、截取一半原文再加推断（→ partial）、与原文无关（→ removed，第二关词面重叠就会去掉）。
@@ -112,6 +113,19 @@ def build_answer(evidence: list[tuple[str, str, str]], question: str) -> str:
     return "\n\n".join(lines)
 
 
+def plugin_args(question: str, name: str) -> dict:
+    """[VER1] 工具全名后面紧跟的 JSON 对象（允许空白）当参数；没有或解析失败时返回 {}。"""
+    i = question.find(name)
+    rest = question[i + len(name):].lstrip()
+    if not rest.startswith("{"):
+        return {}
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(rest)
+    except ValueError:
+        return {}
+    return obj if isinstance(obj, dict) else {}
+
+
 class FakeModel:
     def __init__(self) -> None:
         self.delay = _delay()
@@ -161,7 +175,7 @@ class FakeModel:
                 calls.append(ToolCallReq("call_3", "search_web", {"query": question}))
             for n in sorted(names):
                 if "__" in n and n in question:
-                    calls.append(ToolCallReq(f"call_{len(calls) + 1}", n, {}))
+                    calls.append(ToolCallReq(f"call_{len(calls) + 1}", n, plugin_args(question, n)))
             return calls
         if "search_web" in done and "fetch_url" not in done and "fetch_url" in names:
             id2name = {

@@ -8,6 +8,7 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'rea
 import type { ConversationTree, ID, Message } from '../api/types';
 import { ArrowDownIcon } from '../icons/ChatIcons';
 import { historyLatencyMs } from '../lib/latency';
+import { isTurnSettled } from '../lib/settle';
 import { useChat } from '../store/chat';
 import AssistantMessage, { type AssistantView } from './AssistantMessage';
 import MergeCard from './MergeCard';
@@ -60,7 +61,7 @@ function MessageList({ conversationId, tree, docTitles }: Props) {
 
   // 本对话主线上的进行中一轮（分支里的回合由 F5 的分支面板显示）
   const myTurn = turn && turn.conversation_id === conversationId && !turn.branch_id ? turn : null;
-  const settled = !!myTurn && !!streaming && inTree.has(streaming.message_id);
+  const settled = !!myTurn && isTurnSettled(streaming, streaming ? byId.get(streaming.message_id) : undefined);
   useEffect(() => {
     if (settled) settleTurn();
   }, [settled, settleTurn]);
@@ -77,6 +78,11 @@ function MessageList({ conversationId, tree, docTitles }: Props) {
   if (overlay?.kind === 'regenerate' && overlay.regenerate_of) {
     const i = path.findIndex((m) => m.id === overlay.regenerate_of);
     if (i >= 0) shown = path.slice(0, i);
+  }
+  // [VER1] 回合中途拉到的树里已有这轮的空占位回答：由流式视图显示，树里那条先不画（否则会多出一条空回答）
+  if (overlay && streaming) {
+    const live = streaming.message_id;
+    shown = shown.filter((m) => m.id !== live);
   }
   const showOptimisticUser =
     overlay?.kind === 'send' && !(overlay.user_message_id && inTree.has(overlay.user_message_id));
