@@ -240,5 +240,62 @@ class WebSnapshot(Strict):
     http_status: int
 
 
+
+# ---------- 分支（B3a） ----------
+class BranchAnchor(BaseModel):
+    start: int
+    end: int
+    quote: str
+
+
+class CreateBranchBody(BaseModel):
+    conversation_id: str
+    fork_message_id: str
+    anchor: BranchAnchor
+
+
+class UpdateBranchBody(BaseModel):
+    status: str | None = None
+    title: str | None = None
+
+
+class MergeResult(Strict):
+    branch: Branch
+    merge_note: Message
+
+
+# ---------- 记忆（B3a） ----------
+class MemoryItem(Strict):
+    id: str
+    scope: Literal["global", "project", "branch"]
+    scope_id: str | None = None
+    topic: str
+    content: str
+    source_message_ids: list[str]
+    status: Literal["active", "superseded", "deleted"]
+    valid_from: str | None = None
+    valid_to: str | None = None
+    confidence: float
+    source_conversation_id: str | None = None
+
+
+class MemoryItemList(Strict):
+    items: list[MemoryItem]
+
+
+class UpdateMemoryItemBody(BaseModel):
+    content: str
+
+
+class MemorySummary(Strict):
+    content: str
+    version: int
+    updated_at: str
+
+
+class OkResult(Strict):
+    ok: bool
+
+
 def dump(model: BaseModel) -> dict:
     return model.model_dump(mode="json", exclude_none=True)

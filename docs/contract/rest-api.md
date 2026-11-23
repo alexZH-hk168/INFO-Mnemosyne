@@ -98,10 +98,10 @@ v0.3 追加的可选字段（只增不改）：
 |---|---|---|---|
 | GET | `/api/settings` | — | `Settings` |
 | PUT | `/api/settings` | `Partial<Settings>` | `Settings` |
-| GET | `/api/memory/items?scope=&q=&status=active` | — | `{ items: MemoryItem[] }`；`MemoryItem.source_conversation_id?`（v0.3）：来源消息所在对话，“查看来源”据此跳到该对话 |
+| GET | `/api/memory/items?scope=&q=&status=active` | `status`：`active`（默认）\| `superseded` \| `deleted`（v0.5 草案 [B3a]） | `{ items: MemoryItem[] }`；`MemoryItem.source_conversation_id?`（v0.3）：来源消息所在对话，“查看来源”据此跳到该对话 |
 | PUT | `/api/memory/items/{id}` | `{ content }` | `MemoryItem` |
 | DELETE | `/api/memory/items/{id}` | — | `{ ok: true }`；条目进屏蔽列表，不会被重新抽取 |
-| GET | `/api/memory/summary` | — | `{ content, version, updated_at }` |
+| GET | `/api/memory/summary` | query `project_id?`（v0.5 草案 [B3a]） | `{ content, version, updated_at }`；L4 画像按项目生成（只汇总 global 与本项目条目）。给 `project_id` 返回该项目最新版本，不给返回最近更新的一份；无画像时 `content: ""`、`version: 0`（v0.5 草案 [B3a]） |
 
 `Settings = {chat_model, small_model, embedding_model, api_base, api_key_set: bool, web_search_default: bool, memory_enabled: bool}`。API Key 只写不读：`PUT` 可带 `api_key`，`GET` 只返回 `api_key_set`。
 
