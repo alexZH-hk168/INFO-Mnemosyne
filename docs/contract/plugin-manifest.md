@@ -62,16 +62,17 @@
 其余 14 个市场条目没有适配清单：只展示，`POST /api/plugins/{id}` 返回 `VALIDATION_ERROR`（未决 U92）。
 
 **evidence_mapping 写法**：键 `title`、`url`、`quote`（必需），可选 `items`；值是路径字符串或路径数组（取第一个非空值）。
+含 `{$…}` 的字符串是模板（F6b 对齐时加），如 `"arXiv:{$.paper_id} · {$.title}"`，任一占位取不到值则跳到数组下一项。
 `$` 是当前记录，`$.a.b`、`$.a[0]` 逐级取；`$args.x` 取本次调用参数；`$text` 取工具返回的全部文本。`items` 指向记录列表
 （如 arXiv `search_papers` 的 `$.papers`），取不到数组时整个结果当一条记录（如 `get_abstract`）。结果先取 MCP 的
 structuredContent，否则把文本当 JSON 解析。每次调用最多 5 条证据。
 
-- arxiv：`{"items": "$.papers", "title": "$.title", "url": ["$.url", "$.pdf_url"], "quote": ["$.abstract", "$.summary"]}`（按 v0.8.2 源码 `tools/search.py`、`tools/get_abstract.py` 的返回结构确认）。
+- arxiv：`{"items": "$.papers", "title": ["arXiv:{$.paper_id} · {$.title}", "arXiv:{$.id} · {$.title}", "$.title"], "url": "$.url", "quote": ["$.abstract", "$.summary"]}`（按 v0.8.2 源码 `tools/search.py`、`tools/get_abstract.py` 的返回结构确认）。`search_papers` 的记录有 `url` → 网页快照；`get_abstract` 只有 `pdf_url`，不取它 → 无 URL 插件证据（右栏题录卡片），与 F6b 的 `get-evidence-eid.plugin.ok.json` 一致（F6b 对齐时把 `url` 从 `["$.url", "$.pdf_url"]` 改成 `"$.url"`）。
 - fetch：`{"title": "$args.url", "url": "$args.url", "quote": "$text"}`。
 
 **证据落库**：记录有 http(s) URL → 运行时写一条 `web_snapshots`（`text` = 标题 + 空行 + 引文全文，`http_status` 记 200），
 返回 `EvidenceDraft(kind="web", source_id=snapshot_id, locator={snapshot_id, char_range})`；快照内容来自插件返回，
-不是 Mnemosyne 另行抓取的页面（未决 U91）。没有 URL → `kind="plugin"`，`locator={plugin_id, tool_name, fields}`。
+不是 Mnemosyne 另行抓取的页面（未决 U91）。没有 URL → `kind="plugin"`，`locator={plugin_id, tool_name, fields}`；`fields` 里字符串截到 2000 字，数字、布尔、空值和标量数组（如作者列表）原样保留，其余嵌套结构转 JSON 文本。插件证据标题不入库，`GET /api/evidence/{eid}` 对 `fields` 重新套清单的 title 映射，与回合里 SSE `evidence` 事件的标题一致（F6b 对齐）。
 `evidence` 行（含 `captured_in_message_id`）由 B2 写。
 
 **运行时**：后台线程持有全部会话，legacy `initialize` 握手；空闲 `MN_PLUGIN_IDLE_S`（默认 600 s）回收；

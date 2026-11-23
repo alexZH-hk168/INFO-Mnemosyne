@@ -57,12 +57,17 @@ def step_out(row: sqlite3.Row) -> m.Step:
     # 契约 v0.4：步骤文案存在 tool_calls.label（原 U46）；缺失时退回 tool_name
     kind = row["tool_name"] if row["tool_name"] in STEP_KINDS else "plugin_tool"
     label = row["label"] or row["tool_name"]
+    # v0.5 [F6b] Step.plugin_id：插件工具的 tool_name 是“插件id__工具名”
+    plugin_id = None
+    if kind == "plugin_tool" and "__" in (row["tool_name"] or ""):
+        plugin_id = row["tool_name"].partition("__")[0] or None
     return m.Step(
         step_id=row["id"],
         kind=kind,
         label=str(label),
         status=_STEP_STATUS.get(row["status"] or "done", "done"),
         duration_ms=row["duration_ms"],
+        plugin_id=plugin_id,
     )
 
 
@@ -197,7 +202,16 @@ def evidence_title(conn: sqlite3.Connection, ev: sqlite3.Row) -> str:
         ).fetchone()
         return (row["title"] or "历史对话") if row else "历史对话"
     loc = _loads(ev["locator_json"], {})
-    row = conn.execute("SELECT name FROM plugins WHERE id = ?", (loc.get("plugin_id", sid),)).fetchone()
+    row = conn.execute("SELECT name, manifest_json FROM plugins WHERE id = ?", (loc.get("plugin_id", sid),)).fetchone()
+    # 与回合里 SSE evidence 事件的标题一致：按插件清单的 title 映射从 fields 重算（B3b，F6b 对齐）
+    from app.plugins import mapping, registry
+
+    manifest = _loads(row["manifest_json"], None) if row else None
+    if manifest is None:
+        manifest = (registry.plugin_entry(loc.get("plugin_id", sid)) or {}).get("manifest")
+    title = mapping.title_from_locator(manifest, loc)
+    if title:
+        return title
     name = row["name"] if row else loc.get("plugin_id", sid)
     return f"{name} · {loc['tool_name']}" if loc.get("tool_name") else name
 

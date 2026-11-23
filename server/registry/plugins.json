@@ -52,11 +52,12 @@
       ],
       "evidence_mapping": {
         "items": "$.papers",
-        "title": "$.title",
-        "url": [
-          "$.url",
-          "$.pdf_url"
+        "title": [
+          "arXiv:{$.paper_id} · {$.title}",
+          "arXiv:{$.id} · {$.title}",
+          "$.title"
         ],
+        "url": "$.url",
         "quote": [
           "$.abstract",
           "$.summary"

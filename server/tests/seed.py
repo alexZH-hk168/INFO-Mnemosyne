@@ -39,7 +39,8 @@ def _msg(conn, m: dict) -> None:
                 "id": s["step_id"],
                 "message_id": m["id"],
                 "step_index": idx,
-                "tool_name": s["kind"],
+                # 插件步骤的 tool_name 是“插件id__工具名”（Step.plugin_id 由它得出，v0.5 [F6b]）
+                "tool_name": f"{s['plugin_id']}__{s.get('tool', 'tool')}" if s.get("plugin_id") else s["kind"],
                 "label": s["label"],
                 "args_json": "{}",
                 "result_json": "{}",
@@ -114,6 +115,35 @@ def seed_world(conn, files_dir: Path) -> None:
         },
     )
 
+    # F6b 的插件证据回合（sse-turn-plugin.json，cid=cnv_transformer），接在代码回合 msg_code_a1 之后（同一条线往下问）。
+    # 只写插件证据 evd_arxiv_abs 的引用 cit_plugin_1；E2 引的 evd_att_p4_fn4 在 get-evidence-eid.ok 里的 cited_by
+    # 是这一轮之前的状态，写进来会和那份样例冲突。插件证据 captured_in_message_id = msg_plugin_a1，
+    # 只有把该回合设为当前叶子才可见（契约测试在比对 get-evidence-eid.plugin.ok 前切换 active_leaf_id）。
+    plugin_turn = load_fixture("sse-turn-plugin")
+    p_events = plugin_turn["events"]
+    p_start = next(e["data"] for e in p_events if e["event"] == "message.start")
+    p_steps = {}
+    for e in p_events:
+        if e["event"] == "step":
+            p_steps[e["data"]["step_id"]] = e["data"]
+    p_cits = [e["data"] for e in p_events if e["event"] == "citation" and e["data"]["eid"] == "evd_arxiv_abs"]
+    p_text = "".join(e["data"]["text"] for e in p_events if e["event"] == "delta")
+    _msg(conn, {"id": p_start["user_message_id"], "conversation_id": conv["id"], "parent_id": "msg_code_a1", "role": "user", "content": plugin_turn["request"]["body"]["content"], "created_at": "2026-11-22T07:20:00Z"})
+    _msg(
+        conn,
+        {
+            "id": p_start["message_id"],
+            "conversation_id": conv["id"],
+            "parent_id": p_start["user_message_id"],
+            "role": "assistant",
+            "content": p_text,
+            "model": "chat-model",
+            "created_at": "2026-11-22T07:20:04Z",
+            "steps": [{**s, "tool": "get_abstract"} for s in p_steps.values()],
+            "citations": [{k: c[k] for k in ("citation_id", "eid", "label", "sentence_start", "sentence_end", "verdict")} for c in p_cits],
+        },
+    )
+
     # 历史对话“反向传播 · 作业 3”
     ctx = load_fixture("get-evidence-eid.message.ok")["body"]["context_messages"]
     hw3 = "cnv_backprop_hw3"
@@ -175,8 +205,8 @@ def seed_world(conn, files_dir: Path) -> None:
     _ins(conn, "web_snapshots", dict(snap))
     _ins(conn, "web_snapshots", {**snap, "id": "ws_pytorch_sdpa", "url": "https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html", "title": "PyTorch"})
     _ins(conn, "web_snapshots", {**snap, "id": "ws_sibling_branch", "url": "https://example.org/sibling", "title": "兄弟分支里抓的网页"})
-    captured = {"evd_jalammar_scale": "msg_tf_a1"}
-    for name in ("get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.web.ok", "get-evidence-eid.message.ok", "get-evidence-eid.code.ok"):
+    captured = {"evd_jalammar_scale": "msg_tf_a1", "evd_arxiv_abs": "msg_plugin_a1"}
+    for name in ("get-evidence-eid.ok", "get-evidence-eid.pptx.ok", "get-evidence-eid.web.ok", "get-evidence-eid.message.ok", "get-evidence-eid.code.ok", "get-evidence-eid.plugin.ok"):
         e = load_fixture(name)["body"]
         _ins(
             conn,

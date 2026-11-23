@@ -264,6 +264,13 @@ async def _dispatch(turn: "Turn", name: str, args: dict) -> Outcome:
 
 # ---------- 步骤 ----------
 
+def _step_extra(turn: "Turn", name: str) -> dict:
+    """v0.5 [F6b] Step.plugin_id：插件工具步骤带上发起调用的插件 id。"""
+    if name in turn.plugin_tools and "__" in name:
+        return {"plugin_id": name.partition("__")[0]}
+    return {}
+
+
 def _start_step(turn: "Turn", name: str, label: str, args: dict) -> str:
     step_id = new_id("stp")
     turn.step_index += 1
@@ -273,7 +280,7 @@ def _start_step(turn: "Turn", name: str, label: str, args: dict) -> str:
         (step_id, turn.assistant_message_id, turn.step_index, name, label, json.dumps(args, ensure_ascii=False)),
     )
     turn.conn.commit()
-    turn.em.emit("step", {"step_id": step_id, "kind": name if name in STEP_KINDS else "plugin_tool", "label": label, "status": "running"})
+    turn.em.emit("step", {"step_id": step_id, "kind": name if name in STEP_KINDS else "plugin_tool", "label": label, "status": "running", **_step_extra(turn, name)})
     return step_id
 
 
@@ -285,6 +292,7 @@ def _finish_step(turn: "Turn", step_id: str, name: str, label: str, status: str,
     turn.conn.commit()
     turn.em.emit("step", {
         "step_id": step_id, "kind": name if name in STEP_KINDS else "plugin_tool", "label": label, "status": status, "duration_ms": ms,
+        **_step_extra(turn, name),
     })
 
 
