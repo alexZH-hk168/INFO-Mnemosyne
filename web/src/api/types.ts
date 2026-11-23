@@ -86,6 +86,7 @@ export interface MarketItem {
   id: ID; type: 'plugin' | 'skill'; name: string; owner: string; official: boolean;
   stars: number; stars_date: string; license: string; category: string; desc_zh: string; repo_url: string; installed: boolean;
   verified?: boolean; // v0.3：是否属于 v1 完整验收（只对插件有意义）
+  short_name?: string; // v0.5 草案 [B3b]：插件简称（输入框插件胶囊用），只对插件
 }
 export interface InstalledPlugin {
   id: ID; name: string; version: string; status: 'installed' | 'error' | 'disabled' | 'not_installed';
@@ -93,6 +94,7 @@ export interface InstalledPlugin {
   config_schema: Record<string, { required: boolean; secret: boolean; label: string }>; last_check_at?: ISODate;
   config_set?: string[]; // v0.3：已设置的配置键名（含密钥键名，不回传密钥值）
   config?: Record<string, string | number | boolean>; // v0.3：已存的非密钥配置值
+  short_name?: string; // v0.5 草案 [B3b]：插件简称
 }
 export interface PluginDetail extends InstalledPlugin {
   tools: { name: string; description: string }[]; verified: boolean;
@@ -102,7 +104,7 @@ export interface PluginDetail extends InstalledPlugin {
   usage_zh?: string; // v0.3：“在 Mnemosyne 里怎么用”
   permission_notes?: Partial<Record<InstalledPlugin['permissions'][number], string>>; // v0.3：每项权限的具体范围
 }
-export interface ConversationPlugin { plugin_id: ID; enabled: boolean; status: InstalledPlugin['status']; reason?: string }
+export interface ConversationPlugin { plugin_id: ID; enabled: boolean; status: InstalledPlugin['status']; reason?: string; short_name?: string /* v0.5 草案 [B3b] */ }
 export interface Skill { id: ID; name: string; description: string; dir_path: string; source_url?: string; license?: string; enabled: boolean }
 export interface SkillDetail extends Skill { skill_md: string; files: string[] }
 

@@ -37,6 +37,10 @@ async def lifespan(app: FastAPI):
         if worker is not None:
             worker.stop()
             worker.join(timeout=10)
+        # U94：服务关闭时结束插件子进程
+        from app.plugins.runtime import plugins
+
+        plugins.shutdown()
 
 
 def create_app() -> FastAPI:

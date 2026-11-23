@@ -78,6 +78,19 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-23 | 编排决定，待用户追认：契约升 v0.4（只增可选字段），`GET /api/evidence/{eid}` 与 `GET /api/web_snapshots/{sid}` 加可选 query `leaf_id`，给了就按该叶到根的路径判可见性，不给沿用 `active_leaf_id`；`leaf_id` 与被判断消息不同对话时按那个对话自己的 `active_leaf_id`；不存在的 `leaf_id` 返回 `VALIDATION_ERROR`。F5 分支面板打开证据时传它（原 U44，B1 提出时编号 U40，因与 F4 撞号改编） |
 | 2026-11-23 | 编排决定，待用户追认：契约 v0.4 给 data-model `tool_calls` 补 `label TEXT` 列，`Message.steps[].label` 取该列（为空退回 tool_name），`args_json.label` 不再作约定；B2 写步骤时写该列（原 U46，B1 提出时编号 U42） |
 | 2026-11-23 | 编排决定，待用户追认：`ConversationSummary.branch_count` 不计 archived 分支；多文件上传整批原子，有不支持类型整批 400、一个都不落盘；第一版重复上传不去重；PDF 句子 bbox 不含句首脚注上标号（原 U47，B1 提出时编号 U43） |
+| 2026-11-23 | U70：设置存 `data/settings.json`（0600），不建 settings 表 | 编排决定，待用户追认 |
+| 2026-11-23 | U71：第二关重叠率分母取回答句；一中一外不剔除交小模型；小模型失败记 partial；阈值等 dev 集再调 | 编排决定，待用户追认 |
+| 2026-11-23 | U72：推断只来自 partial，不加 `inferred_spans`（v0.6 不做） | 编排决定，待用户追认 |
+| 2026-11-23 | U74：契约 v0.5 给 `POST /regenerate` 加可选请求体 `{web_search?, scope?, forced_skill?}`；集成阶段实现，前端重新生成时带上原回合参数 | 编排决定，待用户追认 |
+| 2026-11-23 | U75：接受；`index_web`（网页快照进材料检索）v1 不做 | 编排决定，待用户追认 |
+| 2026-11-23 | U76/U95：编排已在主仓库补 `uv lock` | 编排决定，待用户追认 |
+| 2026-11-23 | U90：markitdown 权限按上游 README 声明 `network`+`fs_read`，fixture 与清单一致（交 F6b 改 fixture） | 编排决定，待用户追认 |
+| 2026-11-23 | U91：插件结果快照不进文件栏，只经证据胶囊打开；内容取插件返回字段，不另抓 URL | 编排决定，待用户追认 |
+| 2026-11-23 | U92：无适配清单的插件前端置灰“暂未适配，第一版不能安装”（交 F6b），后端保持 400 | 编排决定，待用户追认 |
+| 2026-11-23 | U94：编排已在 `main.py` lifespan 收尾调用 `plugins.shutdown()` | 编排决定，待用户追认 |
+| 2026-11-23 | U100、U101、U104、U106：按 E 的方案接受；U104 新增参数与输出补进 `docs/contract/scripts.md`（集成阶段） | 编排决定，待用户追认 |
+| 2026-11-23 | U102：dev-120 按官方 6 个题型各 20 题分层，拒答题（`_abs`）混在原题型里，不单列一层（与立项稿“每类约 20”一致） | 编排决定，待用户追认 |
+| 2026-11-23 | U103：BranchMem 目标改为“实际可得数（约 120–150）”，不造变体、不扩源；论文里如实写题数 | 编排决定，待用户追认 |
 
 ## 未决（需要用户拍板）
 
@@ -96,30 +109,15 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U48 | 分支标题由谁生成：规格 2-划词工具条-开分支追问写“标题默认取 quote 前 12 字”，但 `CreateBranchBody` 没有 title 字段，标题只能由后端生成；fixture `post-branches.ok.json` 的标题是整句 quote（“softmax 饱和时梯度同样几乎为 0”，19 字），与“前 12 字”不一致。F5 前端只显示后端给的 `Branch.title`，MSW 新建分支按前 12 字生成（`branch/model.defaultBranchTitle`）。建议：后端建分支时截前 12 字，fixture 随之改，或改规格为整句 | F5、B2 | 2026-11-23（F5） |
 | U49 | 分支标签激活时的路由：F5 按规格 2-划词工具条-开分支追问「验收」实现为分支面板激活时路由 `/c/:cid/b/:bid`、切走或关闭时回 `/c/:cid`；这对所有打开分支的入口都成立，包括对话行的“点击分支数”（规格写“同上”，F1 的 e2e 原断言 `/c/:cid`，已改为 `/c/:cid/b/br_onehot`）。请确认 | F1、F5 | 2026-11-23（F5） |
 
-| U70 | [B2] 设置存哪里：data-model 没有 settings 表，B2 存 `data/settings.json`（权限 0600，API Key 明文存本地文件、接口只回 `api_key_set`）。取值优先级 settings.json 非空值 > 环境变量 `MN_LLM_*` > 默认。真实模型只有在 `MN_LLM_BACKEND=openai` 时才启用（默认假模型），即使设置页填了 Key 也不会发起付费调用。建议：保持文件方案；若要进数据库，契约加 `settings(key, value)` 表 | B2、F6 设置页 | 2026-11-23（B2） |
-| U71 | [B2] 引用校验第二关的“重叠率”契约没写分母，且中文回答引英文论文时字符二元组天然接近 0（按契约 0.05 阈值会把 fixture 里 E1 那种正确引用全部删掉）。已实现：分母取回答句；一中一外时第二关不剔除、交小模型判；小模型失败一律 partial。阈值未在 dev 集上调（还没有 dev 集） | B2、E | 2026-11-23（B2） |
-| U72 | [B2] 推断标注方案（已实现，未增字段）：无依据的句子不写编号、不发 citation、前端不标；“推断”只来自 partial；编造的 E# 发 removed 且 `eid=""`。可选增强（未实现，需契约 v0.6）：`message.end` 加可选 `inferred_spans?: [start,end][]`，由小模型把“没有编号但含事实断言”的句子也标为推断 | B2、F3 推断标记 | 2026-11-23（B2） |
 | U73 | [B2] 联网：`search_web` 提供方由 `MN_WEB_SEARCH_PROVIDER` 选（默认无→工具不出现；`fake` 供测试；`tavily` 需 `MN_WEB_SEARCH_API_KEY`，付费，代码已写但未实测）。搜索结果本身不当证据，模型须再 `fetch_url` 抓网页才产生 web 证据。`fetch_url` 只在本轮联网开关打开时提供，拒绝 localhost/内网 IP。需要决定：用哪家搜索服务、预算 | B2 | 2026-11-23（B2） |
-| U74 | [B2] `POST /regenerate` 没有请求体，原回合的联网开关、材料范围、forced_skill 未存库。现做法：从原回答的步骤推断（有 search_web/fetch_url 步骤→联网；search_materials 的 args_json 里记了 scope），forced_skill 不沿用。建议契约给 regenerate 加可选请求体 `{web_search?, scope?, forced_skill?}` | B2、F3 | 2026-11-23（B2） |
-| U75 | [B2] jobs：按编排口径 B2 不直接写 jobs，回合结束只调 `get_memory().on_turn_finished(...)`（记忆关闭时不调），extract_memory 等由 B3a 写；`index_web` 也未写（网页快照目前不进材料检索）。记忆模块未接入时 recall_memory 每轮会出现一步“没有找到相关的历史对话”，B3a 合入后正常 | B2、B3a | 2026-11-23（B2） |
-| U76 | [B2] `server/pyproject.toml` 加了 `trafilatura>=2.0`，但按编排要求没跑 uv，`uv.lock` 未更新；合并时需编排在主仓库 `uv lock` 一次 | 仓库 | 2026-11-23（B2） |
 
-| U90 | markitdown 插件权限：fixture `get-plugins.ok.json` 只写 `fs_read`；上游 README 说明 `convert_to_markdown` 也读 http(s) 地址，B3b 清单声明 `network` + `fs_read`。建议改 fixture 与清单一致 | F6、fixtures | 2026-11-23（B3b） |
-| U91 | 插件结果带 URL 时：快照内容取插件返回的字段（arXiv 为标题 + 摘要），不另行抓取该 URL，`http_status` 记 200；且不为这类快照另建 `kind=web` 的 Document（U18 写“每个网页快照在文件栏以一条 Document 呈现”，但一次 arXiv 检索可产生 5 个快照，全进文件栏会刷屏）。建议：插件快照只经证据胶囊打开，或由 B2 在回答实际引用后再建 Document | B2、F4、文件栏 | 2026-11-23（B3b） |
-| U92 | 市场里没有适配清单的 14 个插件：`POST /api/plugins/{id}` 返回 `VALIDATION_ERROR`（400，“还没有 Mnemosyne 适配清单”）。契约写“安装按钮可用但标未验收”。建议前端在 `PluginDetail.manifest` 缺省时禁用安装按钮或提示，tavily、markitdown 有清单可装但未验收 | F6b、契约 | 2026-11-23（B3b） |
 | U93 | 插件简称 `short_name`：arxiv/fetch/markitdown 三个取自 UX 规格示例，其余 15 个为 B3b 拟定（`server/registry/sources/overlay.json`），待用户确认；字段放在 `MarketItem`、`InstalledPlugin`（含 `PluginDetail`）与会话插件列表项三处（契约 v0.5 草案 [B3b]） | F6b、契约 | 2026-11-23（B3b） |
-| U94 | 服务关闭时结束插件子进程：现在靠 `atexit` 与空闲回收（B3b 只能在 main.py 加路由）。建议编排在 `app/main.py` lifespan 的 finally 里加 `from app.plugins.runtime import plugins; plugins.shutdown()` | 编排、main.py | 2026-11-23（B3b） |
-| U95 | 新依赖 `mcp>=2.3,<3`（官方 MCP Python SDK，MIT）已写进 `server/pyproject.toml`，共享虚拟环境已装 2.3.0；`uv.lock` 未更新（本轮不跑 uv）。需编排补 `uv lock` | 编排、server | 2026-11-23（B3b） |
 
-| U100 | scripts.md 没定义 `sessions[]` 与 BranchMem `tree` 的内部结构。E 定为：`sessions[]={session_id, date, turns:[{role, content, has_answer}]}`（与官方 haystack 三列表同序，turn_idx 从 0 起；官方检索代码轮次编号从 1 起）；`tree={nodes:[{node_id, parent_id, branch_id, session_id, turn_idx, role, content, date, has_answer, is_distractor}], fork_node_id}`；官方 `answer` 有整数，保留原类型。建议接受并写进 scripts.md（契约变更需用户同意） | E1、E2 | 2026-11-23（E） |
-| U101 | 指标口径待确认：recall@k 用官方主报的 recall_all@k（前 k 覆盖全部证据才算 1；另两种可选是 recall_any 或覆盖比例）；turn 级证据含 assistant 轮（官方检索只索引 user 轮，单 session 助手题证据在 assistant 轮）；拒答题与无证据题不计召回；`cited_turn_hit_rate` 合并全部被引轮次计算；B1 不检索不引用，召回与引用命中都记不适用（scripts.md 只写了 A2）；`leaked_ids` 定义为“进入回答上下文但不在提问节点祖先路径上的消息”，泄漏率仍按 scripts.md 规则另算 | E2、论文 | 2026-11-23（E） |
-| U102 | dev-120 分层：现按 6 类非拒答 + 拒答共 7 层平均分配（17×6 + 18，余 1 给池子最大的层）；立项稿写“每类约 20”，若要每类 20 需不把拒答单列（拒答混入原题型）。请定 | E1 | 2026-11-23（E） |
-| U103 | BranchMem 150 题可能达不到：源池是非拒答的知识更新题 + 单 session 用户题，按论文原版计数（知识更新 78、单 session 用户 70，含拒答，清洗版未核实）最多约 140，再扣掉证据轮里不逐字含答案的。可选：目标改为 120–150 的实际可得数 / 每题造 2 个变体 / 扩源到单 session 助手题。另：干扰值按规则生成（数字 +1～3；文本从其它题答案里挑词数相近的），可能语义不通（迷你数据里出现“猫名→城市名”），人工核对 20 题后再决定是否改用模型生成（付费，关联 U2） | E1 | 2026-11-23（E） |
-| U104 | scripts.md 之外新增的可选参数与输出（未改契约）：prep `--input/--download/--download-dir/--dev-size/--out` 与 `.meta.json`；gen `--input/--review-n/--out` 与 `.stats.json`、`.review.md`；run_eval `--max-items`（默认 10）`/--embed/--adapter/--cache-dir/--price-in/--price-out/--seed/--resume` 与 `run_summary.json`；judge `--out`，判分行另带 `judge_model`、`config_hash`；metrics `--msg-map/--dev-ids/--k/--out`，结果行另带 `split`、`n`。是否接受并补进 scripts.md | E1、E2 | 2026-11-23（E） |
 | U105 | 判分提示逐字移植自官方 `evaluate_qa.py`（MIT，保留版权与许可声明，已逐字比对一致），这与 AGENTS R1“不从其他项目拷代码”字面冲突；编排指示“核对许可证后可移植”，只移植了提示字符串与判定规则。请用户追认。便宜判分的敏感性检查用官方 model_zoo 里的 gpt-4o-mini | E2、R1 | 2026-11-23（E） |
-| U106 | B2 检索方式：立项稿 11.2 写“向量检索前 k 条”，项目记忆写“BM25+向量”；现按立项稿只做向量（嵌入器可选），真跑时 B2 与 M 用同一嵌入模型（待 U2）。M 的 tokens/cost 只计提问阶段，回放与记忆抽取消耗单独记在 run_summary.json 的 `replay`（各系统共用缓存） | E2 | 2026-11-23（E） |
 
 ## 动作日志
+
+- 2026-11-23 · [编排] 合并 B2、B3b、E 进 main · 完成 · 冲突已解（PROGRESS、contract/README、main.py、pyproject 两边都保留）· 补 uv lock · lifespan 加 plugins.shutdown() · `server` pytest 216 passed · 已决 U70–U76、U90–U92、U94、U95、U100–U104、U106；仍待用户：U73 搜索服务、U93 插件简称、U105 判分提示移植
 
 - 2026-11-23 · [F5] 划词工具条、分支面板、分支标记、合并卡片 · 完成 · 分支 feat/F5-branch · 11 份规格全部实现；`npm run check` 通过；`npx vitest run` 19 文件 441/441（新增 src/branch/f5.test.tsx 29 条）；`MN_PORT=5175 npx playwright test --workers=2` 99 条 97 通过，失败 2 条：F1“对话行…点分支数”因 U49 路由改断言后单跑通过、F2“无长任务”并发偶发（long tasks 58/50 ms）单跑通过；F5 自己的 10 条 e2e 全过 · 截图 11 张 `web/tests/screenshots/{1-对话栏-分支概览标签,1-助手回答-分支标记,1-消息列表-合并卡片,2-划词-划词工具条,2-划词工具条-开分支追问,2-划词工具条-引用,2-划词工具条-复制,2-开分支追问-分支面板,2-分支面板-来源原句与回到原处,2-分支面板-上下文提示,2-分支面板-要点合并按钮}.png`；另有 38 张旧截图因对话栏标题出现分支概览标签、主线原句出现分支标记而真实变化，已保留，只有像素噪声的 47 张已还原 · 共享文件只追加：store/evidence.ts（selectedLeafId、select 的 opts.leafId）、api/queries.ts（evidenceAt/snapshotAt、useEvidence/useSnapshot 第二参数）、mocks/chat-world.ts（分支三接口、leafGuardHandlers；branch_count 改为不计 archived，按 U47）、mocks/browser.ts（注册 leafGuardHandlers）、docs/ux/state.md · 未决 U48、U49
 - 2026-11-23 · [F5] 划词工具条、分支面板、分支标记、合并卡片 · 开始 · 分支 feat/F5-branch（worktree `INFO5000项目/worktrees/F5-branch`，基于 main 2a193f0，dev 端口 5175）· 共享文件只追加：`web/src/store/*`、`web/src/api/queries.ts`、`web/src/mocks/*`、`docs/ux/state.md`
