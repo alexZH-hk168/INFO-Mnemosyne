@@ -21,7 +21,9 @@ import type {
   PluginDetail,
   Project,
   SendMessageBody,
+  ProviderPreset,
   Settings,
+  SettingsTestResult,
   Skill,
   SkillDetail,
   SourceType,
@@ -52,6 +54,8 @@ import type {
   SkillList,
   UpdateBranchBody,
   UpdateMemoryItemBody,
+  ProviderList,
+  SettingsTestBody,
   UpdateSettingsBody,
   UpdateSkillBody,
   UploadResult,
@@ -937,10 +941,95 @@ const settings: Settings = {
   small_model: 'small-model',
   embedding_model: 'embedding-model',
   api_base: 'https://api.example.com/v1',
+  api_key_set: true,
+  web_search_default: false,
+  memory_enabled: true,
+  // v0.5 [BYOK]：默认样例为“已配置自己的模型”；未配置（演示模式）见 get-settings.demo.ok.json
+  provider: 'custom',
+  api_key_hint: '••••a1b2',
+  llm_mode: 'real',
+  retrieval_mode: 'local',
+};
+
+/** v0.5 [BYOK]：未配置模型（演示模式）——后端未配置时模型名返回空串 */
+const settingsDemo: Settings = {
+  chat_model: '',
+  small_model: '',
+  embedding_model: '',
+  api_base: '',
   api_key_set: false,
   web_search_default: false,
   memory_enabled: true,
+  provider: 'custom',
+  llm_mode: 'demo',
+  retrieval_mode: 'local',
 };
+
+/** v0.5 [BYOK]：服务商预设，与 server/app/llm/presets.py 逐字段一致（后端测试比对；官方文档核对见该文件注释） */
+export const providerPresets: ProviderPreset[] = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    api_base: 'https://api.openai.com/v1',
+    chat_model: 'gpt-6.2-sol',
+    small_model: 'gpt-6-luna',
+    embedding_model: 'text-embedding-3-small',
+    supports_tools: true,
+    supports_embeddings: true,
+    notes_zh: '对话模型 gpt-6.2-sol，小模型 gpt-6-luna；支持工具调用与嵌入。',
+    doc_urls: [
+      'https://platform.openai.com/docs/models/gpt-6.2-sol',
+      'https://platform.openai.com/docs/models/gpt-6-luna',
+      'https://platform.openai.com/docs/guides/embeddings',
+    ],
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    api_base: 'https://api.deepseek.com',
+    chat_model: 'deepseek-v4-pro',
+    small_model: 'deepseek-flash',
+    embedding_model: '',
+    supports_tools: true,
+    supports_embeddings: false,
+    notes_zh: '支持工具调用（Mnemosyne 以非思考模式调用）；没有嵌入接口，检索使用本地 BM25 与本地向量。',
+    doc_urls: [
+      'https://api-docs.deepseek.com/quick_start/pricing',
+      'https://api-docs.deepseek.com/guides/tool_calls',
+      'https://api-docs.deepseek.com/guides/thinking_mode',
+    ],
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    api_base: 'https://openrouter.ai/api/v1',
+    chat_model: 'openai/gpt-6.2-sol',
+    small_model: 'openai/gpt-6-luna',
+    embedding_model: 'openai/text-embedding-3-small',
+    supports_tools: true,
+    supports_embeddings: true,
+    notes_zh:
+      '一个密钥调用多家模型；模型名带厂商前缀。是否支持工具调用以测试连接时模型列表里的 supported_parameters 为准。',
+    doc_urls: [
+      'https://openrouter.ai/docs/quickstart',
+      'https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties',
+      'https://openrouter.ai/docs/api/reference/embeddings',
+    ],
+  },
+  {
+    id: 'custom',
+    name: '自定义（OpenAI 兼容）',
+    api_base: '',
+    chat_model: '',
+    small_model: '',
+    embedding_model: '',
+    supports_tools: false,
+    supports_embeddings: false,
+    notes_zh:
+      '任何提供 OpenAI 兼容 /chat/completions 的服务（含本机推理服务）。需要模型支持工具调用（function calling）。',
+    doc_urls: [],
+  },
+];
 
 const memoryItems: MemoryItem[] = [
   {
@@ -1889,6 +1978,53 @@ err(
   'PUT /api/settings',
   'api_base 不是合法 URL',
   { body: { api_base: 'not a url' } satisfies UpdateSettingsBody },
+  'VALIDATION_ERROR',
+  'api_base 必须是 http(s) 地址',
+);
+ok<Settings>('GET /api/settings', '未配置模型（演示模式）', undefined, settingsDemo, 'demo');
+ok<ProviderList>('GET /api/settings/providers', '服务商预设（官方文档核对）', undefined, {
+  providers: providerPresets,
+});
+err('GET /api/settings/providers', '读取失败', undefined, 'INTERNAL', '读取服务商预设失败');
+ok<SettingsTestResult>(
+  'POST /api/settings/test',
+  '连接成功（只列模型，不计费）',
+  {
+    body: {
+      provider: 'openai',
+      api_base: 'https://api.openai.com/v1',
+      api_key: 'sk-…',
+      chat_model: 'gpt-6.2-sol',
+      small_model: 'gpt-6-luna',
+    } satisfies SettingsTestBody,
+  },
+  {
+    ok: true,
+    code: 'ok',
+    message: '连接成功：密钥有效，模型都在服务的模型列表里',
+    latency_ms: 412,
+    tool_calls: 'supported',
+    embeddings: 'not_used',
+  },
+);
+ok<SettingsTestResult>(
+  'POST /api/settings/test',
+  '密钥无效（结果仍是 200）',
+  { body: {} satisfies SettingsTestBody },
+  {
+    ok: false,
+    code: 'key_invalid',
+    message: '模型密钥无效或没有权限，请到“设置 → 模型”检查 API Key（HTTP 401）',
+    latency_ms: 230,
+    tool_calls: 'unknown',
+    embeddings: 'not_used',
+  },
+  'key-invalid',
+);
+err(
+  'POST /api/settings/test',
+  'api_base 不是合法 URL',
+  { body: { api_base: 'ftp://x' } satisfies SettingsTestBody },
   'VALIDATION_ERROR',
   'api_base 必须是 http(s) 地址',
 );

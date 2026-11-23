@@ -432,9 +432,11 @@ def test_open_source_respects_branch_path(client, db, run_jobs):
 # ---------- 设置 ----------
 
 def test_settings_get_put(client, env):
-    keys = set(load_fixture("get-settings.ok")["body"])
+    # BYOK：未配置时是演示模式，键集合与 get-settings.demo 样例一致（没有密钥就没有 api_key_hint）
+    keys = set(load_fixture("get-settings.demo.ok")["body"])
+    assert keys | {"api_key_hint"} == set(load_fixture("get-settings.ok")["body"])
     r = client.get("/api/settings")
-    assert r.status_code == 200 and set(r.json()) == keys and r.json()["chat_model"] == "fake-chat"
+    assert r.status_code == 200 and set(r.json()) == keys and r.json()["chat_model"] == "" and r.json()["llm_mode"] == "demo"
     fx = load_fixture("put-settings.ok")
     r = client.put("/api/settings", json=fx["request"]["body"])
     assert r.json()["web_search_default"] is True and set(r.json()) == keys

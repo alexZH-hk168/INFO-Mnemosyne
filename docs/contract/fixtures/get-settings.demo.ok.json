@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/settings",
+  "kind": "ok",
+  "description": "未配置模型（演示模式）",
+  "status": 200,
+  "body": {
+    "chat_model": "",
+    "small_model": "",
+    "embedding_model": "",
+    "api_base": "",
+    "api_key_set": false,
+    "web_search_default": false,
+    "memory_enabled": true,
+    "provider": "custom",
+    "llm_mode": "demo",
+    "retrieval_mode": "local"
+  }
+}

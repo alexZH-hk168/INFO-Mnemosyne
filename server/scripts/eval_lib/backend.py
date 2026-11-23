@@ -22,8 +22,9 @@
 缓存：回放结果的命名空间含后端 git 提交、该题数据库的实例标识、记忆抽取模型与题目 key，所以只在同一题的
 M/A1–A4 之间复用，不跨题复用（未决 U111）。
 
-付费：--model 不是 fake 时要设 MN_EVAL_ALLOW_PAID=1（同 eval_lib.llm 的闸门），并且后端走 OpenAI 兼容接口
-（MN_LLM_API_BASE、MN_LLM_API_KEY 由用户在环境变量里给）。默认 fake，不访问网络。
+付费：--model 不是 fake 时要设 MN_EVAL_ALLOW_PAID=1（同 eval_lib.llm 的闸门），并且后端走 OpenAI 兼容接口，
+地址与密钥读用户在设置页保存的 settings.json（BYOK，与对话、记忆同一份；环境变量 MN_LLM_API_BASE/MN_LLM_API_KEY 仍可作后备）。
+默认 fake，不访问网络。
 """
 
 from __future__ import annotations
@@ -77,11 +78,18 @@ class MnemosyneBackendAdapter:
                 f"系统 M 用模型 {model} 会产生付费调用。按硬约束先用 --max-items 10 在 dev-120 上报成本、等用户确认预算；"
                 "确认后设置环境变量 MN_EVAL_ALLOW_PAID=1 再运行。"
             )
+        # BYOK：后端模型读用户在设置页保存的同一份 settings.json（api_base、API Key、小模型）。每题会换 MN_DATA_DIR，
+        # 所以先把设置文件路径固定下来（MN_SETTINGS_PATH）；--model 只覆盖对话模型名（MN_EVAL_CHAT_MODEL）。
+        if not os.environ.get("MN_SETTINGS_PATH"):
+            from app.llm.settings import settings_path
+
+            os.environ["MN_SETTINGS_PATH"] = str(settings_path().resolve())
         if model == "fake":
             os.environ["MN_LLM_BACKEND"] = "fake"
+            os.environ.pop("MN_EVAL_CHAT_MODEL", None)
         else:
             os.environ["MN_LLM_BACKEND"] = "openai"
-            os.environ["MN_LLM_MODEL"] = model
+            os.environ["MN_EVAL_CHAT_MODEL"] = model
         os.environ.setdefault("MN_EMBED_BACKEND", "fake")
         os.environ.pop("MN_DB_PATH", None)
         self.model = model

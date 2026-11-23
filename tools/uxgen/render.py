@@ -11,7 +11,7 @@ UI = {'UI-01': '01-home', 'UI-02': '02-card-paper', 'UI-03': '03-card-code', 'UI
       'UI-05': '05-workspace-branch', 'UI-06': '06-workspace-evidence', 'UI-07': '07-market-plugins',
       'UI-08': '08-market-skills', 'UI-09': '09-plugin-detail', 'UI-10': '10-skill-detail', 'UI-11': '11-plugin-popover'}
 MS = {'F0': '契约与 mock 基建', 'F1': '外壳、项目栏、文件栏', 'F2': '主页与卡片', 'F3': '对话流、输入框、证据胶囊',
-      'F4': '右栏预览', 'F5': '分支对话', 'F6': '市场、插件、设置'}
+      'F4': '右栏预览', 'F5': '分支对话', 'F6': '市场、插件、设置', 'BYOK': '用户自带模型密钥（v0.5）'}
 
 # ---------- validate ----------
 errs = []

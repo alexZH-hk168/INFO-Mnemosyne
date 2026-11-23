@@ -14,6 +14,8 @@ import type {
   MemoryItem,
   Message,
   Project,
+  ProviderId,
+  ProviderPreset,
   Settings,
   Skill,
 } from './types';
@@ -99,6 +101,19 @@ export interface UpdateSkillBody {
 // ---------- 设置与记忆 ----------
 /** `PUT /api/settings`：`Partial<Settings>`，另可带只写的 `api_key`（rest-api.md 第 92 行）。 */
 export type UpdateSettingsBody = Partial<Settings> & { api_key?: string };
+/** v0.5 [BYOK] `GET /api/settings/providers` */
+export interface ProviderList {
+  providers: ProviderPreset[];
+}
+/** v0.5 [BYOK] `POST /api/settings/test`：用当前填写值测试，未给的字段沿用已保存值；`api_key` 省略＝用已保存的密钥 */
+export interface SettingsTestBody {
+  provider?: ProviderId;
+  api_base?: string;
+  api_key?: string;
+  chat_model?: string;
+  small_model?: string;
+  embedding_model?: string;
+}
 export interface MemoryItemList {
   items: MemoryItem[];
 }
@@ -187,6 +202,8 @@ export const ENDPOINTS: EndpointDef[] = [
   { method: 'PUT', path: '/api/skills/{id}', request: 'UpdateSkillBody', response: 'Skill' },
   { method: 'GET', path: '/api/settings', response: 'Settings' },
   { method: 'PUT', path: '/api/settings', request: 'UpdateSettingsBody', response: 'Settings' },
+  { method: 'GET', path: '/api/settings/providers', response: 'ProviderList' },
+  { method: 'POST', path: '/api/settings/test', request: 'SettingsTestBody', response: 'SettingsTestResult' },
   { method: 'GET', path: '/api/memory/items', response: 'MemoryItemList' },
   {
     method: 'PUT',

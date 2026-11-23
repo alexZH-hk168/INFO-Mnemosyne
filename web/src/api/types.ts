@@ -117,6 +117,24 @@ export interface SkillDetail extends Skill { skill_md: string; files: string[] }
 export interface Settings {
   chat_model: string; small_model: string; embedding_model: string; api_base: string;
   api_key_set: boolean; web_search_default: boolean; memory_enabled: boolean;
+  // v0.5 [BYOK]（只增可选字段）：服务商预设 id；密钥末 4 位掩码（密钥 ≥ 12 位才给，明文永不回传）；
+  // 当前模型状态：real＝用用户自己的密钥调用真实模型，demo＝未配置、回答由本地示例生成，demo_forced＝服务端强制演示（测试用）；
+  // 检索方式：local＝BM25 + 本地向量，embedding＝真实嵌入模型
+  provider?: ProviderId; api_key_hint?: string;
+  llm_mode?: 'real' | 'demo' | 'demo_forced'; retrieval_mode?: 'local' | 'embedding';
+}
+// ---------- v0.5 [BYOK]：服务商预设与测试连接 ----------
+export type ProviderId = 'openai' | 'deepseek' | 'openrouter' | 'custom';
+export interface ProviderPreset {
+  id: ProviderId; name: string; api_base: string; chat_model: string; small_model: string; embedding_model: string;
+  supports_tools: boolean; supports_embeddings: boolean; notes_zh: string; doc_urls: string[];
+}
+export type SettingsTestCode =
+  | 'ok' | 'not_configured' | 'key_invalid' | 'insufficient_balance' | 'rate_limited' | 'model_not_found' | 'tools_unsupported'
+  | 'bad_request' | 'timeout' | 'unreachable' | 'server_error' | 'bad_response';
+export interface SettingsTestResult {
+  ok: boolean; code: SettingsTestCode; message: string; latency_ms: number;
+  tool_calls: 'supported' | 'unsupported' | 'unknown'; embeddings: 'supported' | 'unsupported' | 'unknown' | 'not_used';
 }
 export interface MemoryItem {
   id: ID; scope: 'global' | 'project' | 'branch'; scope_id?: ID; topic: string; content: string;

@@ -92,7 +92,13 @@ const MANIFEST_ID = /^[a-z0-9][a-z0-9-]*$/;
 const isManifestId = (v: string) => MANIFEST_ID.test(v) && !PREFIXES.some((p) => v.startsWith(p));
 /** 插件或 Skill 对象（MarketItem / InstalledPlugin / PluginDetail / Skill）：它们的 id 不加前缀 */
 function isPluginOrSkill(o: Record<string, unknown>): boolean {
-  return 'permissions' in o || 'dir_path' in o || ('repo_url' in o && (o.type === 'plugin' || o.type === 'skill'));
+  return (
+    'permissions' in o ||
+    'dir_path' in o ||
+    ('repo_url' in o && (o.type === 'plugin' || o.type === 'skill')) ||
+    // v0.5 [BYOK]：服务商预设的 id 是固定短名（openai、deepseek…），同样不带类型前缀
+    ('supports_tools' in o && 'doc_urls' in o)
+  );
 }
 const KEY_PREFIX: Record<string, string[]> = {
   project_id: ['prj_'],

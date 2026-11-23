@@ -139,7 +139,8 @@ async def run_turn(req: TurnRequest, handle: TurnHandle) -> None:
             except Exception:  # noqa: BLE001 - 记忆任务失败不影响已结束的回合
                 log.exception("on_turn_finished 失败")
     except ModelError as e:
-        _fail(turn, "MODEL_UNAVAILABLE", str(e) or "模型接口不可用，请检查设置里的 API Key", True)
+        # BYOK：提示是 app/llm/errors.py 给的中文可行动文字（已脱敏）；密钥无效、余额不足等重试无用时 retriable=false
+        _fail(turn, "MODEL_UNAVAILABLE", str(e) or "模型接口不可用，请检查设置里的 API Key", bool(getattr(e, "retriable", True)))
     except asyncio.CancelledError:
         _fail(turn, "INTERNAL", "回答被中断，请重新生成", True)
     except Exception:  # noqa: BLE001

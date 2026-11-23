@@ -61,7 +61,8 @@ def _model_or_502():
     try:
         return cfg, get_model(cfg)
     except ModelError as e:
-        raise ApiError("MODEL_UNAVAILABLE", str(e) or "模型接口不可用，请检查设置里的 API Key") from e
+        # 只有 MN_LLM_BACKEND=openai 强制真实模型且未配置齐时走到这里（auto 模式未配置直接用假模型）；文案与 fixture 一致
+        raise ApiError("MODEL_UNAVAILABLE", "模型接口不可用，请检查设置里的 API Key") from e
 
 
 def _first_assistant_child(conn: sqlite3.Connection, user_mid: str) -> sqlite3.Row | None:

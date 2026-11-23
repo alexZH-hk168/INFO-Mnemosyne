@@ -262,6 +262,7 @@ test('2-用户卡片-设置弹窗：模型页保存（Key 只写）、检索页�
   await page.getByTestId('sidebar.user-card').click();
   await expect(page.getByTestId('settings.dialog.model')).toBeVisible();
   await shot(page, '2-用户卡片-设置弹窗');
+  await page.getByTestId('settings.dialog.api-key-edit').click(); // v0.5 [BYOK]：默认样例已设置 Key
   await page.getByTestId('settings.dialog.api-key').fill('sk-test');
   await page.getByTestId('settings.dialog.save').click();
   await expect(page.getByTestId('settings.dialog.api-key-set')).toHaveText('已设置');

@@ -47,6 +47,7 @@
 - [INT1] 向已合并（`merged`）/已归档（`archived`）分支发消息、以其中消息为 `parent_id`、或在其中重新生成：`400 VALIDATION_ERROR`，`error.details.branch_status`（U87，沿用已有错误码与 `details?`，不加新码）。
 - [INT1] [scripts.md](./scripts.md) 补录评测脚本的可选参数与附带输出（U104），并写明系统 M 的 `backend` 适配器口径。
 - [INT1] `Step.plugin_id?` 沿用上面 [F6b] 条目，后端以 [B3b·F6b 对齐] 的实现为准（INT1 原实现与之等价，合并时取 main）。
+- [BYOK] 用户自带模型密钥（用户决定 2026-11-23）：`Settings` 追加可选 `provider?`、只读 `api_key_hint?`、`llm_mode?`、`retrieval_mode?`；新接口 `GET /api/settings/providers`（服务商预设，官方文档核对）与 `POST /api/settings/test`（测试连接，总是 200 + `SettingsTestResult`）；运行时模型错误仍用 SSE `error` + `MODEL_UNAVAILABLE`，`message` 改为中文可行动提示、`retriable` 随原因变化。新类型 `ProviderId`、`ProviderPreset`、`SettingsTestCode`、`SettingsTestResult`（types.ts）、`ProviderList`、`SettingsTestBody`（endpoints.ts）。新 fixtures：`get-settings.demo.ok.json`、`get-settings-providers.*`、`post-settings-test.*`。细节见 [rest-api.md](./rest-api.md#设置与记忆)。
 
 | v0.5（并行草案，编排统一） | 2026-11-23 | [B3a] `GET /api/memory/summary` 加可选 query `project_id`：给了返回该项目 L4 画像的最新版本，不给返回最近更新的一份；无画像时 `{content:"", version:0, updated_at}`。`GET /api/memory/items` 的 `status` 取值写明 `active`（默认）\| `superseded` \| `deleted`。types.ts 无需改动 | B3a 提出原 U84，编排 Agent 决定，待用户追认 |
 | v0.5（并行草案，编排统一） | 2026-11-23 | [B3b] 只增可选字段：`MarketItem`、`InstalledPlugin`（含 `PluginDetail`）、会话插件列表项加 `short_name?`（原 U36）；plugin-manifest.md 增“B3b 实现约定”：ArXiv/Fetch 等固定版本、evidence_mapping 路径写法（`items`、`$args`、`$text`、路径数组）、插件证据落库方式、运行时超时与回收参数、registry 额外字段 | B3b 提出，待编排统一 |

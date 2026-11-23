@@ -8,9 +8,13 @@
     "small_model": "small-model",
     "embedding_model": "embedding-model",
     "api_base": "https://api.example.com/v1",
-    "api_key_set": false,
+    "api_key_set": true,
     "web_search_default": true,
-    "memory_enabled": true
+    "memory_enabled": true,
+    "provider": "custom",
+    "api_key_hint": "••••a1b2",
+    "llm_mode": "real",
+    "retrieval_mode": "local"
   },
   "request": {
     "body": {

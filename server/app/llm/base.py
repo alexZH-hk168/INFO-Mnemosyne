@@ -10,7 +10,16 @@ from typing import Any, AsyncIterator, Protocol
 
 
 class ModelError(Exception):
-    """模型接口不可用（网络、鉴权、配置缺失、响应格式不对）。对应错误码 MODEL_UNAVAILABLE。"""
+    """模型接口不可用（网络、鉴权、配置缺失、响应格式不对）。对应错误码 MODEL_UNAVAILABLE。
+
+    BYOK：`reason` 是分类（见 app/llm/errors.py 的 REASONS），`retriable` 随原因变化（密钥无效、余额不足重试无用）。
+    消息文字已是给用户看的中文提示，且已脱敏（不含密钥、不含上游响应原文）。
+    """
+
+    def __init__(self, message: str = "", *, reason: str = "server_error", retriable: bool = True):
+        super().__init__(message)
+        self.reason = reason
+        self.retriable = retriable
 
 
 @dataclass

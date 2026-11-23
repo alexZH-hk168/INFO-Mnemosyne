@@ -1,0 +1,23 @@
+{
+  "endpoint": "POST /api/settings/test",
+  "kind": "ok",
+  "description": "连接成功（只列模型，不计费）",
+  "status": 200,
+  "body": {
+    "ok": true,
+    "code": "ok",
+    "message": "连接成功：密钥有效，模型都在服务的模型列表里",
+    "latency_ms": 412,
+    "tool_calls": "supported",
+    "embeddings": "not_used"
+  },
+  "request": {
+    "body": {
+      "provider": "openai",
+      "api_base": "https://api.openai.com/v1",
+      "api_key": "sk-…",
+      "chat_model": "gpt-6.2-sol",
+      "small_model": "gpt-6-luna"
+    }
+  }
+}

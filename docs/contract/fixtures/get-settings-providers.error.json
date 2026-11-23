@@ -1,0 +1,13 @@
+{
+  "endpoint": "GET /api/settings/providers",
+  "kind": "error",
+  "description": "读取失败",
+  "status": 500,
+  "body": {
+    "error": {
+      "code": "INTERNAL",
+      "message": "读取服务商预设失败",
+      "retriable": true
+    }
+  }
+}

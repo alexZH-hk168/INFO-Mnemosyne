@@ -12,6 +12,8 @@ import type {
   MemoryItemList,
   PluginList,
   SkillList,
+  ProviderList,
+  SettingsTestBody,
   UpdateSettingsBody,
 } from '../api/endpoints';
 import type {
@@ -23,6 +25,7 @@ import type {
   MemoryItem,
   PluginDetail,
   Settings,
+  SettingsTestResult,
   Skill,
   SkillDetail,
 } from '../api/types';
@@ -67,6 +70,10 @@ interface MarketWorld {
   failing: Map<ID, ApiError>;
   /** 设置保存后模拟“测试调用失败” */
   modelUnavailable: boolean;
+  /** v0.5 [BYOK]：已保存的密钥（只在模拟层内部用，接口不回传） */
+  apiKey: string;
+  /** v0.5 [BYOK]：测试连接的固定结果（不设置时按填写值是否齐全给 ok / not_configured） */
+  testResult: SettingsTestResult | null;
   /** F6b 追加：会话插件接口的 reason（插件不可用的原因，如“本机 Zotero 未连接”）；只有演示场景会填 */
   reasons: Map<ID, string>;
 }
@@ -93,8 +100,21 @@ function initialWorld(): MarketWorld {
     memory: [...body<MemoryItemList>('get-memory-items.ok.json').items, structuredClone(SUPERSEDED_DEMO)],
     failing,
     modelUnavailable: false,
+    apiKey: '',
+    testResult: null,
     reasons: new Map(),
   };
+}
+
+/** v0.5 [BYOK]：与后端 llm/settings.py 同口径——api_base、API Key、对话模型三项齐全＝real，否则 demo */
+function withMode(st: Settings, key: string): Settings {
+  const out: Settings = { ...st, api_key_set: st.api_key_set || key.length > 0 };
+  if (out.llm_mode !== 'demo_forced') {
+    out.llm_mode = out.api_base && out.chat_model && out.api_key_set ? 'real' : 'demo';
+  }
+  if (key.length >= 12) out.api_key_hint = `••••${key.slice(-4)}`;
+  if (!out.api_key_set) delete out.api_key_hint;
+  return out;
 }
 
 let world = initialWorld();
@@ -344,15 +364,54 @@ export const marketWorldHandlers: HttpHandler[] = [
     if (input.api_base !== undefined && !/^https?:\/\/\S+$/.test(input.api_base)) {
       return HttpResponse.json(body<ApiError>('put-settings.error.json'), { status: 400 });
     }
-    const { api_key, api_key_set: _ignored, ...rest } = input;
+    const { api_key, api_key_set: _ignored, api_key_hint: _h, llm_mode: _m, retrieval_mode: _r, ...rest } = input;
     world.settings = { ...world.settings, ...rest };
-    if (typeof api_key === 'string' && api_key.length > 0) world.settings.api_key_set = true;
+    if (typeof api_key === 'string') {
+      world.apiKey = api_key;
+      world.settings.api_key_set = api_key.length > 0;
+    }
+    world.settings = withMode(world.settings, world.apiKey);
     const touchesModel =
       ['api_base', 'chat_model', 'small_model', 'embedding_model'].some((k) => k in input) || !!api_key;
     if (world.modelUnavailable && touchesModel) {
       return err(502, 'MODEL_UNAVAILABLE', '测试调用失败：模型接口返回 401（Key 无效）', true);
     }
     return HttpResponse.json(world.settings);
+  }),
+
+  http.get('*/api/settings/providers', () => {
+    if (deferred('GET /api/settings/providers')) return undefined;
+    return HttpResponse.json(body<ProviderList>('get-settings-providers.ok.json'));
+  }),
+  http.post('*/api/settings/test', async ({ request }) => {
+    if (deferred('POST /api/settings/test')) return undefined;
+    const input = (await request.json().catch(() => ({}))) as SettingsTestBody;
+    if (input.api_base !== undefined && input.api_base !== '' && !/^https?:\/\/\S+$/.test(input.api_base)) {
+      return HttpResponse.json(body<ApiError>('post-settings-test.error.json'), { status: 400 });
+    }
+    await new Promise((r) => setTimeout(r, 120));
+    if (world.testResult) return HttpResponse.json(world.testResult);
+    const base = input.api_base ?? world.settings.api_base;
+    const chat = input.chat_model ?? world.settings.chat_model;
+    const hasKey = !!input.api_key || world.settings.api_key_set;
+    if (!base || !chat || !hasKey) {
+      const missing = [
+        ['API 地址', base],
+        ['API Key', hasKey],
+        ['对话模型', chat],
+      ]
+        .filter(([, v]) => !v)
+        .map(([n]) => n);
+      return HttpResponse.json({
+        ok: false,
+        code: 'not_configured',
+        message: `还缺：${missing.join('、')}`,
+        latency_ms: 0,
+        tool_calls: 'unknown',
+        embeddings: 'not_used',
+      } satisfies SettingsTestResult);
+    }
+    return HttpResponse.json(body<SettingsTestResult>('post-settings-test.ok.json'));
   }),
 
   http.get('*/api/memory/items', ({ request }) => {
@@ -413,6 +472,15 @@ export const marketControls = {
   /** 设置保存后测试调用失败（MODEL_UNAVAILABLE） */
   setModelUnavailable(on: boolean): void {
     world.modelUnavailable = on;
+  },
+  /** v0.5 [BYOK]：切到“未配置模型”的演示模式（get-settings.demo.ok.json） */
+  setDemoMode(): void {
+    world.settings = body<Settings>('get-settings.demo.ok.json');
+    world.apiKey = '';
+  },
+  /** v0.5 [BYOK]：测试连接返回固定结果；传 null 恢复按填写值判断 */
+  setTestResult(r: SettingsTestResult | 'key-invalid' | null): void {
+    world.testResult = r === 'key-invalid' ? body<SettingsTestResult>('post-settings-test.key-invalid.ok.json') : r;
   },
   /**
    * F6b 追加：复现概念图 UI-11 的插件组合（截图与弹层状态测试用）。已安装 ArXiv、Tavily（API Key 已配置）、MarkItDown、

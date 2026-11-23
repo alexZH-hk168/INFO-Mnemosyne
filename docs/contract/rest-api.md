@@ -108,12 +108,21 @@ v0.5 草案 [B3b] 追加的可选字段（只增不改，编排统一后定稿�
 |---|---|---|---|
 | GET | `/api/settings` | — | `Settings` |
 | PUT | `/api/settings` | `Partial<Settings>` | `Settings` |
+| GET | `/api/settings/providers` | — | `{ providers: ProviderPreset[] }`（v0.5 [BYOK]） |
+| POST | `/api/settings/test` | `SettingsTestBody`（v0.5 [BYOK]） | `SettingsTestResult`（总是 200；请求字段不合法 400） |
 | GET | `/api/memory/items?scope=&q=&status=active` | `status`：`active`（默认）\| `superseded` \| `deleted`（v0.5 草案 [B3a]） | `{ items: MemoryItem[] }`；`MemoryItem.source_conversation_id?`（v0.3）：来源消息所在对话，“查看来源”据此跳到该对话 |
 | PUT | `/api/memory/items/{id}` | `{ content }` | `MemoryItem` |
 | DELETE | `/api/memory/items/{id}` | — | `{ ok: true }`；条目进屏蔽列表，不会被重新抽取 |
 | GET | `/api/memory/summary` | query `project_id?`（v0.5 草案 [B3a]） | `{ content, version, updated_at }`；L4 画像按项目生成（只汇总 global 与本项目条目）。给 `project_id` 返回该项目最新版本，不给返回最近更新的一份；无画像时 `content: ""`、`version: 0`（v0.5 草案 [B3a]） |
 
 `Settings = {chat_model, small_model, embedding_model, api_base, api_key_set: bool, web_search_default: bool, memory_enabled: bool}`。API Key 只写不读：`PUT` 可带 `api_key`，`GET` 只返回 `api_key_set`。
+
+v0.5 [BYOK]（用户决定 2026-11-23：Mnemosyne 不内置付费模型，用户在设置里填自己的 API 地址、密钥和模型名）——只增可选字段与两个新接口：
+
+- `Settings` 追加可选字段：`provider?: "openai" | "deepseek" | "openrouter" | "custom"`（可 `PUT`）；只读的 `api_key_hint?`（密钥末 4 位掩码 `••••abcd`，密钥 ≥ 12 位才给，明文永不回传）、`llm_mode?: "real" | "demo" | "demo_forced"`（`real`＝api_base、API Key、对话模型三项齐全，后端自动用真实模型；`demo`＝未配置，回答由本地示例生成；`demo_forced`＝服务端用 `MN_LLM_BACKEND=fake` 强制演示）、`retrieval_mode?: "local" | "embedding"`（`local`＝BM25 + 本地向量）。`PUT` 时带上只读字段会被忽略；`api_key: ""` 清除密钥。未配置时 `chat_model` 等返回空串（不再返回假模型名）。
+- `GET /api/settings/providers`：服务商预设 `ProviderPreset = {id, name, api_base, chat_model, small_model, embedding_model, supports_tools, supports_embeddings, notes_zh, doc_urls}`。每项 api_base、模型名、工具调用与嵌入支持都按官方文档核对（链接在 `doc_urls` 与 `server/app/llm/presets.py`）；`embedding_model` 为空串表示该服务商没有嵌入接口。
+- `POST /api/settings/test`：请求体 `SettingsTestBody = {provider?, api_base?, api_key?, chat_model?, small_model?, embedding_model?}`，未给的字段沿用已保存值（`api_key` 省略＝用已保存的密钥，前端不必回传）。做一次最省的检查：优先 `GET {api_base}/models`（不计费，核对模型名是否在列表里；OpenRouter 另用 `GET /key` 验证密钥）；服务不提供 `/models`（404/405）时才发 1 个 token 的补全。响应总是 200：`SettingsTestResult = {ok, code, message, latency_ms, tool_calls: "supported"|"unsupported"|"unknown", embeddings: "supported"|"unsupported"|"unknown"|"not_used"}`，`code ∈ ok | not_configured | key_invalid | insufficient_balance | rate_limited | model_not_found | tools_unsupported | bad_request | timeout | unreachable | server_error | bad_response`，`message` 为中文可行动提示。保存前不必先测试。
+- 运行时（发消息、重新生成）真实模型调用失败：仍以 SSE `error` 事件结束，`code: "MODEL_UNAVAILABLE"` 不变，`message` 为中文可行动提示（如“模型密钥无效或没有权限，请到“设置 → 模型”检查 API Key（HTTP 401）”），`retriable` 随原因变化（密钥无效、余额不足、模型不存在为 false）。密钥、`Authorization` 头与上游响应原文不出现在任何接口响应、SSE 事件、日志里（400/422 只附脱敏后的上游 `error.message` 摘要）。
 
 立项稿 §6.3 只写了 `/api/settings` 并提到“记忆条目的查看与删除也在这里”；`/api/memory/*` 是本草案为“设置 → 记忆”补的拆分，待确认。
 

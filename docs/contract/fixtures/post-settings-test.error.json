@@ -1,0 +1,18 @@
+{
+  "endpoint": "POST /api/settings/test",
+  "kind": "error",
+  "description": "api_base 不是合法 URL",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "api_base 必须是 http(s) 地址",
+      "retriable": false
+    }
+  },
+  "request": {
+    "body": {
+      "api_base": "ftp://x"
+    }
+  }
+}

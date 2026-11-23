@@ -1,0 +1,70 @@
+{
+  "endpoint": "GET /api/settings/providers",
+  "kind": "ok",
+  "description": "服务商预设（官方文档核对）",
+  "status": 200,
+  "body": {
+    "providers": [
+      {
+        "id": "openai",
+        "name": "OpenAI",
+        "api_base": "https://api.openai.com/v1",
+        "chat_model": "gpt-6.2-sol",
+        "small_model": "gpt-6-luna",
+        "embedding_model": "text-embedding-3-small",
+        "supports_tools": true,
+        "supports_embeddings": true,
+        "notes_zh": "对话模型 gpt-6.2-sol，小模型 gpt-6-luna；支持工具调用与嵌入。",
+        "doc_urls": [
+          "https://platform.openai.com/docs/models/gpt-6.2-sol",
+          "https://platform.openai.com/docs/models/gpt-6-luna",
+          "https://platform.openai.com/docs/guides/embeddings"
+        ]
+      },
+      {
+        "id": "deepseek",
+        "name": "DeepSeek",
+        "api_base": "https://api.deepseek.com",
+        "chat_model": "deepseek-v4-pro",
+        "small_model": "deepseek-flash",
+        "embedding_model": "",
+        "supports_tools": true,
+        "supports_embeddings": false,
+        "notes_zh": "支持工具调用（Mnemosyne 以非思考模式调用）；没有嵌入接口，检索使用本地 BM25 与本地向量。",
+        "doc_urls": [
+          "https://api-docs.deepseek.com/quick_start/pricing",
+          "https://api-docs.deepseek.com/guides/tool_calls",
+          "https://api-docs.deepseek.com/guides/thinking_mode"
+        ]
+      },
+      {
+        "id": "openrouter",
+        "name": "OpenRouter",
+        "api_base": "https://openrouter.ai/api/v1",
+        "chat_model": "openai/gpt-6.2-sol",
+        "small_model": "openai/gpt-6-luna",
+        "embedding_model": "openai/text-embedding-3-small",
+        "supports_tools": true,
+        "supports_embeddings": true,
+        "notes_zh": "一个密钥调用多家模型；模型名带厂商前缀。是否支持工具调用以测试连接时模型列表里的 supported_parameters 为准。",
+        "doc_urls": [
+          "https://openrouter.ai/docs/quickstart",
+          "https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties",
+          "https://openrouter.ai/docs/api/reference/embeddings"
+        ]
+      },
+      {
+        "id": "custom",
+        "name": "自定义（OpenAI 兼容）",
+        "api_base": "",
+        "chat_model": "",
+        "small_model": "",
+        "embedding_model": "",
+        "supports_tools": false,
+        "supports_embeddings": false,
+        "notes_zh": "任何提供 OpenAI 兼容 /chat/completions 的服务（含本机推理服务）。需要模型支持工具调用（function calling）。",
+        "doc_urls": []
+      }
+    ]
+  }
+}

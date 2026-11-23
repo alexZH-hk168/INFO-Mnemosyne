@@ -4,9 +4,9 @@
 接口：`complete_json(task, prompt, data=...) -> dict`。`prompt` 是给真实模型的完整提示词（已按任务拼好），
 `data` 是同一份输入的结构化形式，假实现只读 `data`。
 
-INT1 已接上：配置了真实模型（MN_LLM_BACKEND=openai 且 api_base/small_model/API Key 齐全）时调用 `app.llm` 的小模型，
-`prompt` 原样发出、解析 JSON；解析失败或模型不可用时退回本文件的规则实现。默认是假模型，不发起付费调用；
-用户定下模型与预算（未决 U2）之前不要打开真实模型。
+INT1 已接上，BYOK 起与对话读同一份设置：用户在设置页配置了真实模型（api_base、API Key、对话模型齐全，或
+MN_LLM_BACKEND=openai 且已配置）时调用 `app.llm` 的小模型，`prompt` 原样发出、解析 JSON；解析失败或模型不可用时退回本文件的
+规则实现。未配置（演示模式）或 MN_LLM_BACKEND=fake 时是假实现，不发起任何调用。费用由用户自己的密钥承担。
 
 任务与返回结构：
 - extract  data={user, assistant, user_message_id, assistant_message_id}
@@ -216,7 +216,7 @@ def _valid(task: str, out: dict) -> bool:
 
 
 def _real_model():
-    """配置了真实模型（MN_LLM_BACKEND=openai 且 API Key 等齐全）时返回 (模型, 小模型名)，否则 None。"""
+    """配置了真实模型（BYOK：设置里 api_base、API Key、对话模型齐全）时返回 (模型, 小模型名)，否则 None。"""
     from app.llm import ModelError, get_model, llm_config
 
     cfg = llm_config()
@@ -255,7 +255,7 @@ def _call_real(task: str, prompt: str) -> dict | None:
 def complete_json(task: str, prompt: str, *, data: dict[str, Any] | None = None) -> dict:
     """返回模型输出的 JSON 对象。
 
-    配置了真实模型（`app.llm`：MN_LLM_BACKEND=openai 且已配置）时把 `prompt` 发给小模型并解析 JSON；
+    配置了真实模型（`app.llm` 的 BYOK 设置）时把 `prompt` 发给小模型并解析 JSON；
     模型不可用、输出不是 JSON 或缺必需键时退回确定性规则实现。默认（假模型）不访问网络、不产生费用。（INT1）
     """
     if task not in _FAKE:

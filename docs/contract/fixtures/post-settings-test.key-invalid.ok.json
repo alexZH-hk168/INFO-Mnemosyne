@@ -1,0 +1,17 @@
+{
+  "endpoint": "POST /api/settings/test",
+  "kind": "ok",
+  "description": "密钥无效（结果仍是 200）",
+  "status": 200,
+  "body": {
+    "ok": false,
+    "code": "key_invalid",
+    "message": "模型密钥无效或没有权限，请到“设置 → 模型”检查 API Key（HTTP 401）",
+    "latency_ms": 230,
+    "tool_calls": "unknown",
+    "embeddings": "not_used"
+  },
+  "request": {
+    "body": {}
+  }
+}

@@ -23,6 +23,9 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("MN_EMBED_BACKEND", "fake")
     monkeypatch.delenv("MN_EMBED_DIM", raising=False)
     monkeypatch.setenv("MN_WORKER", "0")
+    # BYOK：默认 auto 模式。清掉可能从外部环境带进来的模型配置，保证未配置 = 演示模式（假模型，不联网）
+    for k in ("MN_LLM_BACKEND", "MN_LLM_API_BASE", "MN_LLM_MODEL", "MN_LLM_SMALL_MODEL", "MN_LLM_API_KEY", "MN_SETTINGS_PATH", "MN_EVAL_CHAT_MODEL"):
+        monkeypatch.delenv(k, raising=False)
     return tmp_path
 
 

@@ -9,6 +9,7 @@ import type {
   MarketList,
   MemoryItemList,
   MemorySummary,
+  ProviderList,
   PluginList,
   ProjectList,
   SkillList,
@@ -49,6 +50,8 @@ export const queryKeys = {
   skill: (id: ID) => ['skill', id] as const,
   convPlugins: (cid: ID) => ['convPlugins', cid] as const,
   settings: () => ['settings'] as const,
+  /** v0.5 [BYOK]：服务商预设（GET /api/settings/providers） */
+  settingsProviders: () => ['settingsProviders'] as const,
   memory: (filters: MemoryFilters) => ['memory', filters] as const,
   memorySummary: () => ['memorySummary'] as const,
   /**
@@ -190,6 +193,23 @@ export function useSettings() {
     queryKey: queryKeys.settings(),
     queryFn: ({ signal }) => api.get<Settings>('/api/settings', { signal }),
   });
+}
+
+/** v0.5 [BYOK]：服务商预设，几乎不变，缓存 1 小时 */
+export function useProviders(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.settingsProviders(),
+    enabled,
+    staleTime: 60 * 60 * 1000,
+    queryFn: ({ signal }) => api.get<ProviderList>('/api/settings/providers', { signal }),
+  });
+}
+
+/** v0.5 [BYOK]：当前是否在演示模式（未配置模型或服务端强制）。设置未加载完时返回 false，不闪提示 */
+export function useDemoMode(): { demo: boolean; forced: boolean } {
+  const s = useSettings();
+  const mode = s.data?.llm_mode;
+  return { demo: mode === 'demo' || mode === 'demo_forced', forced: mode === 'demo_forced' };
 }
 
 export function useMemory(filters: MemoryFilters = { status: 'active' }) {

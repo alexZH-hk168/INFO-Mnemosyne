@@ -16,6 +16,12 @@ async function shot(page: Page, name: string) {
   await page.screenshot({ path: `${SHOTS}${String(n).padStart(2, '0')}-${name}.png` });
 }
 
+/** BYOK 追加的截图用“上一张编号 + 字母”命名，不打乱已有截图的编号 */
+async function shotSub(page: Page, sub: string, name: string) {
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: `${SHOTS}${String(n).padStart(2, '0')}${sub}-${name}.png` });
+}
+
 /** 主线上当前显示的最后一条助手回答 id */
 async function lastAnswerId(page: Page): Promise<string> {
   const body = page.locator('[data-testid^="chat.answer-body:"]').last();
@@ -77,6 +83,19 @@ test('真实后端：项目 → 上传 → 提问 → 证据 → 重新生成 �
   const row = page.locator('[data-testid^="sidebar.project-row:"]', { hasText: projectName });
   await expect(row).toHaveAttribute('aria-current', 'true');
   await shot(page, '新建项目');
+
+  // 1b. BYOK：未配置模型时输入框下显示演示模式提示，“去设置”打开模型页，横幅同样写明演示模式
+  const notice = page.getByTestId('composer.demo-notice');
+  await expect(notice).toBeVisible();
+  await expect(notice).toHaveText(/演示模式：未配置模型，回答由本地示例生成/);
+  await shotSub(page, 'a', '演示模式提示');
+  await page.getByTestId('composer.demo-notice.settings').click();
+  await expect(page.getByTestId('settings.model.mode')).toHaveAttribute('data-mode', 'demo');
+  await expect(page.getByTestId('settings.model.provider').locator('option')).toHaveCount(4);
+  await expect(page.getByTestId('settings.model.test')).toBeDisabled();
+  await shotSub(page, 'b', '设置-模型-演示模式');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('settings.dialog')).toHaveCount(0);
 
   // 2. 上传示例 PDF，等解析完成
   if (await page.getByTestId('shell.collapsed-rail:1').isVisible()) {

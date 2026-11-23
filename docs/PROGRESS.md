@@ -22,6 +22,7 @@
 
 | B3a    | 长程记忆（jobs worker、L2/L3/L4、recall、/api/memory/*）与分支接口（创建/合并/改名归档、可见性 5 条规则） | B1；对 Agent 回合只经 `app/agent/hooks.py` | 完成（本地 feat/B3a-memory，未合 main；pytest 123 passed（B1 原 86 + B3a 新增 37）；三组分支隔离用例通过；“先喜欢 A 后改 B”用 memory.recall 断言取回被 SUPERSEDE 的 A 及有效期，端到端问答待 B2 合并后由编排验证；模型调用全部走 llm_port 确定性假实现；U80–U89 已由编排决定） | feat/B3a-memory（worktree `worktrees/B3a-memory`，服务端口 8102）· 2026-11-23 |
 | INT1   | 前后端集成第一批：真实后端冒烟（含分支段）、U74 重新生成请求体、U60 plugin_id、U82 记忆开关、U87 只读分支拒发、记忆 llm_port 接真实模型通道、E 接 M、U104 | main（B1、B2、B3a、B3b、E、F0–F6b） | 完成（本地 integ/INT1，未合 main；见动作日志 [INT1]；新增未决 U110–U113） | integ/INT1（worktree `worktrees/INT1`，后端 8104、前端 5177）· 2026-11-23 |
+| BYOK   | 用户自带模型密钥：保存设置后自动启用真实模型、演示模式提示、服务商预设、测试连接、密钥安全、运行时中文报错、记忆与评测读同一份设置 | main 66ef7dd | 完成（本地 feat/BYOK，未合 main；见动作日志 [BYOK]；新增未决 U130–U136） | feat/BYOK（worktree `worktrees/BYOK`，后端 8106、前端 5179）· 2026-11-23 |
 
 F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 
@@ -82,6 +83,7 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | 2026-11-23 | 编排决定，待用户追认：契约 v0.4 给 data-model `tool_calls` 补 `label TEXT` 列，`Message.steps[].label` 取该列（为空退回 tool_name），`args_json.label` 不再作约定；B2 写步骤时写该列（原 U46，B1 提出时编号 U42） |
 | 2026-11-23 | 编排决定，待用户追认：`ConversationSummary.branch_count` 不计 archived 分支；多文件上传整批原子，有不支持类型整批 400、一个都不落盘；第一版重复上传不去重；PDF 句子 bbox 不含句首脚注上标号（原 U47，B1 提出时编号 U43） |
 | 2026-11-23 | 编排决定，待用户追认（来自 B3b 的 U92）：市场 18 个插件里只有 arxiv、tavily、fetch、markitdown 有适配清单；其余 14 个后端安装返回 400 `VALIDATION_ERROR`。前端以 `PluginDetail.manifest` 是否存在判断，缺省时卡片与详情页安装按钮置灰并提示“暂未适配，第一版不能安装”；MSW 同步返回 400（新样例 `post-plugins-id.not-adapted.error.json`；自检失败样例的插件由 docling 改为 markitdown） | 编排 Agent（B3b 提出） |
+| 2026-11-23 | BYOK：Mnemosyne 不内置任何付费模型；用户在“设置 → 模型”填自己的 API 地址、密钥和模型名即可用真实模型（三项齐全后端自动启用，未配置时为演示模式并在界面明示）。原 U2“模型选择与评测预算上限”移出未决：模型由用户自选，费用由用户自己的密钥承担；评测仍保留 `--max-items` 默认 10 与 `MN_EVAL_ALLOW_PAID=1` 闸门 | 用户决定（2026-11-23 13:18 原话“模型API这里做成用户可以用自己的byok”） |
 | 2026-11-23 | U96：fixture 与后端对齐——markitdown 权限 `network`+`fs_read`、arxiv 启动参数固定 `arxiv-mcp-server@0.8.2`（编排改 fixtures-source 并重新生成） | 编排决定，待用户追认 |
 
 ## 未决（需要用户拍板）
@@ -89,7 +91,6 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | #   | 问题                                                                                                            | 影响       | 提出       |
 | --- | --------------------------------------------------------------------------------------------------------------- | ---------- | ---------- |
 | U1  | 课程截止日期与论文形式                                                                                          | 排期       | 立项稿 §15 |
-| U2  | 模型选择与评测预算上限                                                                                          | B2、E2     | 立项稿 §15 |
 | U3  | 是否加跑 LoCoMo                                                                                                 | E2         | 立项稿 §15 |
 | U4  | Skill 附带脚本是否执行（现方案：不执行）                                                                        | B3         | 立项稿 §15 |
 | U5  | 契约草案补充的接口是否接受：`/api/memory/*`、`X-Model-Tier`、`active_leaf`、`context_messages`、`client_msg_id` | F3、F6、B2 | 2026-11-22 |
@@ -111,9 +112,17 @@ F2 与 F1 可并行；F6 的市场部分可与 F4/F5 并行。
 | U111 | [INT1] 评测系统 M 的后端适配器每题一个独立数据库（记忆有 global 作用域，共库会跨题召回），回放缓存只在同一题的 M/A1–A4 之间复用、不跨题复用；LongMemEval 的填充 session 在题间重复，回放成本按题线性增长（真实模型下抽取费用随之增长）。替代做法：按 session 内容建共享库再按题复制（省回放、实现更复杂）。请确认按“每题一位新用户”的口径 | E2、论文口径 | 2026-11-23（INT1） |
 | U112 | [INT1] 评测记账：记忆 llm_port 不回报 token，真实模型下 `replay_tokens_*` 与回放费用记 0（低估）；M 的 `cost_usd` 记 `null`（适配器不知单价，`--price-*` 只作用于 B1/B2）；`retrieved_ids` 的分数是 1/(rank+1)（evidence 表不存召回分数）。真跑（U2）前要决定是否给 llm_port 加用量回报、是否给证据落召回分数 | E2、B3a | 2026-11-23（INT1） |
 | U113 | [INT1] 真实后端冒烟看到两处小问题，未修：① 分支追问流式进行时，主线回答的证据胶囊与来源列表短暂显示“2 · …”占位（树接口不带证据详情，前端逐条 GET /api/evidence/{eid}，回答结束后恢复，截图 10）；② 合并要点卡片与分支标签的标题“The input co”取 quote 前 12 字（U48），英文被截在词中间；③ 在对话里开着分支面板时点“新建对话”回主页，右栏仍显示上一对话的分支面板（截图 16） | F3/F5、F4、U48 | 2026-11-23（INT1） |
+| U130 | [BYOK] 预设推荐的模型名是按 2026-11-23 官方文档挑的：OpenAI 对话 `gpt-6.2-sol`、小模型 `gpt-6-luna`、嵌入 `text-embedding-3-small`；DeepSeek 对话 `deepseek-v4-pro`、小模型 `deepseek-flash`；OpenRouter 用同款 OpenAI 模型的 `openai/…` slug。“对话模型用哪档、小模型用哪档”属于价格与质量取舍，是助手建议，请确认或换。阿里云百炼的官方文档页面读不到正文，未放进预设（用户可用“自定义”） | 设置页、评测成本 | 2026-11-23（BYOK） |
+| U131 | [BYOK] 检索的嵌入仍走 B1 的服务端配置（`MN_EMBED_BACKEND`，默认本地假嵌入 + BM25），设置页填的“嵌入模型”目前只保存、不改检索（界面说明行写明“先保存备用”，`Settings.retrieval_mode` 显示当前方式）。原因：换嵌入模型会改变向量维度，必须重建全部材料索引（`scripts/ingest.py --reindex`），并且每次上传都会产生嵌入费用。可选做法：保存了嵌入模型后提示“重建索引”并由后台任务重建；或保持现状。请决定 | B1 检索、设置页 | 2026-11-23（BYOK） |
+| U132 | [BYOK] “测试连接”优先 `GET /models`（不计费）；服务不提供 `/models`（404/405）时退回 1 个 token 的补全，会产生极少量费用。OpenRouter 的 `/models` 不验证密钥，另调 `GET /key`。是否接受“极少数情况下测试会花 1 个 token” | 设置页 | 2026-11-23（BYOK） |
+| U133 | [BYOK] 预设附带的请求参数：DeepSeek 默认开思考模式，带工具调用时必须回传 `reasoning_content`，我们的回合不回传，所以对 DeepSeek 固定发 `thinking: {type: "disabled"}`；OpenAI `gpt-6-luna` 在 Chat Completions 里只有 `reasoning_effort=none` 才能函数调用，带工具调用它时自动加上。代价是这两种情况都不用推理模式。请确认 | 回答质量 | 2026-11-23（BYOK） |
+| U134 | [BYOK] `MN_LLM_BACKEND` 语义改为：不设（auto）＝按设置自动选；`fake`＝强制假模型（测试与冒烟）；`openai`＝强制真实（未配置时发消息报 MODEL_UNAVAILABLE）。真实后端冒烟改为不设该变量，从全新数据目录启动即演示模式。评测 `run_eval --model X` 现在读用户设置里的 api_base 与密钥（`MN_SETTINGS_PATH` 固定到用户那份，`MN_EVAL_CHAT_MODEL` 覆盖对话模型名），环境变量 `MN_EVAL_API_*`/`MN_LLM_API_*` 仍可覆盖 | 评测、测试脚本 | 2026-11-23（BYOK） |
+| U135 | [BYOK] 契约样例 `get-settings.ok.json` 改成“已配置自己的模型”（`api_key_set: true`、掩码 `••••a1b2`、`llm_mode: "real"`），未配置另有 `get-settings.demo.ok.json`。这样 MSW 默认世界不出现演示模式提示，其他截图不受影响；但 `2-用户卡片-设置弹窗.png` 因模型页内容变化而更新。未配置时后端 `chat_model` 等返回空串（不再返回 `fake-chat`），输入框模型档位此时显示“未配置模型” | fixtures、截图 | 2026-11-23（BYOK） |
+| U136 | [BYOK] 演示模式提示只放输入框下沿一处（主页与对话栏输入框；分支面板的紧凑输入框不放）。演示模式下的历史回答不另加“示例回答”标记。是否需要在每条演示回答上也标注 | 输入框、对话流 | 2026-11-23（BYOK） |
 
 ## 动作日志
 
+- 2026-11-23 · [BYOK] 用户自带模型密钥 · 功能完成（最终测试数字见合并 main 后的下一条）· 分支 feat/BYOK
 - 2026-11-23 · [INT1] 前后端集成第一批 · 完成 · 分支 integ/INT1（已 merge main b692dc6）· 真实后端冒烟 `web/tests/e2e-real/`（单独 config，不进默认 e2e；`MN_PORT=5177 MN_API_PORT=8104 npx playwright test -c tests/e2e-real/playwright.real.config.ts`，13 张截图在 `web/tests/screenshots-real/`）· 修的对接问题：项目栏对话数在新对话首轮后不刷新（ChatColumn 回合结束补 invalidate projects）· U74：`RegenerateBody` 可选请求体，后端请求体优先、缺省沿用推断，前端 store `turnOptions` 记本会话每轮原参数、重新生成时带上 · U60：与 [F6BFIX·B3b] 实现等价，合并取 main · U82：main.py 把 `memory.enabled_check` 接到设置 `memory_enabled`；关闭时回合不调用 recall/on_turn_finished · U87：merged/archived 分支（branch_id、分支内 parent_id、分支内 regenerate）→ 400 VALIDATION_ERROR + `details.branch_status` · llm_port：配置了真实模型（MN_LLM_BACKEND=openai 且已配置）时调 `app.llm` 小模型 JSON，输出不合法或出错退回规则实现；默认假模型不联网 · E 接 M：`server/scripts/eval_lib/backend.py`（进程内调用 B2 回合 + B3a 记忆任务，每题独立库，A1–A4 在评测进程内临时替换），`run_eval --backend-data`；eval_mini 上 M/A1/A2/A4（16 题）与 M/A3（BranchMem 6 题）0 错误，M 无泄漏、A3 6/6 泄漏 · U104：scripts.md 补录 · 合并 main c2aa15a 后冒烟加“市场安装插件（make_registry.py 把 arxiv 换成本地假 MCP 服务，不联网）→ 对话插件区显示 arXiv、弹层列出该插件 → 主页显示“已启用 1 个插件””，共 16 张截图 · 合并后测试：server pytest 279 passed；npm run check 通过（0 error，27 条既有 warning）；vitest 471/471；默认 e2e 112/112（MN_PORT=5177 --workers=2）；真实冒烟 1 passed · 默认 e2e 重跑后 93 张截图有变动，其中 26 张超出像素噪声，抽查最大的“1-输入框-插件区入口”：main 上提交的截图还是插件全名、弹层未开，重跑结果是简称“arXiv · 网页检索 · PDF 解析”且弹层打开，差异来自 main 本身而非 INT1，按规则全部还原、未提交 · 未发起任何付费调用 · 新增未决 U110–U113
 - 2026-11-23 · [F6BFIX·B3b] F6b 合入后的后端契约对齐 · 后端完成 · 分支 integ/F6b · `server/.venv/bin/python -m pytest -q` 259 passed（对齐前 5 failed / 250 passed）· Step.plugin_id（SSE step 与 Message.steps[]）；插件证据标题按清单 title 映射从 fields 重算，GET 与 SSE 一致；evidence_mapping 加 `{$…}` 模板；arXiv `get_abstract` → 无 URL 插件证据（url 只取 `$.url`），标题“arXiv:编号 · 题名”；fields 保留标量数组；seed 写入 sse-turn-plugin 回合（接在 msg_code_a1 后）与 evd_arxiv_abs；契约测试改为 26 份插件类 fixtures、markitdown 模拟自检超时、市场与已安装列表含 short_name 逐字段相等 · 未改任何 fixture；需改 fixture 的两处记为 U96
 - 2026-11-23 · [编排] 合并 B2、B3b、E 进 main · 完成 · 冲突已解（PROGRESS、contract/README、main.py、pyproject 两边都保留）· 补 uv lock · lifespan 加 plugins.shutdown() · `server` pytest 216 passed · 已决 U70–U76、U90–U92、U94、U95、U100–U104、U106；仍待用户：U73 搜索服务、U93 插件简称、U105 判分提示移植

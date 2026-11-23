@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * 真实后端端到端冒烟（INT1）：前端关闭 MSW，经 Vite 代理连真实 FastAPI 后端（假模型，不发付费调用）。
+ * BYOK：后端用默认 auto 模式、全新数据目录里没有设置 → 未配置模型＝演示模式（确定性假模型，不联网），
+ * 冒烟先核对界面上的“演示模式”提示；不设 MN_LLM_BACKEND，并清掉可能从外部带进来的模型环境变量。
  * 不进默认 e2e（默认 config 的 testDir 是 tests/e2e）。
  *
  * 用法（在 web/ 下）：
@@ -37,7 +39,7 @@ export default defineConfig({
   webServer: [
     {
       // registry 用 make_registry.py 生成：arxiv 插件换成本地假 MCP 服务（不联网），供“安装插件 → 输入框插件区”这一步
-      command: `rm -rf ${dataDir} && mkdir -p ${dataDir} && .venv/bin/python ${webDir}tests/e2e-real/make_registry.py ${dataDir}/registry && MN_DATA_DIR=${dataDir} MN_REGISTRY_DIR=${dataDir}/registry MN_SKILLS_DIR=${dataDir}/skills MN_LLM_BACKEND=fake MN_EMBED_BACKEND=fake .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${apiPort}`,
+      command: `rm -rf ${dataDir} && mkdir -p ${dataDir} && .venv/bin/python ${webDir}tests/e2e-real/make_registry.py ${dataDir}/registry && MN_DATA_DIR=${dataDir} MN_REGISTRY_DIR=${dataDir}/registry MN_SKILLS_DIR=${dataDir}/skills MN_EMBED_BACKEND=fake env -u MN_LLM_BACKEND -u MN_LLM_API_BASE -u MN_LLM_API_KEY -u MN_LLM_MODEL -u MN_SETTINGS_PATH .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${apiPort}`,
       cwd: serverDir,
       url: `http://127.0.0.1:${apiPort}/api/projects`,
       reuseExistingServer: true,

@@ -123,7 +123,7 @@ def test_m_and_ablations_with_stub(data):
 
 def _backend_env(monkeypatch, tmp_path):
     """真实适配器会改 MN_DATA_DIR / MN_LLM_BACKEND 等环境变量：先登记，测试结束由 monkeypatch 还原。"""
-    for k in ("MN_DATA_DIR", "MN_LLM_BACKEND", "MN_LLM_MODEL", "MN_EMBED_BACKEND", "MN_DB_PATH"):
+    for k in ("MN_DATA_DIR", "MN_LLM_BACKEND", "MN_LLM_MODEL", "MN_EMBED_BACKEND", "MN_DB_PATH", "MN_SETTINGS_PATH", "MN_EVAL_CHAT_MODEL"):
         monkeypatch.setenv(k, os.environ.get(k, ""))
     monkeypatch.setenv("MN_DATA_DIR", str(tmp_path / "unused"))
     monkeypatch.setenv("MN_EMBED_BACKEND", "fake")

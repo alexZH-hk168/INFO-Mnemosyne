@@ -365,6 +365,30 @@ describe('1-输入框-模型档位', () => {
     fireEvent.click(screen.getByTestId('composer.model.option:high'));
   });
 
+  it('演示模式（v0.5 [BYOK]）：输入框下显示“演示模式：未配置模型，回答由本地示例生成”，“去设置”打开模型页', async () => {
+    const demo = (fixtures['get-settings.demo.ok.json'] as RestFixture).body as object;
+    server.use(http.get('*/api/settings', () => HttpResponse.json(demo)));
+    renderChat();
+    const note = await screen.findByTestId('composer.demo-notice');
+    expect(note).toHaveTextContent('演示模式：未配置模型，回答由本地示例生成');
+    fireEvent.click(screen.getByTestId('composer.demo-notice.settings'));
+    expect(useUI.getState().modal).toEqual({ kind: 'settings', props: { section: 'model' } });
+  });
+
+  it('已配置真实模型时不显示演示模式提示', async () => {
+    renderChat();
+    await waitFor(() => expect(screen.getByTestId('composer.model')).not.toHaveTextContent('未配置模型'));
+    expect(screen.queryByTestId('composer.demo-notice')).toBeNull();
+  });
+
+  it('服务端强制演示（demo_forced）：提示不带“去设置”', async () => {
+    const demo = (fixtures['get-settings.demo.ok.json'] as RestFixture).body as object;
+    server.use(http.get('*/api/settings', () => HttpResponse.json({ ...demo, llm_mode: 'demo_forced' })));
+    renderChat();
+    expect(await screen.findByTestId('composer.demo-notice')).toHaveTextContent('测试用');
+    expect(screen.queryByTestId('composer.demo-notice.settings')).toBeNull();
+  });
+
   it('未配置模型：显示“未配置模型”，点击打开设置', async () => {
     const body = (fixtures['get-settings.ok.json'] as RestFixture).body as object;
     server.use(http.get('*/api/settings', () => HttpResponse.json({ ...body, chat_model: '' })));

@@ -53,8 +53,11 @@ class OpenAICompatEmbedder:
             raise PaidCallBlocked(f"嵌入模型 {model} 会产生付费调用；用户确认预算后设 MN_EVAL_ALLOW_PAID=1。")
         self.model = model
         self.name = model
-        self.api_base = (os.environ.get("MN_EVAL_API_BASE") or "https://api.openai.com/v1").rstrip("/")
-        self._key = os.environ.get("MN_EVAL_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+        from .llm import user_llm_settings
+
+        user_base, user_key = user_llm_settings()  # BYOK：与设置页同一份
+        self.api_base = (os.environ.get("MN_EVAL_API_BASE") or user_base or "https://api.openai.com/v1").rstrip("/")
+        self._key = os.environ.get("MN_EVAL_API_KEY") or os.environ.get("OPENAI_API_KEY") or user_key or ""
         self.transport = transport
 
     def embed(self, texts):

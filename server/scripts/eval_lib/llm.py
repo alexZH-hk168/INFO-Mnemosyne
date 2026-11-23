@@ -2,7 +2,8 @@
 
 付费闸门：构造 OpenAICompatChat 时必须设环境变量 MN_EVAL_ALLOW_PAID=1，否则抛 PaidCallBlocked。
 这是为了守住硬约束「先在 dev-120 跑 M 的前 10 题报成本，用户确认预算后再扩大」（未决 U2）。
-密钥只从环境变量读（MN_EVAL_API_KEY，退回 OPENAI_API_KEY），不写日志、不进错误信息。
+密钥先读环境变量（MN_EVAL_API_KEY，退回 OPENAI_API_KEY），都没有时读用户在设置页保存的 settings.json（BYOK，
+与对话、记忆同一份）；不写日志、不进错误信息。
 """
 
 from __future__ import annotations
@@ -132,6 +133,25 @@ def fake_judge_responder(messages: list[dict[str, str]]) -> str:
     return "yes" if contains_phrase(response, gold) else "no"
 
 
+def user_llm_settings() -> tuple[str, str]:
+    """BYOK：用户在设置页保存的 (api_base, api_key)；读不到时返回空串。只在后端内部用，不打印。"""
+    import sys
+    from pathlib import Path
+
+    server_dir = Path(__file__).resolve().parents[2]
+    if str(server_dir) not in sys.path:
+        sys.path.insert(0, str(server_dir))
+    try:
+        from app.llm.settings import _read_raw
+
+        raw = _read_raw()
+    except Exception:  # noqa: BLE001 - 评测脚本不因读不到设置而失败
+        return "", ""
+    base = raw.get("api_base") if isinstance(raw.get("api_base"), str) else ""
+    key = raw.get("api_key") if isinstance(raw.get("api_key"), str) else ""
+    return base.strip(), key.strip()
+
+
 class OpenAICompatChat:
     """POST {base}/chat/completions。transport 可注入 httpx.MockTransport 做无网测试。"""
 
@@ -153,8 +173,9 @@ class OpenAICompatChat:
             )
         self.name = model
         self.model = model
-        self.api_base = (api_base or os.environ.get("MN_EVAL_API_BASE") or "https://api.openai.com/v1").rstrip("/")
-        self._key = api_key if api_key is not None else (os.environ.get("MN_EVAL_API_KEY") or os.environ.get("OPENAI_API_KEY") or "")
+        user_base, user_key = user_llm_settings()
+        self.api_base = (api_base or os.environ.get("MN_EVAL_API_BASE") or user_base or "https://api.openai.com/v1").rstrip("/")
+        self._key = api_key if api_key is not None else (os.environ.get("MN_EVAL_API_KEY") or os.environ.get("OPENAI_API_KEY") or user_key or "")
         self.pricing = pricing or Pricing()
         self.timeout = timeout
         self.transport = transport

@@ -30,6 +30,7 @@ import ComposerBar, { PluginEntry, PluginPopoverSlot } from './ComposerBar';
 import { COMPOSER_FOCUS_EVENT, requestComposerFocus } from './focus';
 import { menuOptionId, type MenuItem } from './MenuList';
 import MentionMenu, { MENTION_TESTID, mentionItems } from './MentionMenu';
+import DemoModeNotice from './DemoModeNotice';
 import ModelPicker, { getLastTier } from './ModelPicker';
 import ScopePicker from './ScopePicker';
 import SlashMenu, { SLASH_TESTID, slashItems } from './SlashMenu';
@@ -720,6 +721,7 @@ export default function Composer({
           {sendButton}
         </div>
       </div>
+      <DemoModeNotice />
     </div>
   );
 }

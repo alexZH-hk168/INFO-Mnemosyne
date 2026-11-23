@@ -1,18 +1,16 @@
 // 规格：2-用户卡片-设置弹窗（settings.dialog）
-// 大弹窗，左侧导航：模型、检索、记忆。模型页填 API 地址、Key、对话模型、小模型、嵌入模型；检索页设联网检索默认值；
-// 记忆页见 3-设置-记忆管理。保存 = PUT /api/settings（只发当前页改动的字段），API Key 只写不读。
+// 大弹窗，左侧导航：模型、检索、记忆。模型页见 ModelSection.tsx（规格 3-设置-模型，v0.5 [BYOK]：服务商预设、测试连接、
+// 演示模式说明）；检索页设联网检索默认值；记忆页见 3-设置-记忆管理。保存 = PUT /api/settings（只发当前页改动的字段），API Key 只写不读。
 // 无概念图（未决 U7），实现后截图交用户确认。
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { ApiRequestError } from '../api/client';
-import type { UpdateSettingsBody } from '../api/endpoints';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useSettings } from '../api/queries';
 import type { Settings } from '../api/types';
 import { Spinner } from '../icons/Icons';
 import { useSaveSettings } from '../market/hooks';
-import { AlertIcon } from '../market/icons';
 import ModalFrame from '../market/ModalFrame';
 import { useUI } from '../store/ui';
 import MemorySection from './MemorySection';
+import ModelSection from './ModelSection';
 import Switch from './Switch';
 
 export type Section = 'model' | 'search' | 'memory';
@@ -78,7 +76,7 @@ export default function SettingsDialog() {
               </button>
             </div>
           ) : section === 'model' ? (
-            <ModelSection key="model" settings={settings.data} onClose={closeModal} />
+            <ModelPage key="model" settings={settings.data} onClose={closeModal} />
           ) : section === 'search' ? (
             <SearchSection key="search" settings={settings.data} onClose={closeModal} />
           ) : (
@@ -144,143 +142,24 @@ function Page({
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function ModelPage({ settings, onClose }: { settings: Settings; onClose: () => void }) {
   return (
-    <label className="block">
-      <span className="text-[12px] text-muted">{label}</span>
-      {children}
-      {hint && <span className="mt-1 block text-[11.5px] text-faint">{hint}</span>}
-    </label>
-  );
-}
-
-const INPUT =
-  'mt-1 w-full rounded-btn border border-line bg-surface px-3 py-1.5 font-mono text-[12.5px] text-ink outline-none placeholder:font-sans placeholder:text-faint focus:border-handle';
-
-type ModelFields = Pick<Settings, 'api_base' | 'chat_model' | 'small_model' | 'embedding_model'>;
-const MODEL_KEYS: (keyof ModelFields)[] = ['api_base', 'chat_model', 'small_model', 'embedding_model'];
-
-function ModelSection({ settings, onClose }: { settings: Settings; onClose: () => void }) {
-  const save = useSaveSettings();
-  const pushToast = useUI((s) => s.pushToast);
-  const pick = (s: Settings): ModelFields => ({
-    api_base: s.api_base,
-    chat_model: s.chat_model,
-    small_model: s.small_model,
-    embedding_model: s.embedding_model,
-  });
-  const [form, setForm] = useState<ModelFields>(() => pick(settings));
-  const [editingKey, setEditingKey] = useState(!settings.api_key_set);
-  const [apiKey, setApiKey] = useState('');
-  useEffect(() => setEditingKey(!settings.api_key_set), [settings.api_key_set]);
-
-  const changed = MODEL_KEYS.filter((k) => form[k].trim() !== settings[k]);
-  const dirty = changed.length > 0 || apiKey.trim() !== '';
-
-  const onSubmit = () => {
-    const b: UpdateSettingsBody = {};
-    for (const k of changed) b[k] = form[k].trim();
-    if (apiKey.trim()) b.api_key = apiKey.trim();
-    save.mutate(b, {
-      onSuccess: () => {
-        setApiKey('');
-        pushToast({ kind: 'success', text: '模型设置已保存' });
-      },
-    });
-  };
-
-  const err = save.error;
-  const unavailable = err instanceof ApiRequestError && err.code === 'MODEL_UNAVAILABLE';
-
-  return (
-    <Page
-      testid="settings.dialog.model"
-      title="模型"
-      onSubmit={onSubmit}
-      onClose={onClose}
-      dirty={dirty}
-      saving={save.isPending}
-      banner={
-        err ? (
-          <div
-            role="alert"
-            data-testid={unavailable ? 'settings.dialog.model-unavailable' : 'settings.dialog.error'}
-            className="mt-3 flex items-start gap-2 rounded-card-sm bg-[var(--danger-bg)] px-3.5 py-2.5 text-[12.5px] text-danger"
-          >
-            <AlertIcon size={14} />
-            <span>{unavailable ? `已保存，但测试调用失败：${err.message}` : `保存失败：${err.message}`}</span>
-          </div>
-        ) : null
-      }
-    >
-      <Field label="API 地址" hint="OpenAI 兼容接口，例如 https://<服务地址>/v1">
-        <input
-          data-testid="settings.dialog.api-base"
-          value={form.api_base}
-          onChange={(e) => setForm((f) => ({ ...f, api_base: e.target.value }))}
-          className={INPUT}
-          spellCheck={false}
-        />
-      </Field>
-      <Field label="API Key" hint="只保存在本机后端，不会在界面上回显">
-        {editingKey ? (
-          <input
-            data-testid="settings.dialog.api-key"
-            type="password"
-            autoComplete="new-password"
-            value={apiKey}
-            placeholder={settings.api_key_set ? '输入新的 Key 以替换' : '尚未设置'}
-            onChange={(e) => setApiKey(e.target.value)}
-            className={INPUT}
-          />
-        ) : (
-          <span className="mt-1 flex items-center gap-2 rounded-btn border border-line bg-canvas px-3 py-1.5 text-[12.5px] text-ink-2">
-            <span data-testid="settings.dialog.api-key-set">已设置</span>
-            <span aria-hidden="true">·</span>
-            <button
-              type="button"
-              data-testid="settings.dialog.api-key-edit"
-              onClick={() => setEditingKey(true)}
-              className="mn-focus rounded-btn-sm text-ink underline underline-offset-2"
-            >
-              修改
-            </button>
-          </span>
-        )}
-      </Field>
-      <div className="grid grid-cols-3 gap-3">
-        <Field label="对话模型">
-          <input
-            data-testid="settings.dialog.chat-model"
-            value={form.chat_model}
-            onChange={(e) => setForm((f) => ({ ...f, chat_model: e.target.value }))}
-            className={INPUT}
-            spellCheck={false}
-          />
-        </Field>
-        <Field label="小模型">
-          <input
-            data-testid="settings.dialog.small-model"
-            value={form.small_model}
-            onChange={(e) => setForm((f) => ({ ...f, small_model: e.target.value }))}
-            className={INPUT}
-            spellCheck={false}
-          />
-        </Field>
-        <Field label="嵌入模型">
-          <input
-            data-testid="settings.dialog.embedding-model"
-            value={form.embedding_model}
-            onChange={(e) => setForm((f) => ({ ...f, embedding_model: e.target.value }))}
-            className={INPUT}
-            spellCheck={false}
-          />
-        </Field>
-      </div>
-      <p className="text-[11.5px] leading-[1.6] text-muted">
-        对话模型负责回答；小模型用于起标题、抽取要点等轻量任务；嵌入模型用于检索材料。修改后对新发出的消息生效。
-      </p>
-    </Page>
+    <ModelSection
+      settings={settings}
+      renderPage={({ onSubmit, dirty, saving, banner, children }) => (
+        <Page
+          testid="settings.dialog.model"
+          title="模型"
+          onSubmit={onSubmit}
+          onClose={onClose}
+          dirty={dirty}
+          saving={saving}
+          banner={banner}
+        >
+          {children}
+        </Page>
+      )}
+    />
   );
 }
 

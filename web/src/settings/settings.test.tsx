@@ -38,6 +38,8 @@ describe('2-用户卡片-设置弹窗', () => {
     });
     await openSettings();
     fireEvent.change(await screen.findByTestId('settings.dialog.chat-model'), { target: { value: 'my-chat' } });
+    // v0.5 [BYOK]：默认样例已设置 Key，先点“修改”才出现输入框
+    fireEvent.click(screen.getByTestId('settings.dialog.api-key-edit'));
     fireEvent.change(screen.getByTestId('settings.dialog.api-key'), { target: { value: 'sk-test' } });
     fireEvent.click(screen.getByTestId('settings.dialog.save'));
     expect(await screen.findByTestId('settings.dialog.api-key-set')).toHaveTextContent('已设置');
@@ -203,5 +205,91 @@ describe('3-设置-记忆管理', () => {
     expect(useUI.getState().modal).toBeNull();
     expect(window.location.pathname).toBe(before);
     expect(useLayout.getState().rightTabs.at(-1)).toMatchObject({ kind: 'message', ref_id: 'msg_tf_u1' });
+  });
+});
+
+describe('3-设置-模型（v0.5 [BYOK]）', () => {
+  it('已配置：顶部显示“正在使用你自己的模型”，Key 显示末 4 位掩码，输入框是 password', async () => {
+    await openSettings();
+    expect(await screen.findByTestId('settings.model.mode')).toHaveAttribute('data-mode', 'real');
+    expect(screen.getByTestId('settings.model.api-key-hint')).toHaveTextContent('••••a1b2');
+    fireEvent.click(screen.getByTestId('settings.dialog.api-key-edit'));
+    expect(screen.getByTestId('settings.dialog.api-key')).toHaveAttribute('type', 'password');
+  });
+
+  it('选服务商预设：自动填 API 地址与推荐模型名，保存时带 provider', async () => {
+    let body: unknown;
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'PUT' && request.url.endsWith('/api/settings')) body = await request.clone().json();
+    });
+    await openSettings();
+    const sel = await screen.findByTestId('settings.model.provider');
+    await waitFor(() => expect(within(sel).getAllByRole('option')).toHaveLength(4));
+    fireEvent.change(sel, { target: { value: 'deepseek' } });
+    expect(screen.getByTestId('settings.dialog.api-base')).toHaveValue('https://api.deepseek.com');
+    expect(screen.getByTestId('settings.dialog.chat-model')).toHaveValue('deepseek-v4-pro');
+    expect(screen.getByTestId('settings.dialog.small-model')).toHaveValue('deepseek-flash');
+    expect(screen.getByTestId('settings.dialog.embedding-model')).toHaveValue('');
+    expect(screen.getByTestId('settings.model.provider-notes')).toHaveTextContent('没有嵌入接口');
+    expect(screen.getByTestId('settings.model.retrieval-hint')).toHaveTextContent('本地 BM25');
+    fireEvent.click(screen.getByTestId('settings.dialog.save'));
+    await waitFor(() => expect(body).toBeDefined());
+    expect(body).toEqual({
+      api_base: 'https://api.deepseek.com',
+      chat_model: 'deepseek-v4-pro',
+      small_model: 'deepseek-flash',
+      embedding_model: '',
+      provider: 'deepseek',
+    });
+    server.events.removeAllListeners();
+  });
+
+  it('测试连接：发当前填写值（不回传已存 Key），显示成功与工具调用支持', async () => {
+    let body: unknown;
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'POST' && request.url.endsWith('/api/settings/test')) body = await request.clone().json();
+    });
+    await openSettings();
+    fireEvent.change(await screen.findByTestId('settings.dialog.chat-model'), { target: { value: 'my-chat' } });
+    fireEvent.click(screen.getByTestId('settings.model.test'));
+    const res = await screen.findByTestId('settings.model.test-result');
+    expect(res).toHaveAttribute('data-ok', 'true');
+    expect(res).toHaveTextContent('连接成功');
+    expect(res).toHaveTextContent('支持工具调用');
+    expect(body).toMatchObject({ chat_model: 'my-chat', api_base: 'https://api.example.com/v1' });
+    expect(body).not.toHaveProperty('api_key');
+    server.events.removeAllListeners();
+  });
+
+  it('测试连接失败：显示中文原因', async () => {
+    marketControls.setTestResult('key-invalid');
+    await openSettings();
+    fireEvent.click(await screen.findByTestId('settings.model.test'));
+    const res = await screen.findByTestId('settings.model.test-result');
+    expect(res).toHaveAttribute('data-ok', 'false');
+    expect(res).toHaveTextContent('密钥无效');
+  });
+
+  it('清除 Key：保存发 api_key 空串，之后回到演示模式', async () => {
+    let body: unknown;
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'PUT' && request.url.endsWith('/api/settings')) body = await request.clone().json();
+    });
+    await openSettings();
+    fireEvent.click(await screen.findByTestId('settings.model.api-key-clear'));
+    expect(screen.getByTestId('settings.dialog.api-key')).toHaveAttribute('placeholder', '保存后清除已存的 Key');
+    fireEvent.click(screen.getByTestId('settings.dialog.save'));
+    await waitFor(() => expect(screen.getByTestId('settings.model.mode')).toHaveAttribute('data-mode', 'demo'));
+    expect(body).toEqual({ api_key: '' });
+    expect(screen.getByTestId('settings.dialog.api-key')).toHaveValue('');
+    server.events.removeAllListeners();
+  });
+
+  it('演示模式：未配置时测试连接按钮禁用，顶部写“回答由本地示例生成”', async () => {
+    marketControls.setDemoMode();
+    await openSettings();
+    expect(await screen.findByTestId('settings.model.mode')).toHaveTextContent('回答由本地示例生成');
+    expect(screen.getByTestId('settings.model.test')).toBeDisabled();
+    expect(screen.getByTestId('settings.dialog.api-key')).toHaveAttribute('type', 'password');
   });
 });
