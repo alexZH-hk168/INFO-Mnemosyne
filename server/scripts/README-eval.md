@@ -7,7 +7,7 @@ LongMemEval_S（cleaned）与自建 BranchMem 的数据准备、跑分、判分�
 
 1. 用户还没定模型与预算。**真跑之前，先在 dev-120 上只跑 M 的前 10 题**，看 `run_summary.json` 里的单题 token（`tokens_in_per_q`、`tokens_out_per_q`）、单题费用（`cost_usd_per_q`）和回放消耗（`replay`），报给用户，等用户确认预算后再扩大。
 2. `run_eval.py` 的 `--max-items` 默认就是 10；`--max-items 0`（不限）只能在预算确认后使用。
-3. 任何非 `fake` 的模型（读者、判分、嵌入）都会产生费用，代码里有闸门：不设环境变量 `MN_EVAL_ALLOW_PAID=1` 会直接报错退出。密钥只从环境变量读（`MN_EVAL_API_KEY`，退回 `OPENAI_API_KEY`），接口地址 `MN_EVAL_API_BASE`（默认 OpenAI）。
+3. 任何非 `fake` 的模型（读者、判分、嵌入）都会产生费用，代码里有闸门：不设环境变量 `MN_EVAL_ALLOW_PAID=1` 会直接报错退出。密钥先读环境变量（`MN_EVAL_API_KEY`，退回 `OPENAI_API_KEY`），接口地址 `MN_EVAL_API_BASE`；都没设时读用户在设置页保存的 `settings.json`（BYOK，与对话、记忆同一份），再缺省才是 OpenAI 官方地址。系统 M 的后端适配器同样读这份设置，`--model` 只覆盖对话模型名。
 4. 单价用 `--price-in/--price-out`（美元/百万 token）按所选模型的官方价目填写；不填时费用记 `null`，不估算。
 
 ## 流水线
