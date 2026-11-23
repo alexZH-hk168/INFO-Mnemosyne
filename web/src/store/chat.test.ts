@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SseFixture } from '../mocks/fixture-types';
 import full from '../../../docs/contract/fixtures/sse-turn-full.json';
 import cancel from '../../../docs/contract/fixtures/sse-turn-cancel.json';
@@ -173,5 +173,61 @@ describe('useEvidence / useUI 骨架', () => {
     expect(useUI.getState().toasts).toEqual([
       { id: b, kind: 'error', text: '重连失败', action: { label: '重新生成', onClick } },
     ]);
+  });
+});
+
+describe('重新生成带原回合参数（契约 v0.5，U74，INT1）', () => {
+  const calls: { url: string; body?: string }[] = [];
+  const startOf = (uid: string, mid: string) =>
+    `event: message.start\ndata: ${JSON.stringify({ seq: 1, message_id: mid, client_msg_id: 'c', user_message_id: uid })}\n\n` +
+    `event: message.end\ndata: ${JSON.stringify({ seq: 2, message_id: mid, usage: { prompt_tokens: 1, completion_tokens: 1 }, latency_ms: 5, cancelled: false })}\n\n`;
+  beforeEach(() => {
+    calls.length = 0;
+    useChat.setState({ turn: null, turnOptions: {}, composer: { [NEW_MAIN]: { text: '', web_search: false, scope: { mode: 'all' }, attachments: [] } } });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        calls.push({ url, body: init?.body as string | undefined });
+        const sse = url.includes('/regenerate') ? startOf('msg_u1', 'msg_a2') : startOf('msg_u1', 'msg_a1');
+        return new Response(sse, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
+      }),
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  const settle = async () => {
+    for (let i = 0; i < 20 && useChat.getState().streaming?.status !== 'saved'; i++) await new Promise((r) => setTimeout(r, 5));
+  };
+
+  it('本会话发过的一轮：请求体带联网、范围与强制 Skill', async () => {
+    const key = draftKey('cnv_x');
+    useChat.getState().setDraft(key, {
+      text: '问题',
+      web_search: true,
+      scope: { mode: 'selected', document_ids: ['doc_a'] },
+      forced_skill: 'pdf',
+    });
+    useChat.getState().send({ conversation_id: 'cnv_x' });
+    await settle();
+    expect(useChat.getState().turnOptions.msg_u1).toEqual({
+      web_search: true,
+      scope: { mode: 'selected', document_ids: ['doc_a'] },
+      forced_skill: 'pdf',
+    });
+    useChat.getState().regenerate('msg_a1', { conversation_id: 'cnv_x', parent_id: 'msg_u1' });
+    await new Promise((r) => setTimeout(r, 20));
+    const regen = calls.find((c) => c.url.endsWith('/api/messages/msg_a1/regenerate'))!;
+    expect(JSON.parse(regen.body!)).toEqual({
+      web_search: true,
+      scope: { mode: 'selected', document_ids: ['doc_a'] },
+      forced_skill: 'pdf',
+    });
+  });
+
+  it('不知道原参数（如刷新后的历史回答）：不带请求体，交给后端推断', async () => {
+    useChat.getState().regenerate('msg_old', { conversation_id: 'cnv_x', parent_id: 'msg_u_old' });
+    await new Promise((r) => setTimeout(r, 20));
+    const regen = calls.find((c) => c.url.endsWith('/api/messages/msg_old/regenerate'))!;
+    expect(regen.body).toBeUndefined();
   });
 });

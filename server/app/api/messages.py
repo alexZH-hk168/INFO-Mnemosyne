@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlite3
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Body, Depends, Header, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -34,6 +34,14 @@ class SendBody(BaseModel):
     branch_id: str | None = None
     web_search: bool = False
     scope: ScopeBody = ScopeBody()
+    forced_skill: str | None = None
+
+
+class RegenerateBody(BaseModel):
+    """契约 v0.5（U74）：可选请求体；字段缺省时沿用原回合推断（_previous_options）。"""
+
+    web_search: bool | None = None
+    scope: ScopeBody | None = None
     forced_skill: str | None = None
 
 
@@ -152,6 +160,13 @@ def _resolve_parent(conn: sqlite3.Connection, conv: sqlite3.Row, body: SendBody)
         branch = conn.execute("SELECT * FROM branches WHERE id = ?", (body.branch_id,)).fetchone()
         if branch is None or branch["conversation_id"] != conv["id"]:
             raise ApiError("VALIDATION_ERROR", "branch_id 不属于该对话")
+        _check_branch_open(branch)
+    if body.parent_id and not body.branch_id:
+        prow = conn.execute("SELECT branch_id FROM messages WHERE id = ?", (body.parent_id,)).fetchone()
+        if prow is not None and prow["branch_id"]:
+            pb = conn.execute("SELECT * FROM branches WHERE id = ?", (prow["branch_id"],)).fetchone()
+            if pb is not None:
+                _check_branch_open(pb)
     if body.parent_id:
         parent = conn.execute("SELECT * FROM messages WHERE id = ?", (body.parent_id,)).fetchone()
         if parent is None or parent["conversation_id"] != conv["id"]:
@@ -160,6 +175,14 @@ def _resolve_parent(conn: sqlite3.Connection, conv: sqlite3.Row, body: SendBody)
     if branch is not None:
         return _branch_leaf(conn, branch), branch["id"]
     return conv["active_leaf_id"], None
+
+
+def _check_branch_open(branch: sqlite3.Row) -> None:
+    """U87：已合并 / 已归档的分支只读，不再接收新消息（rest-api.md 错误码 VALIDATION_ERROR，400）。"""
+    if branch["status"] == "merged":
+        raise ApiError("VALIDATION_ERROR", "分支已合并到主线，不能再发消息", details={"branch_status": "merged"})
+    if branch["status"] == "archived":
+        raise ApiError("VALIDATION_ERROR", "分支已归档，不能再发消息", details={"branch_status": "archived"})
 
 
 @router.get("/messages/{mid}/events")
@@ -183,7 +206,7 @@ async def cancel_message(mid: str, conn: sqlite3.Connection = Depends(get_conn))
 
 
 def _previous_options(conn: sqlite3.Connection, mid: str) -> tuple[bool, dict]:
-    """重新生成没有请求体：从原回答的步骤推断联网开关与材料范围（U74）。"""
+    """重新生成没带请求体（或请求体缺字段）时：从原回答的步骤推断联网开关与材料范围（U74）。"""
     import json
 
     web = bool(get_settings().get("web_search_default"))
@@ -202,7 +225,12 @@ def _previous_options(conn: sqlite3.Connection, mid: str) -> tuple[bool, dict]:
 
 
 @router.post("/messages/{mid}/regenerate")
-async def regenerate(mid: str, x_model_tier: str | None = Header(default=None), conn: sqlite3.Connection = Depends(get_conn)):
+async def regenerate(
+    mid: str,
+    body: RegenerateBody | None = Body(default=None),
+    x_model_tier: str | None = Header(default=None),
+    conn: sqlite3.Connection = Depends(get_conn),
+):
     msg = conn.execute("SELECT * FROM messages WHERE id = ?", (mid,)).fetchone()
     if msg is None:
         raise not_found("消息")
@@ -214,7 +242,18 @@ async def regenerate(mid: str, x_model_tier: str | None = Header(default=None), 
     tier = _tier(x_model_tier)
     cfg, model = _model_or_502()
     conv = conn.execute("SELECT * FROM conversations WHERE id = ?", (msg["conversation_id"],)).fetchone()
+    if user["branch_id"]:
+        ub = conn.execute("SELECT * FROM branches WHERE id = ?", (user["branch_id"],)).fetchone()
+        if ub is not None:
+            _check_branch_open(ub)  # U87：只读分支里也不能重新生成
     web, scope = _previous_options(conn, mid)
+    forced = None
+    if body is not None:  # U74：请求体优先，缺省字段沿用推断
+        if body.web_search is not None:
+            web = body.web_search
+        if body.scope is not None:
+            scope = body.scope.model_dump(exclude_none=True)
+        forced = body.forced_skill or None
     aid = _new_assistant(conn, conv, user)
-    _start(conn, conv, user, aid, web_search=web, scope=scope, forced_skill=None, tier=tier, cfg=cfg, model=model)
+    _start(conn, conv, user, aid, web_search=web, scope=scope, forced_skill=forced, tier=tier, cfg=cfg, model=model)
     return _sse(aid)

@@ -24,9 +24,11 @@
 | POST | `/api/conversations/{cid}/messages` | `{ client_msg_id, content, parent_id?, branch_id?, web_search: bool, scope: Scope, forced_skill? }` | `text/event-stream`，见 [sse-events.md](./sse-events.md) |
 | GET | `/api/messages/{mid}/events?after_seq=N` | — | 断线续流，同上事件流；回答已结束则补发剩余事件后关闭 |
 | POST | `/api/messages/{mid}/cancel` | — | `{ ok: true }`；已生成正文保留，未校验引用标为推断 |
-| POST | `/api/messages/{mid}/regenerate` | — | 事件流；新回答是原回答的兄弟节点，同时更新 `active_leaf_id` |
+| POST | `/api/messages/{mid}/regenerate` | 可选 `{ web_search?, scope?, forced_skill? }`（v0.5，U74） | 事件流；新回答是原回答的兄弟节点，同时更新 `active_leaf_id` |
 
 - `client_msg_id`：前端生成的 UUID。同一个 id 重复提交返回同一条消息的事件流，不新建消息。
+- 重新生成的请求体（v0.5，U74）整体可省略，字段也都可省略：给了的字段优先；缺省的字段由后端按原回答推断（联网＝原回答有联网步骤或设置默认开启；范围＝原回答 `search_materials` 用过的范围，否则 `all`；`forced_skill` 缺省为不强制）。前端在本会话发过这一轮时带上原回合的三个参数。
+- 已合并（`merged`）或已归档（`archived`）分支只读（v0.5，U87）：`branch_id` 指向这样的分支、`parent_id` 是这样分支里的消息、或对这样分支里的回答 `regenerate`，一律 `400 VALIDATION_ERROR`，`error.details = { branch_status: "merged" | "archived" }`，不落库任何消息。
 - `Scope = { mode: "all" | "selected" | "none", document_ids?: string[] }`。`all`＝本项目全部已解析材料；`selected`＝只用输入框里 @ 引用的文件；`none`＝不检索材料。
 
 ## 分支

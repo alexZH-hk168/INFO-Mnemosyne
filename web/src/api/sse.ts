@@ -4,7 +4,7 @@
 // 还没收到 message.start 就断开时用同一个 client_msg_id 重新 POST（后端不会重复建消息）；三次都失败交给 onGiveUp。
 // 忽略 `: ping` 注释行；超过 45 s 没有任何数据视为断开；收到 seq 不大于已处理 seq 的事件直接丢弃。
 import { ApiRequestError, parseErrorResponse } from './client';
-import type { ID, SendMessageBody, SseEvent } from './types';
+import type { ID, RegenerateBody, SendMessageBody, SseEvent } from './types';
 
 export interface StreamHandlers {
   /** 每收到一个事件调用一次；useChat.applyEvent 是唯一写入口 */
@@ -238,12 +238,18 @@ export function resumeMessageStream(
   return drive(opener(mid, afterSeq), opener, handlers, opts);
 }
 
-/** POST /api/messages/{mid}/regenerate */
-export function regenerateMessageStream(mid: ID, handlers: StreamHandlers, opts: StreamOptions = {}): StreamHandle {
+/** POST /api/messages/{mid}/regenerate；`body` 为契约 v0.5 的可选请求体（U74），不给时不发请求体 */
+export function regenerateMessageStream(
+  mid: ID,
+  handlers: StreamHandlers,
+  opts: StreamOptions = {},
+  body?: RegenerateBody,
+): StreamHandle {
   const first: Opener = (signal) =>
     fetch(`/api/messages/${encodeURIComponent(mid)}/regenerate`, {
       method: 'POST',
       headers: jsonHeaders(opts.headers),
+      ...(body ? { body: JSON.stringify(body) } : {}),
       signal,
     });
   return drive(first, resumeOpener(opts), handlers, opts);

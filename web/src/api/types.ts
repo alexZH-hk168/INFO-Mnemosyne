@@ -32,6 +32,8 @@ export interface SendMessageBody {
   client_msg_id: string; content: string; parent_id?: ID; branch_id?: ID;
   web_search: boolean; scope: Scope; forced_skill?: string;
 }
+/** v0.5（U74）：POST /api/messages/{mid}/regenerate 的可选请求体；缺省字段由后端按原回答推断 */
+export interface RegenerateBody { web_search?: boolean; scope?: Scope; forced_skill?: string }
 
 // ---------- 分支 ----------
 export type BranchStatus = 'open' | 'merged' | 'archived';
@@ -69,7 +71,10 @@ export interface WebSnapshot { id: ID; url: string; title: string; fetched_at: I
 
 // ---------- SSE ----------
 export type StepKind = 'search_materials' | 'search_web' | 'fetch_url' | 'recall_memory' | 'open_source' | 'plugin_tool' | 'load_skill';
-export interface Step { step_id: ID; kind: StepKind; label: string; status: 'running' | 'done' | 'error'; duration_ms?: number }
+export interface Step {
+  step_id: ID; kind: StepKind; label: string; status: 'running' | 'done' | 'error'; duration_ms?: number;
+  plugin_id?: ID; // v0.5 [F6b]（原 U60）：kind=plugin_tool 时发起调用的插件 id；会话插件弹层据此统计“本轮调用 N 次”，缺省时前端退回按 label 匹配
+}
 export type Verdict = 'supported' | 'partial' | 'removed';
 export interface Citation { citation_id: ID; eid: ID; label: string; sentence_start: number; sentence_end: number; verdict: Verdict }
 export type SseEvent =

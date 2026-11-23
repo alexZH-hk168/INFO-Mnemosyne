@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { api } from '../api/client';
 import type { OkResult } from '../api/endpoints';
 import { regenerateMessageStream, sendMessageStream, type StreamHandle, type StreamHandlers } from '../api/sse';
-import type { Citation, ErrorCode, Evidence, ID, Scope, SendMessageBody, SseEvent, Step } from '../api/types';
+import type { Citation, ErrorCode, Evidence, ID, RegenerateBody, Scope, SendMessageBody, SseEvent, Step } from '../api/types';
 
 type EvidenceEventData = Extract<SseEvent, { event: 'evidence' }>['data'];
 
@@ -99,6 +99,8 @@ export interface Turn {
   error?: { code: ErrorCode; message: string; retriable: boolean };
   /** message.end 的 latency_ms */
   latency_ms?: number;
+  /** INT1 追加（U74）：发送这一轮时的联网开关、范围与强制 Skill；message.start 后按 user_message_id 记进 turnOptions */
+  options?: RegenerateBody;
 }
 
 export interface ChatState {
@@ -123,6 +125,11 @@ export interface ChatState {
   regenerate: (messageId: ID, target: { conversation_id: ID; parent_id?: ID; model_tier?: ModelTier }) => void;
   /** F3 追加：对话栏确认树里已有本轮消息后调用，去掉乐观显示（streaming 保留，供证据定位） */
   settleTurn: () => void;
+  /**
+   * INT1 追加（U74）：本会话发出的每一轮的原参数，键为用户消息 id。重新生成时作为请求体带上；
+   * 不在表里（如刷新页面后的历史回答）就不带请求体，由后端按原回答推断。只在内存里，不持久化。
+   */
+  turnOptions: Record<ID, RegenerateBody>;
 }
 
 export const emptyDraft = (): ComposerDraft => ({
@@ -162,6 +169,7 @@ export const useChat = create<ChatState>()((set, get) => {
     streaming: null,
     composer: { [NEW_MAIN]: emptyDraft() },
     turn: null,
+    turnOptions: {},
 
     setDraft: (key, patch) =>
       set((s) => ({ composer: { ...s.composer, [key]: { ...(s.composer[key] ?? emptyDraft()), ...patch } } })),
@@ -189,6 +197,8 @@ export const useChat = create<ChatState>()((set, get) => {
       };
       if (body.parent_id) turn.parent_id = body.parent_id;
       if (body.branch_id) turn.branch_id = body.branch_id;
+      turn.options = { web_search: body.web_search, scope: body.scope };
+      if (body.forced_skill) turn.options.forced_skill = body.forced_skill;
       set({ turn, streaming: null });
       // 发送后清空当前草稿：文字、强制 Skill、附件；@ 引用随文字一起清掉，范围回到“全部材料”；联网开关与“不用材料”保留
       const rest: Partial<ComposerDraft> = {
@@ -221,8 +231,16 @@ export const useChat = create<ChatState>()((set, get) => {
         connection: 'live',
       };
       if (target.parent_id) turn.parent_id = target.parent_id;
+      // U74：带上原回合参数（parent_id 即这条回答的用户消息）；本会话没发过这一轮就不带，交给后端推断
+      const options = target.parent_id ? get().turnOptions[target.parent_id] : undefined;
+      if (options) turn.options = options;
       set({ turn, streaming: null });
-      handle = regenerateMessageStream(messageId, handlers(), { headers: tierHeaders(target.model_tier) });
+      handle = regenerateMessageStream(
+        messageId,
+        handlers(),
+        { headers: tierHeaders(target.model_tier) },
+        options,
+      );
     },
 
     settleTurn: () => set({ turn: null }),
@@ -243,8 +261,12 @@ export const useChat = create<ChatState>()((set, get) => {
                 client_msg_id: state.turn.client_msg_id || e.data.client_msg_id,
               }
             : state.turn;
+          const opts = state.turn?.options;
           return {
             turn,
+            ...(opts && e.data.user_message_id
+              ? { turnOptions: { ...state.turnOptions, [e.data.user_message_id]: opts } }
+              : {}),
             streaming: {
               message_id: e.data.message_id,
               client_msg_id: e.data.client_msg_id,

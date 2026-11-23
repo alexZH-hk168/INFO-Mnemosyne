@@ -63,7 +63,14 @@ def step_out(row: sqlite3.Row) -> m.Step:
         label=str(label),
         status=_STEP_STATUS.get(row["status"] or "done", "done"),
         duration_ms=row["duration_ms"],
+        plugin_id=plugin_id_of(row["tool_name"]) if kind == "plugin_tool" else None,
     )
+
+
+def plugin_id_of(tool_name: str | None) -> str | None:
+    """插件工具名 `插件id__工具名` → 插件 id（契约 v0.5 [F6b] Step.plugin_id，原 U60）。"""
+    pid, sep, _ = (tool_name or "").partition("__")
+    return pid if sep and pid else None
 
 
 def message_out(conn: sqlite3.Connection, row: sqlite3.Row) -> m.Message:

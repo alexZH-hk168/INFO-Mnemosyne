@@ -65,6 +65,8 @@ export default function ChatColumn() {
     if (pid) {
       void qc.invalidateQueries({ queryKey: queryKeys.conversations(pid) });
       void qc.invalidateQueries({ queryKey: queryKeys.documents(pid) });
+      // INT1：项目栏的对话数（Project.conversation_count）在新对话首轮后变化
+      void qc.invalidateQueries({ queryKey: queryKeys.projects() });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endKey]);

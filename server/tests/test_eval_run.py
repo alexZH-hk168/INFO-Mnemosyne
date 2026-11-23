@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -120,10 +121,88 @@ def test_m_and_ablations_with_stub(data):
     assert len(set(hashes.values())) == 4
 
 
-def test_backend_adapter_not_ready(data):
-    out = data["dir"] / "runs" / "backend"
-    with pytest.raises(NotImplementedError, match="B2"):
-        run_eval.main(["--system", "M", "--data", str(data["full"]), "--model", "fake", "--out", str(out)])
+def _backend_env(monkeypatch, tmp_path):
+    """真实适配器会改 MN_DATA_DIR / MN_LLM_BACKEND 等环境变量：先登记，测试结束由 monkeypatch 还原。"""
+    for k in ("MN_DATA_DIR", "MN_LLM_BACKEND", "MN_LLM_MODEL", "MN_EMBED_BACKEND", "MN_DB_PATH"):
+        monkeypatch.setenv(k, os.environ.get(k, ""))
+    monkeypatch.setenv("MN_DATA_DIR", str(tmp_path / "unused"))
+    monkeypatch.setenv("MN_EMBED_BACKEND", "fake")
+
+
+def run_backend(data, system, dataset, root):
+    out = root / f"{dataset}-{system}"
+    argv = ["--system", system, "--data", str(data[dataset]), "--model", "fake", "--out", str(out), "--max-items", "0",
+            "--adapter", "backend", "--backend-data", str(root / "backend_data"), "--cache-dir", str(root / "replay_cache")]
+    assert run_eval.main(argv) == 0
+    summ = json.loads((out / "run_summary.json").read_text(encoding="utf-8"))
+    return summ, read_jsonl(out / "predictions.jsonl"), {m["message_id"]: (m["session_id"], m["turn_idx"]) for m in read_jsonl(out / "msg_map.jsonl")}
+
+
+def test_backend_adapter_runs_m_and_ablations_on_mini(data, monkeypatch, tmp_path):
+    """INT1：系统 M 走后端真实 Python API（B2 回合 + B3a 记忆任务，假模型），A1/A2/A4 复用同题回放。"""
+    _backend_env(monkeypatch, tmp_path)
+    root = tmp_path / "runs"
+    summ, rows, mm = run_backend(data, "M", "full", root)
+    check_rows(rows, mm)
+    assert len(rows) == 16 and summ["n_errors"] == 0
+    assert summ["replay"]["cache_misses"] > 0 and summ["replay"]["cache_hits"] == 0  # 每题独立库：不跨题复用（U111）
+    assert all(m.startswith("msg_") for m in mm)  # 后端分配的真实 message_id
+    assert all(r["hypothesis"] and "[[E" not in r["hypothesis"] for r in rows)
+    assert any(r["cited_message_ids"] for r in rows) and any(r["retrieved_ids"] for r in rows)
+    assert all(r["tokens_in"] > 0 and r["cost_usd"] is None for r in rows)
+    # 每题一个独立数据库
+    dbs = sorted((root / "backend_data" / "items").glob("*/mnemosyne.db"))
+    assert len(dbs) == 16
+    for s in ("A1", "A2", "A4"):
+        summ2, rows2, mm2 = run_backend(data, s, "full", root)
+        check_rows(rows2, mm2)
+        assert summ2["replay"]["cache_misses"] == 0 and summ2["replay"]["cache_hits"] == summ["replay"]["cache_misses"]
+        if s == "A2":
+            assert all(r["cited_message_ids"] == [] for r in rows2)
+
+
+def test_backend_adapter_branchmem_scope(data, monkeypatch, tmp_path):
+    _backend_env(monkeypatch, tmp_path)
+    root = tmp_path / "runs"
+    items = {it.key: it for it in load_items(read_jsonl(data["bm"]))}
+    _, m_rows, m_map = run_backend(data, "M", "bm", root)
+    _, a3_rows, a3_map = run_backend(data, "A3", "bm", root)
+    for rows, mm in ((m_rows, m_map), (a3_rows, a3_map)):
+        check_rows(rows, mm)
+        assert all(r["branch_id"] == "main" for r in rows)
+    for r in m_rows:  # M：召回与引用都不越出提问节点的祖先路径
+        assert r["leaked_ids"] == []
+        assert not any(x["session_id"] in items[r["question_id"]].distractor_sessions for x in r["retrieved_ids"])
+    assert any(r["leaked_ids"] for r in a3_rows)  # A3 不按分支过滤：兄弟分支进入召回
+
+
+def test_backend_adapter_isolates_eval_questions(data, monkeypatch, tmp_path):
+    """同一数据目录重跑：命中回放缓存，且上一轮的提问没有写进记忆（两次结果相同）。"""
+    _backend_env(monkeypatch, tmp_path)
+    root = tmp_path / "runs"
+    _, first, _ = run_backend(data, "M", "full", root)
+    summ, second, _ = run_backend(data, "A4", "full", root)
+    _, third, _ = run_backend(data, "M", "full", root)
+    assert [r["hypothesis"] for r in third] == [r["hypothesis"] for r in first]
+    assert [r["retrieved_ids"] for r in third] == [r["retrieved_ids"] for r in first]
+
+
+def test_backend_adapter_paid_gate(monkeypatch, tmp_path):
+    from eval_lib.adapter import make_adapter
+    from eval_lib.llm import PaidCallBlocked
+
+    _backend_env(monkeypatch, tmp_path)
+    monkeypatch.delenv("MN_EVAL_ALLOW_PAID", raising=False)
+    with pytest.raises(PaidCallBlocked):
+        make_adapter("backend", model="gpt-4o-mini", data_dir=tmp_path / "bd")
+
+
+def test_backend_to_iso():
+    from eval_lib.backend import to_iso
+
+    assert to_iso("2023/05/20 (Sat) 02:21", "x") == "2023-05-20T02:21:00Z"
+    assert to_iso("2023-5-2", "x") == "2023-05-02T00:00:00Z"
+    assert to_iso("", "fallback") == "fallback"
 
 
 def test_branchmem_scope_vs_a3_vs_b2(data):

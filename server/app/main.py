@@ -53,7 +53,16 @@ async def lifespan(app: FastAPI):
         plugins.shutdown()
 
 
+def _wire_memory_switch() -> None:
+    """U82：记忆子系统的开关读设置页的 memory_enabled（B2 的 settings.json）。"""
+    from app.llm.settings import memory_enabled
+    from app.memory.service import memory
+
+    memory.enabled_check = lambda _conn: memory_enabled()
+
+
 def create_app() -> FastAPI:
+    _wire_memory_switch()
     app = FastAPI(title="Mnemosyne", version="0.1.0", lifespan=lifespan)
     install_error_handlers(app)
     app.include_router(projects.router, prefix="/api")

@@ -1,11 +1,12 @@
 """记忆子系统用到的全部“模型判断”都经过这里：抽取候选、ADD/UPDATE/SUPERSEDE/NOOP 判定、L2/L4 重写、分支合并要点。
 
-现在是**确定性假实现**（规则式），不访问网络、不发起任何付费调用；开发与测试都用它。
+默认是**确定性假实现**（规则式），不访问网络、不发起任何付费调用；开发与测试都用它。
 接口：`complete_json(task, prompt, data=...) -> dict`。`prompt` 是给真实模型的完整提示词（已按任务拼好），
 `data` 是同一份输入的结构化形式，假实现只读 `data`。
 
-TODO(B3a→B2 合并后)：改为调用 `app.llm` 的小模型（OpenAI 兼容、JSON 输出），`prompt` 原样发出、解析 JSON；
-解析失败或模型不可用时退回本文件的规则实现。在用户定下模型与预算（未决 U2）之前不得切换。
+INT1 已接上：配置了真实模型（MN_LLM_BACKEND=openai 且 api_base/small_model/API Key 齐全）时调用 `app.llm` 的小模型，
+`prompt` 原样发出、解析 JSON；解析失败或模型不可用时退回本文件的规则实现。默认是假模型，不发起付费调用；
+用户定下模型与预算（未决 U2）之前不要打开真实模型。
 
 任务与返回结构：
 - extract  data={user, assistant, user_message_id, assistant_message_id}
@@ -21,6 +22,7 @@ TODO(B3a→B2 合并后)：改为调用 `app.llm` 的小模型（OpenAI 兼容�
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any
 
@@ -180,10 +182,87 @@ def _merge(data: dict) -> dict:
 _FAKE = {"extract": _extract, "judge": _judge, "digest": _digest, "profile": _profile, "merge": _merge}
 
 
+# 每个任务的真实模型输出至少要有的键；缺了就退回规则实现
+_REQUIRED = {"extract": "candidates", "judge": "action", "digest": "content", "profile": "content", "merge": "content"}
+_JSON_ONLY = "\n只输出一个 JSON 对象，不要输出其他文字。"
+
+
+def _parse_json(text: str) -> dict | None:
+    t = (text or "").strip()
+    m = re.search(r"```(?:json)?\s*(.*?)```", t, re.S)
+    if m:
+        t = m.group(1).strip()
+    if not t.startswith("{"):
+        i, j = t.find("{"), t.rfind("}")
+        if i < 0 or j <= i:
+            return None
+        t = t[i : j + 1]
+    try:
+        out = json.loads(t)
+    except ValueError:
+        return None
+    return out if isinstance(out, dict) else None
+
+
+def _valid(task: str, out: dict) -> bool:
+    key = _REQUIRED[task]
+    if key not in out:
+        return False
+    if task == "extract":
+        return isinstance(out["candidates"], list) and all(isinstance(c, dict) for c in out["candidates"])
+    if task == "judge":
+        return out["action"] in ("ADD", "UPDATE", "SUPERSEDE", "NOOP")
+    return isinstance(out[key], str)
+
+
+def _real_model():
+    """配置了真实模型（MN_LLM_BACKEND=openai 且 API Key 等齐全）时返回 (模型, 小模型名)，否则 None。"""
+    from app.llm import ModelError, get_model, llm_config
+
+    cfg = llm_config()
+    if cfg.backend == "fake" or not cfg.configured:
+        return None
+    try:
+        return get_model(cfg), cfg.small_model
+    except ModelError:
+        return None
+
+
+def _call_real(task: str, prompt: str) -> dict | None:
+    import asyncio
+
+    from app.llm import ModelError
+
+    real = _real_model()
+    if real is None:
+        return None
+    try:
+        asyncio.get_running_loop()
+        return None  # 在事件循环线程里不能同步等待；调用方都在线程池或 jobs 线程里，这里只是兜底
+    except RuntimeError:
+        pass
+    model, small = real
+    try:
+        text, _usage = asyncio.run(model.complete([{"role": "user", "content": prompt + _JSON_ONLY}], model=small))
+    except Exception as e:  # noqa: BLE001 - 任何模型侧失败都退回规则实现，记忆任务不能因此失败
+        if not isinstance(e, ModelError):
+            logging.getLogger("mnemosyne.memory").warning("记忆任务 %s 调用真实模型失败：%s", task, type(e).__name__)
+        return None
+    out = _parse_json(text)
+    return out if out is not None and _valid(task, out) else None
+
+
 def complete_json(task: str, prompt: str, *, data: dict[str, Any] | None = None) -> dict:
-    """返回模型输出的 JSON 对象。当前只走确定性假实现（见模块说明的 TODO）。"""
+    """返回模型输出的 JSON 对象。
+
+    配置了真实模型（`app.llm`：MN_LLM_BACKEND=openai 且已配置）时把 `prompt` 发给小模型并解析 JSON；
+    模型不可用、输出不是 JSON 或缺必需键时退回确定性规则实现。默认（假模型）不访问网络、不产生费用。（INT1）
+    """
     if task not in _FAKE:
         raise ValueError(f"未知的记忆任务：{task}")
+    out = _call_real(task, prompt)
+    if out is not None:
+        return out
     return _FAKE[task](data if data is not None else json.loads(prompt))
 
 

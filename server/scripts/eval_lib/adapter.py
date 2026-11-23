@@ -5,8 +5,8 @@ run_eval.py 只通过 BackendAdapter 协议与后端交互：
      回放结果按「缓存键」落盘（ReplayCache），同一 session 在不同题、不同系统（M、A1–A4）之间复用（立项稿 11.5）。
   2. ask(...)：在后端提一个问题（BranchMem 时挂在提问节点的父消息下），拿回答、引用的 message_id、检索到的 message_id 与分数。
 
-本轮（2026-11-23）B2 的 Python API 尚在并行开发，`MnemosyneBackendAdapter` 只写了接口与 TODO；
-测试与流水线自检用 `StubAdapter`（本地词面检索 + 抽取式回答，不代表 M 的效果，结果不得写进论文）。
+`MnemosyneBackendAdapter`（INT1）在本进程里调用后端的数据库、Agent 回合与记忆任务，见 backend.py；
+`StubAdapter` 只用于流水线自检（本地词面检索 + 抽取式回答，不代表 M 的效果，结果不得写进论文）。
 """
 
 from __future__ import annotations
@@ -207,32 +207,17 @@ class StubAdapter:
         return AskResult(hyp, cited, retrieved, branch, tokens_in=0, tokens_out=0, latency_ms=0, cost_usd=None)
 
 
-class MnemosyneBackendAdapter:
-    """真实后端适配器（待 B2 的 Python API 合入后实现）。
+def MnemosyneBackendAdapter(**kwargs: Any) -> Any:  # noqa: N802 - 保留原名，实现见 backend.py
+    """真实后端适配器（INT1 接上 B2/B3a 的进程内 Python API），实现与说明见 eval_lib/backend.py。"""
+    from .backend import MnemosyneBackendAdapter as Impl
 
-    TODO(E, 等 B2)：对接方式定下来后实现下面四个方法，预期依赖（以 B2 实际交付为准，接口不得自造）：
-      - start_item：为每题建一个项目（app.repo 建项目），记下 project_id；
-      - replay_session：LongMemEval 每个 session 建一个对话、按 turns 顺序写入 user/assistant 消息
-        （带 session 日期作为 created_at），BranchMem 在 parent_backend_id 下续写；然后同步跑记忆抽取
-        （B3a 的 MemoryService.on_turn_finished → jobs），统计抽取用的 token 与费用；
-      - ask：在新对话（LongMemEval）或 parent_backend_id 下（BranchMem）发问题，调用 B2 的 Agent 回合
-        （非流式或收集 SSE 事件），按 Flags 关闭 open_source / 引用要求与引用校验 / 分支路径过滤 / L4 画像；
-        从 message.end 与 citations 取回答、cited message_id，从检索步骤取 retrieved（message_id, score）；
-      - cache_namespace：后端 git 提交号 + 数据库路径 + 记忆抽取模型名。
-    """
-
-    name = "backend"
-
-    def __init__(self, **kwargs: Any) -> None:
-        raise NotImplementedError(
-            "系统 M/A1–A4 的真实后端适配器尚未实现：等 B2 交付 Python API 后接上（见 MnemosyneBackendAdapter 文档）。"
-            "流水线自检请用 --adapter stub（结果不可用于论文）。"
-        )
+    return Impl(**kwargs)
 
 
-def make_adapter(name: str) -> Any:
+def make_adapter(name: str, **kwargs: Any) -> Any:
+    """kwargs 只给 backend：model（fake 或模型名）、data_dir（后端数据目录）。"""
     if name == "stub":
         return StubAdapter()
     if name == "backend":
-        return MnemosyneBackendAdapter()
+        return MnemosyneBackendAdapter(**kwargs)
     raise ValueError(f"未知适配器：{name}")

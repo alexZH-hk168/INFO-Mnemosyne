@@ -146,7 +146,7 @@ def test_event_fields_match_contract_fixture(client, run_jobs):
         if ev == "message.start":
             assert keys <= contract_start and {"seq", "message_id", "user_message_id"} <= keys
         elif ev == "step":
-            assert keys <= {"seq", "step_id", "kind", "label", "status", "duration_ms"}
+            assert keys <= {"seq", "step_id", "kind", "label", "status", "duration_ms", "plugin_id"}  # plugin_id：v0.5 [F6b]
         else:
             assert keys == want[ev], (ev, keys ^ want[ev])
 

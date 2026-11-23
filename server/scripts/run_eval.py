@@ -8,7 +8,8 @@
   run_summary.json：配置、config_hash、题数、单题平均 token 与费用、回放消耗与缓存命中
 
 系统：B1 全量上下文；B2 朴素 RAG（按轮切块、取前 k、要求引用）；M 完整系统；A1 去回溯原文；A2 去证据锚点；
-      A3 去分支作用域（只在 BranchMem 上跑）；A4 去 L4 画像。M/A* 经 --adapter 调后端。
+      A3 去分支作用域（只在 BranchMem 上跑）；A4 去 L4 画像。M/A* 经 --adapter 调后端：backend（默认）在本进程里
+      调后端 Python API，数据库在 --backend-data（默认 <out>/../backend_data）；stub 只用于流水线自检。
 
 预算硬约束（未决 U2）：--max-items 默认 10。真跑前先在 dev-120 上只跑 M 的前 10 题，看 run_summary.json 的
 单题 token 与费用，等用户确认预算后再用 --max-items 0（不限）扩大。非 fake 模型还要设 MN_EVAL_ALLOW_PAID=1。
@@ -78,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--embed", default="hash", help="B2 的嵌入器：hash（本地测试）或 openai:<模型名>")
     ap.add_argument("--adapter", default="backend", choices=["backend", "stub"], help="M/A1–A4 的后端适配器；stub 只用于流水线自检")
     ap.add_argument("--cache-dir", type=Path, help="回放缓存目录（M/A* 共用）；默认 <out>/../replay_cache")
+    ap.add_argument("--backend-data", type=Path, help="--adapter backend 的后端数据目录（数据库）；默认 <out>/../backend_data，须与回放缓存配套")
     ap.add_argument("--price-in", type=float, help="每百万输入 token 美元（按所选模型官方价目填）")
     ap.add_argument("--price-out", type=float, help="每百万输出 token 美元")
     ap.add_argument("--seed", type=int, default=SEED)
@@ -101,7 +103,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.system == "B2":
         ctx.embedder = make_embedder(args.embed)
     if args.system in SYSTEM_FLAGS:
-        ctx.adapter = make_adapter(args.adapter)
+        if args.adapter == "backend":
+            ctx.adapter = make_adapter("backend", model=args.model, data_dir=args.backend_data or (args.out.parent / "backend_data"))
+        else:
+            ctx.adapter = make_adapter(args.adapter)
         if args.cache_dir is None and args.adapter == "stub":
             ctx.cache = ReplayCache(None)  # 桩的消息只在内存里，不落盘
         else:
