@@ -59,10 +59,12 @@ test('真实后端：项目 → 上传 → 提问 → 证据 → 重新生成 �
   const apiErrors: string[] = [];
   page.on('response', (r) => {
     // favicon.ico：前端本来就没有站点图标（MSW 模式下同样 404），与前后端对接无关
-    if (r.status() >= 400 && !r.url().endsWith('/favicon.ico')) apiErrors.push(`${r.status()} ${r.request().method()} ${r.url()}`);
+    if (r.status() >= 400 && !r.url().endsWith('/favicon.ico'))
+      apiErrors.push(`${r.status()} ${r.request().method()} ${r.url()}`);
   });
   page.on('console', (m) => {
-    if (m.type() === 'error' && !m.location().url.endsWith('/favicon.ico')) apiErrors.push(`console: ${m.text()} @ ${m.location().url}`);
+    if (m.type() === 'error' && !m.location().url.endsWith('/favicon.ico'))
+      apiErrors.push(`console: ${m.text()} @ ${m.location().url}`);
   });
 
   // 1. 新建项目
@@ -116,19 +118,25 @@ test('真实后端：项目 → 上传 → 提问 → 证据 → 重新生成 �
   // 5. 点胶囊：右栏打开 PDF 第 4 页并高亮
   await chip.click();
   await expect(page.getByTestId('right.pdf-preview')).toHaveAttribute('data-page', '4', { timeout: 30_000 });
-  await expect(
-    page.getByTestId('right.pdf-preview.page:4').getByTestId('right.pdf-preview.highlight'),
-  ).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('right.pdf-preview.page:4').getByTestId('right.pdf-preview.highlight')).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByTestId('right.pdf-toolbar.pages')).toHaveText('/ 15 页');
-  await expect(page.getByTestId('right.pdf-preview.page:4')).toHaveAttribute('data-rendered', 'true', { timeout: 30_000 });
+  await expect(page.getByTestId('right.pdf-preview.page:4')).toHaveAttribute('data-rendered', 'true', {
+    timeout: 30_000,
+  });
   await shot(page, '证据胶囊-PDF第4页高亮');
 
   // 6. 重新生成
-  const regenReq = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith(`/api/messages/${mid}/regenerate`));
+  const regenReq = page.waitForRequest(
+    (r) => r.method() === 'POST' && r.url().endsWith(`/api/messages/${mid}/regenerate`),
+  );
   await page.getByTestId(`chat.regenerate:${mid}`).click();
   // U74：重新生成带上原回合参数（不联网、全部材料）
   expect((await regenReq).postDataJSON()).toEqual({ web_search: false, scope: { mode: 'all' } });
-  await expect(page.getByTestId(`chat.regenerate.count:${mid}`).or(page.locator('[data-testid^="chat.regenerate.count:"]').last())).toHaveText('2/2', { timeout: 30_000 });
+  await expect(
+    page.getByTestId(`chat.regenerate.count:${mid}`).or(page.locator('[data-testid^="chat.regenerate.count:"]').last()),
+  ).toHaveText('2/2', { timeout: 30_000 });
   const mid2 = await lastAnswerId(page);
   expect(mid2).not.toBe(mid);
   await expect(page.getByTestId(`chat.evidence-chip:${mid2}:E1`)).toBeVisible();
@@ -170,6 +178,29 @@ test('真实后端：项目 → 上传 → 提问 → 证据 → 重新生成 �
   await expect(page.getByTestId('market.plugin-detail')).toBeVisible();
   await expect(page.getByTestId('market.plugin-detail.permissions')).toBeVisible();
   await shot(page, '插件详情');
+
+  // 9. 安装插件（本地假 MCP 服务冒充 arxiv，见 make_registry.py）→ 输入框插件区显示已启用插件
+  await page.getByTestId('market.install-button').click();
+  await expect(page.getByTestId('market.install-dialog')).toBeVisible();
+  await shot(page, '插件安装-确认弹窗');
+  await page.getByTestId('market.install-dialog.next').click();
+  await expect(page.getByTestId('market.install-dialog')).toHaveCount(0, { timeout: 30_000 });
+  await expect(page.getByTestId('market.install-button')).toHaveText(/已安装/);
+  // 回到对话：插件区列出本对话已启用插件的简称
+  await page.getByTestId(`sidebar.conversation-row:${cid}`).click();
+  await expect(page).toHaveURL(new RegExp(`/c/${cid}`));
+  const entry = page.getByTestId('composer.plugin-entry');
+  await expect(entry).toHaveText('arXiv');
+  await entry.click();
+  await expect(page.locator('[data-testid^="plugins.popover"]').first()).toBeVisible();
+  await expect(page.getByTestId('plugins.popover.row:arxiv')).toBeVisible();
+  await shot(page, '输入框插件区-对话');
+  await entry.click();
+  // 主页：托条显示“已启用 1 个插件”
+  await page.getByTestId('sidebar.new-chat').click();
+  await expect(page.getByTestId('home.onboard')).toBeVisible();
+  await expect(entry).toHaveText('已启用 1 个插件');
+  await shot(page, '输入框插件区-主页已启用1个');
 
   expect(apiErrors, apiErrors.join('\n')).toEqual([]);
 });

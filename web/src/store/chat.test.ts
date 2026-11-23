@@ -183,7 +183,11 @@ describe('重新生成带原回合参数（契约 v0.5，U74，INT1）', () => {
     `event: message.end\ndata: ${JSON.stringify({ seq: 2, message_id: mid, usage: { prompt_tokens: 1, completion_tokens: 1 }, latency_ms: 5, cancelled: false })}\n\n`;
   beforeEach(() => {
     calls.length = 0;
-    useChat.setState({ turn: null, turnOptions: {}, composer: { [NEW_MAIN]: { text: '', web_search: false, scope: { mode: 'all' }, attachments: [] } } });
+    useChat.setState({
+      turn: null,
+      turnOptions: {},
+      composer: { [NEW_MAIN]: { text: '', web_search: false, scope: { mode: 'all' }, attachments: [] } },
+    });
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string, init?: RequestInit) => {
@@ -196,7 +200,8 @@ describe('重新生成带原回合参数（契约 v0.5，U74，INT1）', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   const settle = async () => {
-    for (let i = 0; i < 20 && useChat.getState().streaming?.status !== 'saved'; i++) await new Promise((r) => setTimeout(r, 5));
+    for (let i = 0; i < 20 && useChat.getState().streaming?.status !== 'saved'; i++)
+      await new Promise((r) => setTimeout(r, 5));
   };
 
   it('本会话发过的一轮：请求体带联网、范围与强制 Skill', async () => {

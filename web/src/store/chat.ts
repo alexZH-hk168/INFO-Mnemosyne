@@ -4,7 +4,17 @@ import { create } from 'zustand';
 import { api } from '../api/client';
 import type { OkResult } from '../api/endpoints';
 import { regenerateMessageStream, sendMessageStream, type StreamHandle, type StreamHandlers } from '../api/sse';
-import type { Citation, ErrorCode, Evidence, ID, RegenerateBody, Scope, SendMessageBody, SseEvent, Step } from '../api/types';
+import type {
+  Citation,
+  ErrorCode,
+  Evidence,
+  ID,
+  RegenerateBody,
+  Scope,
+  SendMessageBody,
+  SseEvent,
+  Step,
+} from '../api/types';
 
 type EvidenceEventData = Extract<SseEvent, { event: 'evidence' }>['data'];
 
@@ -237,12 +247,7 @@ export const useChat = create<ChatState>()((set, get) => {
       const options = target.parent_id ? get().turnOptions[target.parent_id] : undefined;
       if (options) turn.options = options;
       set({ turn, streaming: null });
-      handle = regenerateMessageStream(
-        messageId,
-        handlers(),
-        { headers: tierHeaders(target.model_tier) },
-        options,
-      );
+      handle = regenerateMessageStream(messageId, handlers(), { headers: tierHeaders(target.model_tier) }, options);
     },
 
     settleTurn: () => set({ turn: null }),

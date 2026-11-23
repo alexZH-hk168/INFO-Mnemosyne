@@ -36,7 +36,8 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: [
     {
-      command: `rm -rf ${dataDir} && mkdir -p ${dataDir} && MN_DATA_DIR=${dataDir} MN_LLM_BACKEND=fake MN_EMBED_BACKEND=fake .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${apiPort}`,
+      // registry 用 make_registry.py 生成：arxiv 插件换成本地假 MCP 服务（不联网），供“安装插件 → 输入框插件区”这一步
+      command: `rm -rf ${dataDir} && mkdir -p ${dataDir} && .venv/bin/python ${webDir}tests/e2e-real/make_registry.py ${dataDir}/registry && MN_DATA_DIR=${dataDir} MN_REGISTRY_DIR=${dataDir}/registry MN_SKILLS_DIR=${dataDir}/skills MN_LLM_BACKEND=fake MN_EMBED_BACKEND=fake .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${apiPort}`,
       cwd: serverDir,
       url: `http://127.0.0.1:${apiPort}/api/projects`,
       reuseExistingServer: true,
