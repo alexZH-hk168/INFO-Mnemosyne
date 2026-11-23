@@ -84,7 +84,7 @@ python3 tools/uxgen/prompts.py    # 重新生成 docs/prompts/（会先跑 rende
 | R4 | **模拟数据只放 `web/src/mocks/` 与 `docs/contract/fixtures/`。**组件里不写死演示文字、文件名、ID。 | 移到 mocks |
 | R5 | **先认领再动手。**在 PROGRESS 看板写上里程碑、分支、日期；别人认领的文件不改。 | 回滚对别人文件的改动 |
 | R6 | **不夸大。**没跑的测试不说通过，没截图的界面不说完成，部分完成就写部分完成。 | 更正汇报与 PROGRESS |
-| R7 | **当前不推送远端。**仓库只保存在云电脑本地（`/home/user/workspace/INFO5000项目/INFO-Mnemosyne`）。不要 `git push`、不要改 remote、不要 force 操作；在本地分支提交即可。用户说可以推送时再推。 | 立即停止并告诉用户 |
+| R7 | **开发 Agent 不推送远端。**只在自己的本地分支提交；不要 `git push`、不要改 remote、不要 force。用户 2026-11-23 要求代码及时同步到 GitHub：由编排 Agent 在每次合并本地 `main` 并复跑测试后推送 `main`（只 fast-forward，禁止 force），不在仓库或聊天里写任何令牌。 | 立即停止并告诉用户 |
 | R8 | **不碰凭据。**不在代码、文档、日志、聊天里写任何 API Key 或 GitHub 令牌。 | 删除并告诉用户 |
 
 ## 6. 用户已定的产品口径（改动必须经用户同意）
