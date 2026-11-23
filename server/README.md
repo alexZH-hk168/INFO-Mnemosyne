@@ -26,6 +26,10 @@ uv run uvicorn app.main:app --port 8100   # 启动服务，解析任务在后台
 | `MN_EMBED_MODEL` | — | 如 `text-embedding-3-small` |
 | `MN_EMBED_API_KEY` | — | 只从环境变量读取，不写日志 |
 | `MN_EMBED_DIM` | fake 为 256 | 真实模型必须填，与模型输出维度一致 |
+| `MN_PLUGIN_START_TIMEOUT_S` | `30` | 对话里插件启动（`tools/list`、调用前拉起）的上限 |
+| `MN_PLUGIN_INSTALL_TIMEOUT_S` | `180` | [VER1] 安装 / 改配置 / 重新检查的自检上限；首次 `uvx` 要下载插件依赖（约 100 MB），网络慢时调大。未设时若设了 `MN_PLUGIN_START_TIMEOUT_S` 则沿用它 |
+
+真实插件验收（要联网，模型仍是假模型，不产生费用）：`MN_REAL_PLUGINS=1 .venv/bin/python -m pytest -q tests/test_real_plugins.py`，前端对应冷烟见 `web/tests/e2e-real/playwright.plugins.real.config.ts`。
 
 切到真实嵌入：设好上面四个 `MN_EMBED_*` 变量，然后运行 `uv run python scripts/ingest.py --project <项目> --reindex`，它会按新维度重建向量表并重新嵌入该项目全部材料（会产生嵌入 API 费用）。维度与现有向量表不一致时服务启动会报错并提示 `--reindex`。
 

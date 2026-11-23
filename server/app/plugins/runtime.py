@@ -32,6 +32,11 @@ from app.plugins.host import (
 log = logging.getLogger("mnemosyne.plugins")
 
 MAX_TEXT = 12000
+# [VER1] 安装（含改配置、重新检查）时的自检上限。实测（2026-11-23 云电脑）：空 uv 缓存时 uvx 要先下载插件依赖
+# （arxiv-mcp-server@0.8.2 为 45 个包、缓存约 108 MB），默认 30 s 内两个插件都握不上手；超时会把下载一起结束，重试只能接着已缓存的部分。
+# 缓存热了以后启动约 1–2 s。所以安装单独给长一些的上限；对话里的启动（tools/list、调用）仍用 MN_PLUGIN_START_TIMEOUT_S。
+# 网络很慢时 180 s 也可能不够（同一天换新缓存目录实测仍超时），见 PROGRESS U140。
+DEFAULT_INSTALL_TIMEOUT_S = 180.0
 
 
 def start_timeout() -> float:
@@ -39,6 +44,19 @@ def start_timeout() -> float:
         return float(os.environ.get("MN_PLUGIN_START_TIMEOUT_S", DEFAULT_START_TIMEOUT_S))
     except ValueError:
         return DEFAULT_START_TIMEOUT_S
+
+
+def install_timeout() -> float:
+    """安装自检上限：优先 MN_PLUGIN_INSTALL_TIMEOUT_S；只显式设了 MN_PLUGIN_START_TIMEOUT_S 时沿用它（测试里用小值验超时）；
+    都没设时 180 s。"""
+    for key in ("MN_PLUGIN_INSTALL_TIMEOUT_S", "MN_PLUGIN_START_TIMEOUT_S"):
+        raw = os.environ.get(key)
+        if raw:
+            try:
+                return float(raw)
+            except ValueError:
+                break
+    return DEFAULT_INSTALL_TIMEOUT_S
 
 
 def _truncate(text: str, limit: int = MAX_TEXT) -> str:
@@ -163,7 +181,7 @@ class PluginRuntime:
             raise ApiError("VALIDATION_ERROR", "缺少必填配置：" + "、".join(missing))
         spec = store.launch_spec(manifest, cfg)
         try:
-            tools: list[ToolInfo] = host.self_check(spec, start_timeout())
+            tools: list[ToolInfo] = host.self_check(spec, install_timeout())
         except PluginStartError as e:
             if row is not None:  # 已安装的插件：保存这次的配置，状态记为 error
                 store.save_installed(conn, manifest, cfg, "error", None, now_iso())

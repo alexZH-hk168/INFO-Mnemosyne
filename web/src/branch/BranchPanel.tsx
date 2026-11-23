@@ -14,6 +14,7 @@ import AssistantMessage, { type AssistantView } from '../chat/AssistantMessage';
 import Composer from '../chat/Composer';
 import UserMessage from '../chat/UserMessage';
 import { historyLatencyMs } from '../lib/latency';
+import { isTurnSettled } from '../lib/settle';
 import { pushPath, routePath } from '../lib/router';
 import { useChat } from '../store/chat';
 import { useLayout, type Tab } from '../store/layout';
@@ -71,7 +72,7 @@ export default function BranchPanel({ tab }: { tab: Tab }) {
 
   // 本分支的进行中一轮
   const myTurn = turn && turn.conversation_id === cid && turn.branch_id === bid ? turn : null;
-  const settled = !!myTurn && !!streaming && inTree.has(streaming.message_id);
+  const settled = !!myTurn && isTurnSettled(streaming, streaming ? byId.get(streaming.message_id) : undefined);
   useEffect(() => {
     if (settled) settleTurn();
   }, [settled, settleTurn]);
@@ -167,35 +168,38 @@ export default function BranchPanel({ tab }: { tab: Tab }) {
                 已归档，只读
               </div>
             )}
-            {path.map((m) => {
-              if (m.role === 'user')
-                return <UserMessage key={m.id} id={m.id} content={m.content} docTitles={docTitles} />;
-              if (m.role !== 'assistant') return null;
-              const isStreamed = streaming?.message_id === m.id;
-              const latencyMs =
-                isStreamed && streaming.latency_ms !== undefined
-                  ? streaming.latency_ms
-                  : historyLatencyMs(m, byId, [m.id]);
-              const view: AssistantView = {
-                id: m.id,
-                content: m.content,
-                steps: m.steps ?? [],
-                citations: m.citations ?? [],
-                status: isStreamed && streaming.status === 'cancelled' ? 'cancelled' : 'saved',
-                ...(m.parent_id ? { parentId: m.parent_id } : {}),
-                ...(latencyMs !== undefined ? { latencyMs } : {}),
-              };
-              return (
-                <AssistantMessage
-                  key={m.id}
-                  view={view}
-                  conversationId={cid}
-                  siblings={[]}
-                  busy={busy}
-                  variant="branch"
-                />
-              );
-            })}
+            {path
+              // [VER1] 回合中途拉到的树里已有这轮的空占位回答：由流式视图显示，树里那条先不画
+              .filter((m) => !(overlay && streaming && m.id === streaming.message_id))
+              .map((m) => {
+                if (m.role === 'user')
+                  return <UserMessage key={m.id} id={m.id} content={m.content} docTitles={docTitles} />;
+                if (m.role !== 'assistant') return null;
+                const isStreamed = streaming?.message_id === m.id;
+                const latencyMs =
+                  isStreamed && streaming.latency_ms !== undefined
+                    ? streaming.latency_ms
+                    : historyLatencyMs(m, byId, [m.id]);
+                const view: AssistantView = {
+                  id: m.id,
+                  content: m.content,
+                  steps: m.steps ?? [],
+                  citations: m.citations ?? [],
+                  status: isStreamed && streaming.status === 'cancelled' ? 'cancelled' : 'saved',
+                  ...(m.parent_id ? { parentId: m.parent_id } : {}),
+                  ...(latencyMs !== undefined ? { latencyMs } : {}),
+                };
+                return (
+                  <AssistantMessage
+                    key={m.id}
+                    view={view}
+                    conversationId={cid}
+                    siblings={[]}
+                    busy={busy}
+                    variant="branch"
+                  />
+                );
+              })}
             {showOptimisticUser && overlay && (
               <UserMessage
                 id={overlay.user_message_id ?? `pending:${overlay.client_msg_id}`}
