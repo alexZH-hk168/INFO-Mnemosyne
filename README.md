@@ -142,8 +142,8 @@ Frontend first, then backend, then evaluation.
 | W1 | Contract fixtures, design tokens, four-pane shell, home page and cards | done |
 | W2 | Conversation stream, evidence chips, previews, branches, markets (all on MSW mocks) | done |
 | W3 | Database, file parsing, hybrid retrieval | done |
-| W4 | Agent loop, SSE, citation verification; LongMemEval and BranchMem data prep | code done; tested with the fake model and a hand-written 16-question synthetic set; the real dataset has not been downloaded |
-| W5 | Long-term memory, branch isolation, plugin runtime | done with the fake model; real ArXiv/Fetch install not verified |
+| W4 | Agent loop, SSE, citation verification; LongMemEval and BranchMem data prep | code done; tested with the fake model and a hand-written 16-question synthetic set; LongMemEval_S (500 questions) downloaded, checksum-verified and preprocessed; the pipeline runs end to end on 10 questions with the fake model |
+| W5 | Long-term memory, branch isolation, plugin runtime | done with the fake model; real ArXiv and Fetch MCP plugins installed and called successfully (VER1) |
 | — | Frontend–backend integration and real-backend smoke test | done (fake model) |
 | — | BYOK: user-supplied model key, provider presets, connection test, demo-mode notice | done (tested with mocked HTTP; no real key used) |
 | W6–7 | Tuning on dev-120, full runs and ablations | BYOK by design: the project ships no model or budget. Evaluation scripts are ready; runs use the user's own key and the LongMemEval download |
