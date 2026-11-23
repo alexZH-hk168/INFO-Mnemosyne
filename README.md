@@ -7,7 +7,7 @@ Mnemosyne helps students work through papers, code and lecture slides. Answers p
 This is the course project for INFO5000 (HKUST-GZ). Besides the app, the project produces a short paper that evaluates two things current memory benchmarks rarely measure: whether cited evidence actually lands on the right source, and whether information leaks between branches.
 
 > **Status (2026-11-23): frontend and backend are implemented and run together locally; the evaluation has not been run.**
-> By default the backend uses a **deterministic fake model** and a fake embedder, so it makes no paid calls and the answers are canned text built from retrieved passages, not real model output. A real chat model, a web-search provider and the LongMemEval dataset still have to be configured (see [Known limitations](#known-limitations)). The repository lives on a local machine; the code is not deployed anywhere.
+> Mnemosyne ships no paid model: it is **bring-your-own-key (BYOK)**. Until you enter your own API address, key and chat model under *设置 → 模型* (Settings → Model), the backend runs a **deterministic fake model** and a fake embedder, makes no paid calls, and the input box shows a “demo mode” notice; the answers in that mode are canned text built from retrieved passages, not real model output. A web-search provider and the LongMemEval dataset still have to be configured (see [Known limitations](#known-limitations)). The repository lives on a local machine; the code is not deployed anywhere.
 
 [中文说明](./README.zh-CN.md) · [Developer & agent guide](./AGENTS.md) · [UX specs](./docs/ux/README.md) · [API contract](./docs/contract/README.md)
 
@@ -127,7 +127,7 @@ Playwright uses an existing Chromium; point `MN_CHROMIUM` at its executable. `MN
 
 ### Switching to a real model (costs money)
 
-Set `MN_LLM_BACKEND=openai` and provide an OpenAI-compatible endpoint with `MN_LLM_API_BASE`, `MN_LLM_MODEL` (chat), `MN_LLM_SMALL_MODEL` (memory extraction and citation checks; falls back to the chat model) and `MN_LLM_API_KEY`. The address, model names and key can also be entered in the app under *设置 → 模型* (Settings → Model); `MN_LLM_BACKEND` itself is environment-only, so the app cannot start paying by accident. Real embeddings use `MN_EMBED_BACKEND=openai` plus `MN_EMBED_API_BASE`, `MN_EMBED_MODEL`, `MN_EMBED_API_KEY` (environment only), `MN_EMBED_DIM`, then `uv run python scripts/ingest.py --project <id> --reindex`. The full variable list is in [`server/README.md`](server/README.md). No real model has been run with this code yet.
+**Bring your own key.** Open *设置 → 模型* (Settings → Model), pick a provider preset (OpenAI, DeepSeek, OpenRouter) or “custom (OpenAI-compatible)”, paste your API key, check the model names, press *测试连接* (Test connection), then save. From the next message on, the backend uses your model; any cost goes to your own account. The key is stored only in the local backend (`server/data/settings.json`, mode 0600); no endpoint returns it, only “set” and the last four characters. The preset model names are suggestions checked against the providers' docs on 2026-11-23 (U130). Environment variables still work: `MN_LLM_API_BASE`, `MN_LLM_MODEL`, `MN_LLM_SMALL_MODEL`, `MN_LLM_API_KEY`; `MN_LLM_BACKEND=fake` forces the fake model (tests), `openai` forces the real one, unset means “use the real model once it is configured”. Real embeddings use `MN_EMBED_BACKEND=openai` plus `MN_EMBED_API_BASE`, `MN_EMBED_MODEL`, `MN_EMBED_API_KEY` (environment only), `MN_EMBED_DIM`, then `uv run python scripts/ingest.py --project <id> --reindex`. The full variable list is in [`server/README.md`](server/README.md). No real model has been run with this code yet: all tests use mocked HTTP and the fake model.
 
 ### Plugins
 
@@ -145,7 +145,8 @@ Frontend first, then backend, then evaluation.
 | W4 | Agent loop, SSE, citation verification; LongMemEval and BranchMem data prep | code done; tested with the fake model and a hand-written 16-question synthetic set; the real dataset has not been downloaded |
 | W5 | Long-term memory, branch isolation, plugin runtime | done with the fake model; real ArXiv/Fetch install not verified |
 | — | Frontend–backend integration and real-backend smoke test | done (fake model) |
-| W6–7 | Tuning on dev-120, full runs and ablations | not started: waiting for the model choice and budget |
+| — | BYOK: user-supplied model key, provider presets, connection test, demo-mode notice | done (tested with mocked HTTP; no real key used) |
+| W6–7 | Tuning on dev-120, full runs and ablations | not started: needs a real API key and the LongMemEval download |
 | W8 | Paper and demo video | not started |
 
 Progress is tracked in [`docs/PROGRESS.md`](docs/PROGRESS.md).
@@ -154,7 +155,7 @@ Progress is tracked in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 Open decisions (details and numbering in [`docs/PROGRESS.md`](docs/PROGRESS.md)):
 
-- **Model and budget (U2).** No real chat model, small model or embedding model has been chosen; everything shown so far runs on the fake model. The evaluation will not run until a budget is set, and starts with 10 questions to report cost.
+- **Models (BYOK).** Users bring their own key, so there is no built-in model or budget. Nothing has been run with a real key yet; everything shown so far runs on the fake model. The evaluation uses the same settings and defaults to 10 questions (`--max-items`) so the first run reports cost before spending more. The embedding model field is saved but retrieval still uses local BM25 + fake vectors until reindexing is decided (U131).
 - **Web search provider (U73).** `search_web` is hidden by default; a Tavily adapter exists but has not been tested with a real key.
 - **Plugin short names (U93).** Three come from the UX spec; the other 15 were drafted during development and are not confirmed.
 - **Judge prompt licence (U105).** The LongMemEval judge prompts are copied verbatim from the official MIT-licensed `evaluate_qa.py` (with its notice). This needs sign-off against the "write all code from scratch" rule.
