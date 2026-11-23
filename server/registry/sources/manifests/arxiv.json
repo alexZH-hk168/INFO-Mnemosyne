@@ -1,0 +1,144 @@
+{
+  "manifest": {
+    "id": "arxiv",
+    "name": "ArXiv MCP Server",
+    "version": "1.0.0",
+    "source_url": "https://github.com/blazickjp/arxiv-mcp-server",
+    "license": "Apache-2.0",
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "arxiv-mcp-server@0.8.2",
+      "--storage-path",
+      "~/.mnemosyne/plugins/arxiv"
+    ],
+    "env_schema": {},
+    "permissions": [
+      "network",
+      "fs_write"
+    ],
+    "tools_allow": [
+      "search_papers",
+      "get_abstract",
+      "download_paper",
+      "get_paper_outline",
+      "read_paper_section",
+      "search_paper_text",
+      "export_citations",
+      "citation_graph",
+      "list_papers",
+      "read_paper",
+      "get_paper_latex",
+      "list_paper_latex_sections",
+      "get_paper_latex_section",
+      "watch_topic",
+      "list_watches",
+      "check_alerts",
+      "unwatch_topic"
+    ],
+    "evidence_mapping": {
+      "items": "$.papers",
+      "title": "$.title",
+      "url": [
+        "$.url",
+        "$.pdf_url"
+      ],
+      "quote": [
+        "$.abstract",
+        "$.summary"
+      ]
+    }
+  },
+  "details": {
+    "tools": [
+      {
+        "name": "search_papers",
+        "description": "按关键词、分类、日期和排序检索 arXiv"
+      },
+      {
+        "name": "get_abstract",
+        "description": "按 arXiv ID 取元数据与摘要，不下载全文"
+      },
+      {
+        "name": "download_paper",
+        "description": "下载论文并转成本地 Markdown"
+      },
+      {
+        "name": "get_paper_outline",
+        "description": "分页返回论文的章节目录"
+      },
+      {
+        "name": "read_paper_section",
+        "description": "读取某一节正文（有长度上限）"
+      },
+      {
+        "name": "search_paper_text",
+        "description": "在单篇论文内检索段落，返回原文偏移"
+      },
+      {
+        "name": "export_citations",
+        "description": "为一个或多个 arXiv ID 导出 BibTeX"
+      },
+      {
+        "name": "citation_graph",
+        "description": "查参考文献与被引（经 Semantic Scholar）"
+      },
+      {
+        "name": "list_papers",
+        "description": "列出本地已保存的论文"
+      },
+      {
+        "name": "read_paper",
+        "description": "读取本地已保存论文的正文（有长度上限）"
+      },
+      {
+        "name": "get_paper_latex",
+        "description": "读取作者提交的 LaTeX 源（有长度上限）"
+      },
+      {
+        "name": "list_paper_latex_sections",
+        "description": "分页返回 LaTeX 章节目录"
+      },
+      {
+        "name": "get_paper_latex_section",
+        "description": "读取 LaTeX 的某一节（有长度上限）"
+      },
+      {
+        "name": "watch_topic",
+        "description": "保存或更新一个 arXiv 主题订阅"
+      },
+      {
+        "name": "list_watches",
+        "description": "列出已保存的主题订阅"
+      },
+      {
+        "name": "check_alerts",
+        "description": "检查订阅的主题有没有新论文"
+      },
+      {
+        "name": "unwatch_topic",
+        "description": "删除一个主题订阅"
+      },
+      {
+        "name": "semantic_search",
+        "description": "按语义相似度检索已下载的论文（需 [pro] 依赖）"
+      },
+      {
+        "name": "reindex",
+        "description": "重建本地语义索引（需 [pro] 依赖）"
+      }
+    ],
+    "about_zh": "查找 arXiv 预印本并读论文。论文下载到本地后按章节读取，适合精读时边问边查原文；返回的题录、章节文本会作为证据进入回答，带 arXiv ID 和章节位置。",
+    "usage_zh": "在对话里直接问“帮我找 2024 年以后关于长程记忆评测的 arXiv 论文”，助手会调用 search_papers；让它下载某篇论文后，回答里的引用会定位到对应章节。也可以在输入框的“插件”弹层里按对话关闭它。",
+    "permission_notes": {
+      "network": "访问 arXiv 与 Semantic Scholar",
+      "fs_write": "仅限论文存放目录（--storage-path）"
+    }
+  },
+  "upstream": {
+    "package": "arxiv-mcp-server (PyPI)",
+    "version": "0.8.2",
+    "checked": "2026-11-23：PyPI JSON 最新版 0.8.2（上传于 2026-10-08）；GitHub tag v0.8.2 的 tools/search.py 返回 {papers:[{id,title,authors,abstract,categories,published,url,resource_uri}]}，tools/get_abstract.py 返回 {status,paper_id,title,authors,abstract,categories,published,pdf_url}；--storage-path 见 config.py",
+    "verified": true
+  }
+}

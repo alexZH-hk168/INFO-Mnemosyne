@@ -11,6 +11,7 @@ dependencies = [
   "python-pptx>=1.0",
   "sqlite-vec>=0.1.6",
   "httpx>=0.27",
+  "mcp>=2.3,<3",  # B3b 插件运行时：官方 MCP Python SDK（MIT）；uv.lock 待编排补锁（U95）
   "trafilatura>=2.0",  # B2 网页正文抽取，Apache-2.0；uv.lock 待编排更新（U76）
 ]
 
