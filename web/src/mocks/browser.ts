@@ -2,15 +2,17 @@
 // F1：有状态的 worldHandlers 排在前面（上传/解析/新建项目/翻页），其余接口由 fixture handlers 应答。
 // F3：chatWorldHandlers（新建对话、发送、重新生成、停止、切换兄弟回答）排在最前。
 // F6 追加：marketWorldHandlers（市场、插件安装/卸载、会话插件、Skill、设置、记忆）同样排在 fixture handlers 前面。
+// F5 追加：leafGuardHandlers（证据/快照的 leaf_id 校验）排在最前；分支接口在 chatWorldHandlers 里。
 // F4 追加：previewWorldHandlers（PDF / PPTX 的 raw 返回 public/samples/ 示例文件）同样排在 fixture handlers 前面。
 import { setupWorker } from 'msw/browser';
-import { chatWorldControls, chatWorldHandlers } from './chat-world';
+import { chatWorldControls, chatWorldHandlers, leafGuardHandlers } from './chat-world';
 import { handlers, resetMockScenarios, setMockScenario } from './handlers';
 import { marketControls, marketWorldHandlers } from './market-world';
 import { previewWorldHandlers } from './preview-world';
 import { worldControls, worldHandlers } from './world';
 
 export const worker = setupWorker(
+  ...leafGuardHandlers,
   ...chatWorldHandlers,
   ...worldHandlers,
   ...marketWorldHandlers,

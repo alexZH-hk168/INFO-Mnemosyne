@@ -19,8 +19,10 @@ export function formatFetchedAt(iso: string): string {
 }
 
 export default function WebSnapshotViewer({ tab }: { tab: Tab }) {
-  const snap = useSnapshot(tab.ref_id);
   const ev = useTabEvidence(tab);
+  // F5：从分支面板的证据打开时按分支叶子读快照（leaf_id，U44）；文件栏直接打开不带
+  const leafId = useEvidence((s) => s.selectedLeafId);
+  const snap = useSnapshot(tab.ref_id, ev ? leafId : null);
   const nonce = useEvidence((s) => s.messageEvidence);
   const markRef = useRef<HTMLElement>(null);
   const loc = (ev?.locator ?? {}) as { char_range?: unknown };

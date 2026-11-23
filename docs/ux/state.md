@@ -56,6 +56,10 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 | `selectedMessageId`             | （F4 追加）当前证据是从哪条回答打开的（证据栏“被主线第 N 条回答引用”与左右切换用）                                                                                             |
 | `select(eid, messageId, opts?)` | （F4 追加可选参数）`opts.evidence`：历史消息的证据不在流式池里时由调用方传入，用来打开对应标签；`opts.evidenceIds`：本回答的证据顺序，缺省沿用流式池顺序（池为空时为 `[eid]`） |
 | `setMessageEvidence(ids)`       | （F4 追加）证据栏按回答的引用（去掉 removed、同一证据只算一次、按序号）算出列表后写回                                                                                          |
+| `selectedLeafId`                | （F5 追加，契约 v0.4 / U44）当前证据从分支面板打开时为该分支当前叶子消息 id，右栏读证据与网页快照时带 `?leaf_id=`；主线打开时为 `null`（不带，后端按 `active_leaf_id`） |
+| `select(…, opts.leafId?)`       | （F5 追加可选字段）写入 `selectedLeafId`；缺省为 `null`                                                                                                                         |
+
+分支里的叶子由 `web/src/branch/leafContext.ts` 的 `LeafContext` 下发（F5）：分支面板与合并卡片展开时提供分支最后一条消息 id（还没有消息时为 fork 消息），证据胶囊、悬停浮层、来源列表、步骤行读取并随 `select` 传入。
 
 `useLayout.openTab` （F4 追加，规格 1-右栏-标签条）：右栏最多 `MAX_TABS = 8` 个标签，超出时关闭最早的、未激活的非分支标签。
 
@@ -81,6 +85,7 @@ UX 规格里“store”与“query”两列引用的名字都在这里定义。�
 | `['documents', pid]`                                       | GET `/api/projects/{pid}/documents`；有 `parsing/queued` 时每 2 s 轮询 |
 | `['document', did]`                                        | GET `/api/documents/{did}`                                             |
 | `['evidence', eid]`                                        | GET `/api/evidence/{eid}`                                              |
+| `['evidence', eid, {leaf_id}]`、`['snapshot', sid, {leaf_id}]` | （F5 追加，`queryKeys.evidenceAt / snapshotAt`）分支里按叶子判断可见性：GET `…?leaf_id=`；前缀与不带 leaf 的 key 相同，失效时一起失效 |
 | `['snapshot', sid]`                                        | GET `/api/web_snapshots/{sid}`                                         |
 | `['market', 'plugins' \| 'skills']`                        | GET `/api/market/*`                                                    |
 | `['plugins']`, `['plugin', id]`                            | GET `/api/plugins`, `/api/plugins/{id}`                                |

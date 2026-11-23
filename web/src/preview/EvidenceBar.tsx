@@ -43,13 +43,19 @@ export default function EvidenceBar({ evidence }: { evidence: Evidence }) {
     if (!messageId) return;
     const st = useChat.getState().streaming;
     const local = st && st.message_id === messageId ? st.evidence.find((e) => e.id === eid) : undefined;
+    // F5：分支面板里打开的证据，切换时继续带分支叶子（leaf_id，U44）
+    const leafId = useEvidence.getState().selectedLeafId;
     const ev =
       local ??
       (await qc.fetchQuery({
-        queryKey: queryKeys.evidence(eid),
-        queryFn: ({ signal }) => api.get<Evidence>(`/api/evidence/${encodeURIComponent(eid)}`, { signal }),
+        queryKey: queryKeys.evidenceAt(eid, leafId),
+        queryFn: ({ signal }) =>
+          api.get<Evidence>(`/api/evidence/${encodeURIComponent(eid)}`, {
+            signal,
+            ...(leafId ? { query: { leaf_id: leafId } } : {}),
+          }),
       }));
-    select(eid, messageId, { evidence: ev, evidenceIds: list });
+    select(eid, messageId, { evidence: ev, evidenceIds: list, ...(leafId ? { leafId } : {}) });
   };
 
   return (

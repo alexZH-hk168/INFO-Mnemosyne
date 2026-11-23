@@ -9,12 +9,12 @@ import { labelNumber } from '../lib/citations';
 import { chipTone, longPosition, TONE_CLASS } from '../lib/evidenceDisplay';
 import { useChat } from '../store/chat';
 import { useEvidence } from '../store/evidence';
-import { getHoverMessageId, hoverKeep, hoverLeave, openEvidence } from './EvidenceChip';
+import { getHoverLeafId, getHoverMessageId, hoverKeep, hoverLeave, openEvidence } from './EvidenceChip';
 
 export default function EvidenceHover() {
   const hover = useEvidence((s) => s.hover);
   const local = useChat((s) => (hover ? s.streaming?.evidence.find((e) => e.id === hover.eid) : undefined));
-  const remote = useEvidenceQuery(hover && !local ? hover.eid : null);
+  const remote = useEvidenceQuery(hover && !local ? hover.eid : null, hover ? getHoverLeafId() : null);
   const ev = local ?? remote.data;
 
   const { refs, floatingStyles } = useFloating({
@@ -53,7 +53,7 @@ export default function EvidenceHover() {
       data-eid={hover.eid}
       onMouseEnter={hoverKeep}
       onMouseLeave={hoverLeave}
-      onClick={() => mid && openEvidence(hover.eid, mid, ev)}
+      onClick={() => mid && openEvidence(hover.eid, mid, ev, getHoverLeafId())}
       className="z-40 w-[320px] cursor-pointer rounded-card border border-line bg-surface px-3.5 py-3 text-left shadow-[var(--shadow-pop)]"
     >
       {!ev ? (

@@ -5,6 +5,7 @@
 // 悬停 300 ms 出原句浮层（EvidenceHover）；点击 = useEvidence.select(eid, message_id) 并打开右栏预览标签（预览内容由 F4 实现）。
 import { memo, useRef } from 'react';
 import { useEvidence as useEvidenceQuery } from '../api/queries';
+import { useLeafId } from '../branch/leafContext';
 import type { Evidence, ID, Verdict } from '../api/types';
 import { labelNumber } from '../lib/citations';
 import { chipText, chipTone, TONE_CLASS } from '../lib/evidenceDisplay';
@@ -21,13 +22,17 @@ let closeTimer: ReturnType<typeof setTimeout> | undefined;
 /** 当前浮层对应的回答（点击浮层 = 点击胶囊，需要 message_id） */
 let hoverMessageId: ID | null = null;
 export const getHoverMessageId = () => hoverMessageId;
+/** F5 追加：浮层对应的胶囊在分支面板里时为分支叶子（读证据带 leaf_id） */
+let hoverLeafId: ID | null = null;
+export const getHoverLeafId = () => hoverLeafId;
 
-export function hoverEnter(eid: ID, messageId: ID, el: HTMLElement) {
+export function hoverEnter(eid: ID, messageId: ID, el: HTMLElement, leafId: ID | null = null) {
   clearTimeout(closeTimer);
   clearTimeout(openTimer);
   const show = () => {
     const r = el.getBoundingClientRect();
     hoverMessageId = messageId;
+    hoverLeafId = leafId;
     useEvidence.setState({ hover: { eid, rect: { x: r.x, y: r.y, width: r.width, height: r.height } } });
   };
   // 浮层已开着（从一个胶囊移到另一个）：直接切换，不再等 300 ms
@@ -61,10 +66,11 @@ export function useLocalEvidence(messageId: ID, eid: ID | undefined, label: stri
   });
 }
 
-/** 打开证据：select + 右栏标签（历史消息的证据从 ['evidence', eid] 取，F0 的 select 只认流式证据池） */
-export function openEvidence(eid: ID, messageId: ID, ev: Evidence | undefined) {
+/** 打开证据：select + 右栏标签（历史消息的证据从 ['evidence', eid] 取，F0 的 select 只认流式证据池）。
+ *  第四个参数 F5 追加：分支面板里打开时传分支叶子，右栏读证据带 leaf_id */
+export function openEvidence(eid: ID, messageId: ID, ev: Evidence | undefined, leafId: ID | null = null) {
   hoverCloseNow();
-  useEvidence.getState().select(eid, messageId);
+  useEvidence.getState().select(eid, messageId, leafId ? { leafId } : undefined);
   if (ev) useLayout.getState().openTab(tabForEvidence(ev));
 }
 
@@ -78,8 +84,9 @@ interface Props {
 
 function EvidenceChip({ messageId, label, eid, verdict }: Props) {
   const local = useLocalEvidence(messageId, eid, label);
+  const leafId = useLeafId();
   const id = eid ?? local?.id;
-  const remote = useEvidenceQuery(local ? null : id);
+  const remote = useEvidenceQuery(local ? null : id, leafId);
   const ev = local ?? remote.data;
   const selected = useEvidence((s) => !!id && s.selectedEvidenceId === id);
   const ref = useRef<HTMLButtonElement>(null);
@@ -100,10 +107,10 @@ function EvidenceChip({ messageId, label, eid, verdict }: Props) {
       aria-label={`证据 ${num}${ev ? `：${ev.title}` : ''}${pending ? '（待确认）' : ''}`}
       aria-pressed={selected}
       disabled={!id}
-      onClick={() => id && openEvidence(id, messageId, ev)}
-      onMouseEnter={() => id && ref.current && hoverEnter(id, messageId, ref.current)}
+      onClick={() => id && openEvidence(id, messageId, ev, leafId)}
+      onMouseEnter={() => id && ref.current && hoverEnter(id, messageId, ref.current, leafId)}
       onMouseLeave={hoverLeave}
-      onFocus={() => id && ref.current && hoverEnter(id, messageId, ref.current)}
+      onFocus={() => id && ref.current && hoverEnter(id, messageId, ref.current, leafId)}
       onBlur={hoverLeave}
       className={`mn-focus relative top-[-1px] mx-[3px] inline-flex h-[18px] items-center whitespace-nowrap rounded-chip px-[5px] align-middle text-[11px] font-medium leading-none transition-opacity ${
         TONE_CLASS[tone]

@@ -126,6 +126,10 @@ export interface ComposerProps {
   /** 新消息接在哪条消息后：对话栏 = active_leaf_id；分支面板 = 分支最后一条消息 */
   parentId?: ID;
   autoFocus?: boolean;
+  /** F5 追加：覆盖默认占位（分支面板新分支无消息时“就这句话追问…”） */
+  placeholder?: string;
+  /** F5 追加：只读（分支已合并或归档）：不能输入、不能发送 */
+  readOnly?: boolean;
 }
 
 export default function Composer({
@@ -134,6 +138,8 @@ export default function Composer({
   conversationId = null,
   parentId,
   autoFocus,
+  placeholder,
+  readOnly = false,
 }: ComposerProps) {
   const key = variant === 'home' ? NEW_MAIN : draftKey(conversationId, branchId);
   const qc = useQueryClient();
@@ -188,7 +194,7 @@ export default function Composer({
   const mine =
     !!turn && (turn.branch_id ?? null) === branchId && (variant === 'home' || turn.conversation_id === conversationId);
   const hasText = draft.text.trim().length > 0;
-  const canSend = hasText && !busy && !creating;
+  const canSend = hasText && !busy && !creating && !readOnly;
 
   // ---------------------------------------------------------------- 文本框高度与焦点
   useLayoutEffect(() => {
@@ -402,6 +408,7 @@ export default function Composer({
   };
 
   const acceptsDrag = (e: DragEvent) => {
+    if (readOnly) return false; // F5：只读分支不接收拖入
     const types = Array.from(e.dataTransfer?.types ?? []);
     return types.includes(DOC_DRAG_TYPE) || types.includes('Files');
   };
@@ -584,7 +591,9 @@ export default function Composer({
           // 点菜单项用 mousedown.preventDefault 保住焦点；真正离开时收起
           if (trigger) setTimeout(() => document.activeElement !== ta.current && openTrigger(null), 120);
         }}
-        placeholder={PLACEHOLDER[variant]}
+        placeholder={placeholder ?? PLACEHOLDER[variant]}
+        readOnly={readOnly}
+        aria-readonly={readOnly || undefined}
         aria-label="输入问题"
         aria-autocomplete="list"
         aria-controls={menuOpen ? `${trigger?.kind === 'mention' ? MENTION_TESTID : SLASH_TESTID}-list` : undefined}
@@ -640,6 +649,7 @@ export default function Composer({
       <div
         data-testid="composer.box"
         data-variant="branch"
+        data-readonly={readOnly || undefined}
         data-drag={dragOver || undefined}
         {...dropHandlers}
         className={`relative rounded-[13px] border bg-surface px-3 py-2 transition-colors ${

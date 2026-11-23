@@ -246,7 +246,7 @@ describe('1-外壳-右栏 / 1-右栏-标签条', () => {
     expect(screen.getByTestId('right.tabs.activate:code:doc_transformer_py')).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(screen.getByTestId('right.tabs.activate:branch:br_variance'));
     expect(useLayout.getState().activeTab).toBe('branch:br_variance');
-    expect(screen.getByTestId('right.branch-placeholder')).toBeInTheDocument();
+    expect(screen.getByTestId('right.branch-panel')).toBeInTheDocument(); // F5：占位换成分支面板
     fireEvent.click(screen.getByTestId('right.tabs.close:branch:br_variance'));
     expect(useLayout.getState().activeTab).toBe('web:ws_jalammar_illustrated');
     fireEvent(

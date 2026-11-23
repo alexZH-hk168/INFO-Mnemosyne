@@ -1,6 +1,7 @@
 // 回答正文：Markdown（react-markdown + remark-math + rehype-katex）＋ 证据胶囊 ＋ “推断”标记。
 // `[[E#]]` 与 partial 句末位置先换成占位字符（lib/answerMarkup），再由 rehype 插件变成 span，映射到 EvidenceChip / InferenceMark。
 // 句子与锚点偏移按“去掉 [[E#]] 后的纯文本”计算（契约），F5 划词用 data-message-id 定位到这里。
+// F5 追加：可选 `marks`（分支标记组），起止占位由 buildAnswerMarkup 插入、rehypeBranchMarks 包成 span，映射到 BranchMark。
 import 'katex/dist/katex.min.css';
 import { memo, useMemo, useRef, type ComponentProps } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -9,6 +10,8 @@ import remarkMath from 'remark-math';
 import type { Citation, ID } from '../api/types';
 import { trimPartialMarker } from '../lib/citations';
 import { buildAnswerMarkup, rehypeAnswerSlots } from '../lib/answerMarkup';
+import { rehypeBranchMarks, type MarkGroup } from '../lib/branchMarkup';
+import { BranchMarkBadge, BranchMarkText } from './BranchMark';
 import EvidenceChip from './EvidenceChip';
 import InferenceMark from './InferenceMark';
 
@@ -17,14 +20,20 @@ interface Props {
   content: string;
   citations: Citation[];
   streaming: boolean;
+  /** F5 追加：本条回答上的分支标记（lib/branchMarkup.markGroupsFor） */
+  marks?: MarkGroup[];
 }
 
-function AnswerBody({ messageId, content, citations, streaming }: Props) {
+const NO_MARKS: MarkGroup[] = [];
+
+function AnswerBody({ messageId, content, citations, streaming, marks = NO_MARKS }: Props) {
   const raw = streaming ? trimPartialMarker(content) : content;
-  const markup = useMemo(() => buildAnswerMarkup(raw, citations), [raw, citations]);
+  const markup = useMemo(() => buildAnswerMarkup(raw, citations, marks), [raw, citations, marks]);
   // 组件映射保持稳定（否则每段 delta 都会重新挂载全部胶囊），渲染时从 ref 读最新的占位表
   const slots = useRef(markup);
   slots.current = markup;
+  const groups = useRef(marks);
+  groups.current = marks;
 
   const components = useMemo(
     () => ({
@@ -47,6 +56,16 @@ function AnswerBody({ messageId, content, citations, streaming }: Props) {
         if (inf !== undefined) {
           const slot = slots.current.inferences[Number(inf)];
           return slot ? <InferenceMark messageId={messageId} citationId={slot.citation.citation_id} /> : null;
+        }
+        const mark = p['data-mn-mark'];
+        if (mark !== undefined) {
+          const g = groups.current[Number(mark)];
+          return g ? <BranchMarkText group={g}>{props.children}</BranchMarkText> : <span>{props.children}</span>;
+        }
+        const badge = p['data-mn-badge'];
+        if (badge !== undefined) {
+          const g = groups.current[Number(badge)];
+          return g ? <BranchMarkBadge group={g} messageId={messageId} /> : null;
         }
         return <span {...props} />;
       },
@@ -71,7 +90,7 @@ function AnswerBody({ messageId, content, citations, streaming }: Props) {
     >
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex, rehypeAnswerSlots]}
+        rehypePlugins={[rehypeKatex, rehypeAnswerSlots, rehypeBranchMarks]}
         components={components}
       >
         {markup.source}

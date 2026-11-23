@@ -17,7 +17,8 @@ export function useEvidenceById(eid: ID | null, messageId: ID | null) {
       ? s.streaming.evidence.find((e) => e.id === eid)
       : undefined,
   );
-  const q = useEvidenceQuery(local ? null : eid);
+  const leafId = useEvidence((s) => s.selectedLeafId); // F5：分支面板里打开的证据按分支叶子判断可见性（U44）
+  const q = useEvidenceQuery(local ? null : eid, leafId);
   return { evidence: local ?? q.data, error: local ? null : q.error, loading: !local && q.isLoading };
 }
 
