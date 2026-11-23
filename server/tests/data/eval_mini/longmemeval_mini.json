@@ -1,0 +1,229 @@
+[
+ {
+  "question_id": "mini_ssu_01",
+  "question_type": "single-session-user",
+  "question": "What degree did I graduate with?",
+  "question_date": "2023/05/30 (Tue) 23:40",
+  "answer": "Business Administration",
+  "answer_session_ids": ["answer_ssu01"],
+  "haystack_dates": ["2023/05/20 (Sat) 02:21", "2023/05/21 (Sun) 09:27", "2023/05/22 (Mon) 11:21"],
+  "haystack_session_ids": ["sharegpt_fillA_0", "answer_ssu01", "ultrachat_fillB"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "How do I reverse a list in Python?"}, {"role": "assistant", "content": "Use list.reverse() or slicing with [::-1]."}],
+   [{"role": "user", "content": "I graduated with a degree in Business Administration and now I want to learn data science.", "has_answer": true}, {"role": "assistant", "content": "That background helps; start with statistics and SQL.", "has_answer": false}],
+   [{"role": "user", "content": "Is it going to rain tomorrow in the city?"}, {"role": "assistant", "content": "I cannot check live weather, please use a forecast service."}]
+  ]
+ },
+ {
+  "question_id": "mini_ssu_02",
+  "question_type": "single-session-user",
+  "question": "What is the name of my cat?",
+  "question_date": "2023/06/02 (Fri) 10:00",
+  "answer": "Mochi",
+  "answer_session_ids": ["answer_ssu02"],
+  "haystack_dates": ["2023/05/20 (Sat) 02:21", "2023/05/25 (Thu) 03:27"],
+  "haystack_session_ids": ["sharegpt_fillA_0", "answer_ssu02"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "How do I reverse a list in Python?"}, {"role": "assistant", "content": "Use list.reverse() or slicing with [::-1]."}],
+   [{"role": "user", "content": "My cat Mochi keeps scratching the sofa, any tips?", "has_answer": true}, {"role": "assistant", "content": "Try a scratching post near the sofa and reward her for using it.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ssu_03",
+  "question_type": "single-session-user",
+  "question": "Which city was I born in?",
+  "question_date": "2023/06/03 (Sat) 08:15",
+  "answer": "Chengdu",
+  "answer_session_ids": ["answer_ssu03"],
+  "haystack_dates": ["2023/05/22 (Mon) 11:21", "2023/05/26 (Fri) 04:41"],
+  "haystack_session_ids": ["ultrachat_fillB", "answer_ssu03"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "Is it going to rain tomorrow in the city?"}, {"role": "assistant", "content": "I cannot check live weather, please use a forecast service."}],
+   [{"role": "user", "content": "I was born in Chengdu, so spicy hotpot is my comfort food.", "has_answer": true}, {"role": "assistant", "content": "Chengdu hotpot is famous for its numbing peppercorns.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ssu_04_abs",
+  "question_type": "single-session-user",
+  "question": "What is the name of my dog?",
+  "question_date": "2023/06/02 (Fri) 10:05",
+  "answer": "The user mentioned a cat named Mochi but never mentioned a dog.",
+  "answer_session_ids": ["answer_ssu02"],
+  "haystack_dates": ["2023/05/20 (Sat) 02:21", "2023/05/25 (Thu) 03:27"],
+  "haystack_session_ids": ["sharegpt_fillA_0", "answer_ssu02"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "How do I reverse a list in Python?"}, {"role": "assistant", "content": "Use list.reverse() or slicing with [::-1]."}],
+   [{"role": "user", "content": "My cat Mochi keeps scratching the sofa, any tips?", "has_answer": false}, {"role": "assistant", "content": "Try a scratching post near the sofa and reward her for using it.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ssa_01",
+  "question_type": "single-session-assistant",
+  "question": "What pasta recipe did you recommend to me?",
+  "question_date": "2023/06/05 (Mon) 19:00",
+  "answer": "Cacio e Pepe",
+  "answer_session_ids": ["answer_ssa01"],
+  "haystack_dates": ["2023/05/20 (Sat) 02:21", "2023/05/28 (Sun) 17:31"],
+  "haystack_session_ids": ["sharegpt_fillA_0", "answer_ssa01"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "How do I reverse a list in Python?"}, {"role": "assistant", "content": "Use list.reverse() or slicing with [::-1]."}],
+   [{"role": "user", "content": "I want a quick dinner idea with few ingredients.", "has_answer": false}, {"role": "assistant", "content": "I recommend Cacio e Pepe pasta: just spaghetti, pecorino and black pepper.", "has_answer": true}]
+  ]
+ },
+ {
+  "question_id": "mini_ssa_02",
+  "question_type": "single-session-assistant",
+  "question": "Which book did you suggest for learning Rust?",
+  "question_date": "2023/06/06 (Tue) 09:30",
+  "answer": "The Rust Programming Language",
+  "answer_session_ids": ["answer_ssa02"],
+  "haystack_dates": ["2023/05/22 (Mon) 11:21", "2023/05/29 (Mon) 10:53"],
+  "haystack_session_ids": ["ultrachat_fillB", "answer_ssa02"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "Is it going to rain tomorrow in the city?"}, {"role": "assistant", "content": "I cannot check live weather, please use a forecast service."}],
+   [{"role": "user", "content": "I want to start learning Rust this summer.", "has_answer": false}, {"role": "assistant", "content": "A good book for learning Rust is The Rust Programming Language, which is free online.", "has_answer": true}]
+  ]
+ },
+ {
+  "question_id": "mini_ssp_01",
+  "question_type": "single-session-preference",
+  "question": "Can you suggest a weekend activity for me?",
+  "question_date": "2023/06/07 (Wed) 12:00",
+  "answer": "The user would prefer outdoor activities involving bird watching, since they enjoy birding in wetlands.",
+  "answer_session_ids": ["answer_ssp01"],
+  "haystack_dates": ["2023/05/20 (Sat) 02:21", "2023/05/30 (Tue) 09:50"],
+  "haystack_session_ids": ["sharegpt_fillA_0", "answer_ssp01"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "How do I reverse a list in Python?"}, {"role": "assistant", "content": "Use list.reverse() or slicing with [::-1]."}],
+   [{"role": "user", "content": "I spent my weekend bird watching in the wetlands and loved it.", "has_answer": true}, {"role": "assistant", "content": "Wetlands are great for spotting herons.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ssp_02",
+  "question_type": "single-session-preference",
+  "question": "Recommend a podcast for my commute.",
+  "question_date": "2023/06/08 (Thu) 07:45",
+  "answer": "The user would prefer podcasts about the history of science.",
+  "answer_session_ids": ["answer_ssp02"],
+  "haystack_dates": ["2023/05/22 (Mon) 11:21", "2023/05/30 (Tue) 11:24"],
+  "haystack_session_ids": ["ultrachat_fillB", "answer_ssp02"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "Is it going to rain tomorrow in the city?"}, {"role": "assistant", "content": "I cannot check live weather, please use a forecast service."}],
+   [{"role": "user", "content": "I love listening to stories about the history of science on my commute podcast app.", "has_answer": true}, {"role": "assistant", "content": "History of science stories are fascinating.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ms_01",
+  "question_type": "multi-session",
+  "question": "How many musical instruments do I own in total?",
+  "question_date": "2023/06/09 (Fri) 20:00",
+  "answer": 3,
+  "answer_session_ids": ["answer_ms01a", "answer_ms01b"],
+  "haystack_dates": ["2023/05/21 (Sun) 13:12", "2023/05/24 (Wed) 13:03", "2023/05/27 (Sat) 16:34"],
+  "haystack_session_ids": ["answer_ms01a", "sharegpt_fillA_0", "answer_ms01b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "I own a guitar and a piano, and I practice musical instruments daily.", "has_answer": true}, {"role": "assistant", "content": "Practicing both instruments daily is impressive.", "has_answer": false}],
+   [{"role": "user", "content": "How do I reverse a list in Python?"}, {"role": "assistant", "content": "Use list.reverse() or slicing with [::-1]."}],
+   [{"role": "user", "content": "I just bought a violin, my third musical instrument.", "has_answer": true}, {"role": "assistant", "content": "Congratulations on the violin!", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ms_02_abs",
+  "question_type": "multi-session",
+  "question": "How many drums do I own in total?",
+  "question_date": "2023/06/09 (Fri) 20:05",
+  "answer": "The user mentioned a guitar, a piano and a violin, but never mentioned owning drums.",
+  "answer_session_ids": ["answer_ms01a", "answer_ms01b"],
+  "haystack_dates": ["2023/05/21 (Sun) 13:12", "2023/05/27 (Sat) 16:34"],
+  "haystack_session_ids": ["answer_ms01a", "answer_ms01b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "I own a guitar and a piano, and I practice musical instruments daily.", "has_answer": false}, {"role": "assistant", "content": "Practicing both instruments daily is impressive.", "has_answer": false}],
+   [{"role": "user", "content": "I just bought a violin, my third musical instrument.", "has_answer": false}, {"role": "assistant", "content": "Congratulations on the violin!", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ku_01",
+  "question_type": "knowledge-update",
+  "question": "Which city do I live in now?",
+  "question_date": "2023/06/10 (Sat) 10:00",
+  "answer": "Shenzhen",
+  "answer_session_ids": ["answer_ku01a", "answer_ku01b"],
+  "haystack_dates": ["2023/05/20 (Sat) 05:50", "2023/05/22 (Mon) 11:21", "2023/06/01 (Thu) 18:02"],
+  "haystack_session_ids": ["answer_ku01a", "ultrachat_fillB", "answer_ku01b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "I live in Wuhan and the summers here are brutal.", "has_answer": true}, {"role": "assistant", "content": "Wuhan is known as one of the furnace cities.", "has_answer": false}],
+   [{"role": "user", "content": "Is it going to rain tomorrow in the city?"}, {"role": "assistant", "content": "I cannot check live weather, please use a forecast service."}],
+   [{"role": "user", "content": "I just moved and now I live in Shenzhen near the bay.", "has_answer": true}, {"role": "assistant", "content": "Shenzhen has a mild winter, enjoy the move.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ku_02",
+  "question_type": "knowledge-update",
+  "question": "How many days a week do I go to the gym now?",
+  "question_date": "2023/06/11 (Sun) 07:00",
+  "answer": "4",
+  "answer_session_ids": ["answer_ku02a", "answer_ku02b"],
+  "haystack_dates": ["2023/05/21 (Sun) 03:24", "2023/05/31 (Wed) 06:30"],
+  "haystack_session_ids": ["answer_ku02a", "answer_ku02b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "I go to the gym 3 days a week before work.", "has_answer": true}, {"role": "assistant", "content": "Three sessions a week is a solid routine.", "has_answer": false}],
+   [{"role": "user", "content": "I increased it, now I go to the gym 4 days a week.", "has_answer": true}, {"role": "assistant", "content": "Great progress with your gym routine.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ku_03",
+  "question_type": "knowledge-update",
+  "question": "What is my current job title?",
+  "question_date": "2023/06/12 (Mon) 09:00",
+  "answer": "Senior Data Analyst",
+  "answer_session_ids": ["answer_ku03a", "answer_ku03b"],
+  "haystack_dates": ["2023/05/21 (Sun) 09:27", "2023/06/01 (Thu) 09:00"],
+  "haystack_session_ids": ["answer_ku03a", "answer_ku03b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "My job title is Junior Analyst at a retail company.", "has_answer": true}, {"role": "assistant", "content": "Retail analytics is a good place to start.", "has_answer": false}],
+   [{"role": "user", "content": "I got promoted, my job title is now Senior Data Analyst.", "has_answer": true}, {"role": "assistant", "content": "Congratulations on the promotion!", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_ku_04_abs",
+  "question_type": "knowledge-update",
+  "question": "Which city does my sister live in now?",
+  "question_date": "2023/06/10 (Sat) 10:05",
+  "answer": "The user talked about where they live themselves but never mentioned a sister.",
+  "answer_session_ids": ["answer_ku01a", "answer_ku01b"],
+  "haystack_dates": ["2023/05/20 (Sat) 05:50", "2023/06/01 (Thu) 18:02"],
+  "haystack_session_ids": ["answer_ku01a", "answer_ku01b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "I live in Wuhan and the summers here are brutal.", "has_answer": false}, {"role": "assistant", "content": "Wuhan is known as one of the furnace cities.", "has_answer": false}],
+   [{"role": "user", "content": "I just moved and now I live in Shenzhen near the bay.", "has_answer": false}, {"role": "assistant", "content": "Shenzhen has a mild winter, enjoy the move.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_tr_01",
+  "question_type": "temporal-reasoning",
+  "question": "How many days before my Tokyo trip did I buy the camera?",
+  "question_date": "2023/06/13 (Tue) 21:00",
+  "answer": "10 days",
+  "answer_session_ids": ["answer_tr01a", "answer_tr01b"],
+  "haystack_dates": ["2023/05/20 (Sat) 10:58", "2023/05/30 (Tue) 14:00"],
+  "haystack_session_ids": ["answer_tr01a", "answer_tr01b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "Today I bought a new mirrorless camera for travel photos.", "has_answer": true}, {"role": "assistant", "content": "Mirrorless cameras are light for travel.", "has_answer": false}],
+   [{"role": "user", "content": "I am flying to Tokyo today for my trip, 10 days after buying the camera.", "has_answer": true}, {"role": "assistant", "content": "Have a great trip to Tokyo.", "has_answer": false}]
+  ]
+ },
+ {
+  "question_id": "mini_tr_02",
+  "question_type": "temporal-reasoning",
+  "question": "Which did I do first, the marathon or the cooking class?",
+  "question_date": "2023/06/14 (Wed) 18:00",
+  "answer": "the marathon",
+  "answer_session_ids": ["answer_tr02a", "answer_tr02b"],
+  "haystack_dates": ["2023/05/23 (Tue) 09:46", "2023/05/29 (Mon) 19:30"],
+  "haystack_session_ids": ["answer_tr02a", "answer_tr02b"],
+  "haystack_sessions": [
+   [{"role": "user", "content": "I finished the marathon this morning, my legs hurt.", "has_answer": true}, {"role": "assistant", "content": "Rest well after the marathon.", "has_answer": false}],
+   [{"role": "user", "content": "The cooking class tonight taught me to make dumplings.", "has_answer": true}, {"role": "assistant", "content": "Dumplings are a fun dish to learn.", "has_answer": false}]
+  ]
+ }
+]
