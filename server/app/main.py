@@ -8,6 +8,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api import materials, projects
+from app.api import messages as messages_api  # B2
+from app.api import settings as settings_api  # B2
 from app.config import get_config
 from app.db.conn import connect, init_db
 from app.errors import install_error_handlers
@@ -42,6 +44,8 @@ def create_app() -> FastAPI:
     install_error_handlers(app)
     app.include_router(projects.router, prefix="/api")
     app.include_router(materials.router, prefix="/api")
+    app.include_router(messages_api.router, prefix="/api")  # B2
+    app.include_router(settings_api.router, prefix="/api")  # B2
     return app
 
 

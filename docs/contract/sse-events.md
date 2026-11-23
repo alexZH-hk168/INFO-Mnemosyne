@@ -32,6 +32,13 @@ message.start
 
 取消（`POST /cancel`）后：停止生成，未校验的引用全部以 `verdict: "partial"` 发出，然后发 `message.end`（`cancelled: true`）。
 
+### 推断标注（v0.5 草案，[B2]，U72）
+
+- 模型只在有证据的句子末尾写本轮的 `[[E#]]`；没有证据、属于模型自己推理的句子不写编号，后端也不为它发 `citation`，前端不加任何标记。
+- 带编号的句子经引用校验：`supported` 胶囊转实心；`partial` 句子加“推断”；`removed` 胶囊消失。一句里的编号全部 removed 时，这句话不再带任何标记。
+- 正文里出现不在本轮证据池的 `E#`（模型编造的编号）：照样发一条 `citation`，`verdict: "removed"`，`eid` 为空串，前端据此去掉待确认胶囊。
+- `message.start` 中值为空的 `parent_id`、`branch_id` 省略不发。
+
 ## 断线续流
 
 1. 前端记录最后收到的 `seq` 与 `message_id`。
