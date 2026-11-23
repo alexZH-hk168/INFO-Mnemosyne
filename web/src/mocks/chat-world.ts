@@ -25,6 +25,7 @@ import { defaultBranchTitle } from '../branch/model';
 import { cpLength, parseCitations, sliceByCp, stripCitations } from '../lib/citations';
 import type { RestFixture, SseFixture } from './fixture-types';
 import { fixtures, formatSse, getMockScenario, SSE_INTERVAL_MS } from './handlers';
+import { isPluginEnabled } from './market-world';
 import { upsertConversationSummary } from './world';
 
 const fx = <T>(file: string) => fixtures[file] as T;
@@ -421,7 +422,10 @@ export const chatWorldHandlers: HttpHandler[] = [
       : [];
     // F4 追加：@ 引用了 transformer.py 的提问用代码问答回合（引用代码 L7、历史对话“作业 3”、网页快照），其余仍用 sse-turn-full
     const codeTurn = body.scope?.mode === 'selected' && (body.scope.document_ids ?? []).includes(CODE_DOC);
-    const events = rewrite(fx<SseFixture>(codeTurn ? 'sse-turn-code.json' : 'sse-turn-full.json').events, ids, extra);
+    // F6b 追加（原 U43）：提问里提到 arXiv、且本对话启用了 ArXiv 插件时，用带插件证据的回合（sse-turn-plugin.json）
+    const pluginTurn = !codeTurn && /arxiv/i.test(body.content) && isPluginEnabled(st.conversation.id, 'arxiv');
+    const turnFile = codeTurn ? 'sse-turn-code.json' : pluginTurn ? 'sse-turn-plugin.json' : 'sse-turn-full.json';
+    const events = rewrite(fx<SseFixture>(turnFile).events, ids, extra);
     const t = iso();
     const user: Message = {
       id: ids.user_message_id,

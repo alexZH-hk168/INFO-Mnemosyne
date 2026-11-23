@@ -33,6 +33,7 @@ import MentionMenu, { MENTION_TESTID, mentionItems } from './MentionMenu';
 import ModelPicker, { getLastTier } from './ModelPicker';
 import ScopePicker from './ScopePicker';
 import SlashMenu, { SLASH_TESTID, slashItems } from './SlashMenu';
+import { commitHomePlugins } from './plugins/usePluginToggle';
 
 export type ComposerVariant = 'home' | 'chat' | 'branch';
 
@@ -470,6 +471,7 @@ export default function Composer({
       try {
         const conv = await api.post<Conversation>(`/api/projects/${encodeURIComponent(pid)}/conversations`, {});
         void qc.invalidateQueries({ queryKey: queryKeys.conversations(pid) });
+        await commitHomePlugins(qc, conv.id); // F6b：主页弹层里改过的插件开关带到新对话
         goConversation(conv.id);
         useChat.getState().send({ conversation_id: conv.id, model_tier: tier, draft_key: NEW_MAIN });
         // 主页草稿已丢弃，联网开关带到了新对话的主线草稿：不再用设置里的默认值覆盖

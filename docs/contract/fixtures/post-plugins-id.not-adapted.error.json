@@ -1,0 +1,21 @@
+{
+  "endpoint": "POST /api/plugins/{id}",
+  "kind": "error",
+  "description": "插件没有 Mnemosyne 适配清单（第一版 18 个里只有 arxiv、tavily、fetch、markitdown 有），不能安装",
+  "status": 400,
+  "body": {
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "插件 docling 还没有 Mnemosyne 适配清单，暂时不能安装",
+      "retriable": false
+    }
+  },
+  "request": {
+    "params": {
+      "id": "docling"
+    },
+    "body": {
+      "config": {}
+    }
+  }
+}

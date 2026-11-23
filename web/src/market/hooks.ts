@@ -10,7 +10,7 @@ import type {
   SkillList,
   UpdateSettingsBody,
 } from '../api/endpoints';
-import { queryKeys, useConvPlugins, useMarket, usePlugins, useSkills } from '../api/queries';
+import { queryKeys, useConvPlugins, useMarket, usePlugin, usePlugins, useSkills } from '../api/queries';
 import type { ID, InstalledPlugin, MarketItem, MemoryItem, Settings, Skill } from '../api/types';
 import { useChat } from '../store/chat';
 
@@ -169,4 +169,18 @@ export function useMarketItem(type: 'plugin' | 'skill', id: ID | null | undefine
 export function useRegistryIndex(type: 'plugin' | 'skill', id: ID): number {
   const list = useMarket(type === 'plugin' ? 'plugins' : 'skills');
   return list.data?.items.findIndex((i) => i.id === id) ?? -1;
+}
+
+/** F6b 追加（编排决定，来自 B3b U92）：第一版不能安装的插件的提示文案 */
+export const NOT_ADAPTED_HINT = '暂未适配，第一版不能安装';
+
+/**
+ * F6b 追加：插件能否安装＝`GET /api/plugins/{id}` 返回了 `manifest`（Mnemosyne 适配清单）。
+ * 返回 false 只在详情已取到且没有 manifest 时；Skill、已安装插件、详情还在加载或读取失败时都返回 true（交给安装接口判断），
+ * 避免可安装的条目在加载瞬间闪成置灰。与详情页共用 ['plugin', id] 缓存。
+ */
+export function usePluginAdapted(item: Pick<MarketItem, 'id' | 'type'>, installed: boolean): boolean {
+  const detail = usePlugin(item.type === 'plugin' && !installed ? item.id : null);
+  if (item.type !== 'plugin' || installed || !detail.data) return true;
+  return !!detail.data.manifest;
 }

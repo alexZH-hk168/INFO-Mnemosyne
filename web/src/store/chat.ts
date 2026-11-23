@@ -46,6 +46,8 @@ export interface ComposerDraft {
   scope: Scope;
   forced_skill?: string;
   attachments: ID[];
+  /** F6b 追加：主页（还没有对话）在会话插件弹层里改过的启用列表；建对话后 PUT /api/conversations/{cid}/plugins 一并提交。未改过为 undefined＝全部已安装可用插件 */
+  enabled_plugin_ids?: ID[];
 }
 
 /** 草稿 key，见 draftKey（编排决定 U37） */

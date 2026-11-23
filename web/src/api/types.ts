@@ -1,4 +1,4 @@
-// Mnemosyne 接口类型草案 v0.3（2026-11-23；v0.3 只追加可选字段）
+// Mnemosyne 接口类型草案 v0.3（2026-11-23；v0.3 只追加可选字段）；v0.5 并行草案只追加 short_name?、Step.plugin_id?（F6b）
 // 来源：docs/contract/*.md。F0 里程碑把本文件拷到 web/src/api/types.ts，之后两处保持一致。
 // 字段保持 snake_case，与后端 JSON 一致。
 // 字符偏移（sentence_start/end、anchor_start/end、char_range）一律左闭右开、按 Unicode 码点计数；
@@ -69,7 +69,10 @@ export interface WebSnapshot { id: ID; url: string; title: string; fetched_at: I
 
 // ---------- SSE ----------
 export type StepKind = 'search_materials' | 'search_web' | 'fetch_url' | 'recall_memory' | 'open_source' | 'plugin_tool' | 'load_skill';
-export interface Step { step_id: ID; kind: StepKind; label: string; status: 'running' | 'done' | 'error'; duration_ms?: number }
+export interface Step {
+  step_id: ID; kind: StepKind; label: string; status: 'running' | 'done' | 'error'; duration_ms?: number;
+  plugin_id?: ID; // v0.5 [F6b]（原 U60）：kind=plugin_tool 时发起调用的插件 id；会话插件弹层据此统计“本轮调用 N 次”，缺省时前端退回按 label 匹配
+}
 export type Verdict = 'supported' | 'partial' | 'removed';
 export interface Citation { citation_id: ID; eid: ID; label: string; sentence_start: number; sentence_end: number; verdict: Verdict }
 export type SseEvent =
