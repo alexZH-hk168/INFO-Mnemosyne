@@ -146,8 +146,8 @@ Frontend first, then backend, then evaluation.
 | W5 | Long-term memory, branch isolation, plugin runtime | done with the fake model; real ArXiv/Fetch install not verified |
 | — | Frontend–backend integration and real-backend smoke test | done (fake model) |
 | — | BYOK: user-supplied model key, provider presets, connection test, demo-mode notice | done (tested with mocked HTTP; no real key used) |
-| W6–7 | Tuning on dev-120, full runs and ablations | not started: needs a real API key and the LongMemEval download |
-| W8 | Paper and demo video | not started |
+| W6–7 | Tuning on dev-120, full runs and ablations | BYOK by design: the project ships no model or budget. Evaluation scripts are ready; runs use the user's own key and the LongMemEval download |
+| W8 | Paper and demo video | done |
 
 Progress is tracked in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
